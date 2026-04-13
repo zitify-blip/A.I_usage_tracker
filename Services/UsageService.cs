@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ClaudeUsageTracker.Models;
 
 namespace ClaudeUsageTracker.Services;
@@ -117,15 +118,15 @@ public class UsageService
     {
         try
         {
-            var result = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(resultJson);
+            var result = JsonSerializer.Deserialize<JsonElement>(resultJson);
             var ok = result.TryGetProperty("ok", out var okProp) && okProp.GetBoolean();
             if (!ok) return false;
 
             var dataStr = result.GetProperty("data").GetString();
             if (dataStr == null) return false;
 
-            var usage = System.Text.Json.JsonSerializer.Deserialize<UsageApiResponse>(dataStr,
-                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var usage = JsonSerializer.Deserialize<UsageApiResponse>(dataStr,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             if (usage == null) return false;
 
             IsLoggedIn = true;

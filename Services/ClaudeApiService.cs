@@ -16,7 +16,7 @@ public class ClaudeApiService
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "ClaudeUsageTracker", "WebView2Data");
 
-    private static readonly string FetchViaPostMessage = @"
+    public static readonly string FetchViaPostMessage = @"
 (function() {
   fetch('https://claude.ai/api/organizations', { credentials: 'include' })
     .then(function(orgsRes) {
@@ -75,17 +75,31 @@ public class ClaudeApiService
         _webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
         _webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
 
+        // Restrict navigation to claude.ai only
+        _webView.CoreWebView2.NavigationStarting += (_, args) =>
+        {
+            if (args.Uri != null &&
+                !args.Uri.StartsWith("https://claude.ai/", StringComparison.OrdinalIgnoreCase) &&
+                !args.Uri.StartsWith("about:", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Cancel = true;
+            }
+        };
+
         var tcs = new TaskCompletionSource<bool>();
-        _webView.CoreWebView2.DOMContentLoaded += (_, _) =>
+        void Handler(object? s, CoreWebView2DOMContentLoadedEventArgs e)
         {
             _ready = true;
             tcs.TrySetResult(true);
-        };
+            _webView.CoreWebView2.DOMContentLoaded -= Handler;
+        }
+        _webView.CoreWebView2.DOMContentLoaded += Handler;
 
         _webView.CoreWebView2.Navigate("https://claude.ai/");
 
         // Wait for page to load (max 15s)
-        await Task.WhenAny(tcs.Task, Task.Delay(15000));
+        if (await Task.WhenAny(tcs.Task, Task.Delay(15000)) != tcs.Task)
+            _webView.CoreWebView2.DOMContentLoaded -= Handler;
     }
 
     public async Task ReloadAsync()
@@ -103,7 +117,8 @@ public class ClaudeApiService
         _webView.CoreWebView2.DOMContentLoaded += Handler;
 
         _webView.CoreWebView2.Navigate("https://claude.ai/");
-        await Task.WhenAny(tcs.Task, Task.Delay(15000));
+        if (await Task.WhenAny(tcs.Task, Task.Delay(15000)) != tcs.Task)
+            _webView.CoreWebView2.DOMContentLoaded -= Handler;
 
         // Extra wait for JS/cookies to settle
         await Task.Delay(1500);
@@ -161,9 +176,9 @@ public class ClaudeApiService
                 return (false, error, null);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            return (false, ex.Message, null);
+            return (false, "request_failed", null);
         }
     }
 }

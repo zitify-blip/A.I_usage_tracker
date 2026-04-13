@@ -5,3 +5,8 @@ obj/
 *.suo
 *.DotSettings.user
 *.ide/
+publish_msix/
+msix_output/
+certs/
+*.log
+*.pfx

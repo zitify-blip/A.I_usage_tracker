@@ -8,10 +8,8 @@ using System.Windows.Threading;
 using ClaudeUsageTracker.Models;
 using ClaudeUsageTracker.Services;
 using Color = System.Windows.Media.Color;
-using Brush = System.Windows.Media.Brush;
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
-using Rectangle = System.Windows.Shapes.Rectangle;
 
 namespace ClaudeUsageTracker.Views;
 
@@ -244,9 +242,9 @@ public partial class MainWindow : Window
         }
         ExtraCard.Opacity = 1;
         ExtraDisabledText.Visibility = Visibility.Collapsed;
-        var used = ex.UsedCredits / 100.0;
-        var limit = ex.MonthlyLimit / 100.0;
-        var pct = Math.Round(ex.Utilization);
+        var used = (ex.UsedCredits ?? 0) / 100.0;
+        var limit = (ex.MonthlyLimit ?? 0) / 100.0;
+        var pct = Math.Round(ex.Utilization ?? 0);
         ExtraUsedText.Text = $"${used:F2}";
         ExtraLimitText.Text = $"of ${limit:F2}";
         ExtraPctText.Text = $"{pct:F0}%";
@@ -357,9 +355,6 @@ public partial class MainWindow : Window
             DeltaChartCanvas.Children.Add(dot);
         }
 
-        // Reset lines (where usage dropped significantly = session reset)
-        // Reset lines not needed for delta view
-
         // Time labels
         var t0 = DateTimeOffset.FromUnixTimeMilliseconds(points[0].ts).ToLocalTime();
         var t1 = DateTimeOffset.FromUnixTimeMilliseconds(points[^1].ts).ToLocalTime();
@@ -390,14 +385,7 @@ public partial class MainWindow : Window
                 LastUpdateLabel.Text = $"Last update: {DateTime.Now:HH:mm:ss}";
                 CheckNotify();
 
-                // Reload BgWebView in background for future polling
-                _ = Task.Run(async () =>
-                {
-                    await Dispatcher.InvokeAsync(async () =>
-                    {
-                        await _api.ReloadAsync();
-                    });
-                });
+                _ = Dispatcher.InvokeAsync(async () => await _api.ReloadAsync());
                 _pollTimer.Start();
                 return;
             }

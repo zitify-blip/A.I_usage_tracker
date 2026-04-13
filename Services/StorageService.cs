@@ -47,7 +47,11 @@ public class StorageService
         {
             Directory.CreateDirectory(StorageDir);
             var json = JsonSerializer.Serialize(_data, JsonOptions);
-            File.WriteAllText(StoragePath, json);
+
+            // Write to temp file first, then replace atomically to prevent corruption
+            var tempPath = StoragePath + ".tmp";
+            File.WriteAllText(tempPath, json);
+            File.Move(tempPath, StoragePath, overwrite: true);
         }
         catch (Exception ex)
         {
@@ -70,25 +74,4 @@ public class StorageService
         Save();
     }
 
-    public string? GetSessionKey() => _data.SessionKey;
-
-    public void SaveSessionKey(string? key)
-    {
-        _data.SessionKey = key;
-        Save();
-    }
-
-    public List<CookieEntry> GetCookies() => _data.Cookies;
-
-    public void SaveCookies(List<(string name, string value)> cookies)
-    {
-        _data.Cookies = cookies.Select(c => new CookieEntry { Name = c.name, Value = c.value }).ToList();
-        // Also keep sessionKey separately
-        var sk = cookies.FirstOrDefault(c => c.name == "sessionKey");
-        if (!string.IsNullOrEmpty(sk.value))
-            _data.SessionKey = sk.value;
-        Save();
-    }
-
-    public AppSettings GetSettings() => _data.Settings;
 }

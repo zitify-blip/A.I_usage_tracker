@@ -25,6 +25,18 @@ public partial class LoginWindow : Window
             var env = await CoreWebView2Environment.CreateAsync(null, WebView2UserDataFolder);
             await LoginWebView.EnsureCoreWebView2Async(env);
 
+            // Restrict navigation to claude.ai only
+            LoginWebView.CoreWebView2.NavigationStarting += (_, args) =>
+            {
+                if (args.Uri != null &&
+                    !args.Uri.StartsWith("https://claude.ai/", StringComparison.OrdinalIgnoreCase) &&
+                    !args.Uri.StartsWith("https://accounts.google.com/", StringComparison.OrdinalIgnoreCase) &&
+                    !args.Uri.StartsWith("about:", StringComparison.OrdinalIgnoreCase))
+                {
+                    args.Cancel = true;
+                }
+            };
+
             LoginWebView.CoreWebView2.Navigate("https://claude.ai/login");
             StatusText.Text = "로딩 중...";
 
@@ -33,9 +45,9 @@ public partial class LoginWindow : Window
                 StatusText.Text = "";
             };
         }
-        catch (Exception ex)
+        catch
         {
-            StatusText.Text = $"Error: {ex.Message}";
+            StatusText.Text = "WebView 초기화 실패";
         }
     }
 
@@ -58,43 +70,7 @@ public partial class LoginWindow : Window
             }
             LoginWebView.CoreWebView2.WebMessageReceived += MsgHandler;
 
-            // Inject script that fetches with absolute URL and posts result back
-            await LoginWebView.CoreWebView2.ExecuteScriptAsync(@"
-(function() {
-  fetch('https://claude.ai/api/organizations', { credentials: 'include' })
-    .then(function(orgsRes) {
-      if (orgsRes.status === 401 || orgsRes.status === 403) {
-        window.chrome.webview.postMessage({ ok: false, error: 'not_logged_in', status: orgsRes.status });
-        return;
-      }
-      if (!orgsRes.ok) {
-        window.chrome.webview.postMessage({ ok: false, error: 'orgs_failed', status: orgsRes.status });
-        return;
-      }
-      orgsRes.json().then(function(orgs) {
-        if (!orgs || !orgs.length) {
-          window.chrome.webview.postMessage({ ok: false, error: 'no_org' });
-          return;
-        }
-        var orgId = orgs[0].uuid;
-        fetch('https://claude.ai/api/organizations/' + orgId + '/usage', {
-          credentials: 'include',
-          headers: { 'Accept': 'application/json' }
-        }).then(function(usageRes) {
-          if (!usageRes.ok) {
-            window.chrome.webview.postMessage({ ok: false, error: 'usage_failed', status: usageRes.status });
-            return;
-          }
-          usageRes.json().then(function(usage) {
-            window.chrome.webview.postMessage({ ok: true, data: JSON.stringify(usage) });
-          });
-        });
-      });
-    })
-    .catch(function(e) {
-      window.chrome.webview.postMessage({ ok: false, error: 'exception', message: String(e) });
-    });
-})()");
+            await LoginWebView.CoreWebView2.ExecuteScriptAsync(ClaudeApiService.FetchViaPostMessage);
 
             // Wait for message (max 30s)
             var completed = await Task.WhenAny(tcs.Task, Task.Delay(30000));
@@ -135,9 +111,9 @@ public partial class LoginWindow : Window
                 DoneBtn.IsEnabled = true;
             }
         }
-        catch (Exception ex)
+        catch
         {
-            StatusText.Text = $"오류: {ex.Message}";
+            StatusText.Text = "데이터 조회 실패 — 다시 시도하세요";
             DoneBtn.IsEnabled = true;
         }
     }

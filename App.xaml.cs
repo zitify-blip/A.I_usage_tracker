@@ -84,7 +84,11 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _trayIcon?.Dispose();
+        if (_trayIcon != null)
+        {
+            _trayIcon.Dispose();
+            _trayIcon = null;
+        }
         base.OnExit(e);
     }
 }

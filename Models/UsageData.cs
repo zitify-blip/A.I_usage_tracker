@@ -22,13 +22,13 @@ public class ExtraUsage
     public bool IsEnabled { get; set; }
 
     [JsonPropertyName("monthly_limit")]
-    public double MonthlyLimit { get; set; }
+    public double? MonthlyLimit { get; set; }
 
     [JsonPropertyName("used_credits")]
-    public double UsedCredits { get; set; }
+    public double? UsedCredits { get; set; }
 
     [JsonPropertyName("utilization")]
-    public double Utilization { get; set; }
+    public double? Utilization { get; set; }
 }
 
 public class UsageApiResponse
@@ -85,12 +85,6 @@ public class UsageApiResponse
     public ExtraUsage? GetExtraUsage() => ExtraUsage ?? ExtraUsageAlt;
 }
 
-public class Organization
-{
-    [JsonPropertyName("uuid")]
-    public string Uuid { get; set; } = "";
-}
-
 public class UsageSnapshot
 {
     public long Timestamp { get; set; }
@@ -108,18 +102,10 @@ public class AppSettings
     public int NotifyThreshold { get; set; } = 80;
 }
 
-public class CookieEntry
-{
-    public string Name { get; set; } = "";
-    public string Value { get; set; } = "";
-}
-
 public class StorageData
 {
     public List<UsageSnapshot> UsageHistory { get; set; } = new();
     public AppSettings Settings { get; set; } = new();
-    public string? SessionKey { get; set; }
-    public List<CookieEntry> Cookies { get; set; } = new();
 }
 
 public class LatestUsage

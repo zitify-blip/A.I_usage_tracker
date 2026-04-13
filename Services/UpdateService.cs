@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace ClaudeUsageTracker.Services;
 
@@ -28,7 +29,7 @@ public class UpdateService
 
     static UpdateService()
     {
-        Http.DefaultRequestHeaders.UserAgent.ParseAdd("ClaudeUsageTracker/1.0");
+        Http.DefaultRequestHeaders.UserAgent.ParseAdd($"ClaudeUsageTracker/{CurrentVersion}");
     }
 
     public static string CurrentVersion
@@ -81,6 +82,11 @@ public class UpdateService
             if (string.IsNullOrEmpty(downloadUrl))
                 return null;
 
+            // Sanitize filename to prevent path traversal
+            fileName = Path.GetFileName(fileName);
+            if (string.IsNullOrEmpty(fileName) || !Regex.IsMatch(fileName, @"^[a-zA-Z0-9._\-]+$"))
+                return null;
+
             return new UpdateInfo
             {
                 Version = latestVersion,
@@ -100,11 +106,17 @@ public class UpdateService
     /// </summary>
     public async Task<bool> DownloadAndInstallAsync(UpdateInfo info, Action<int>? onProgress = null)
     {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"ClaudeUsageTrackerUpdate_{Guid.NewGuid():N}");
+        string? filePath = null;
+
         try
         {
-            var tempDir = Path.Combine(Path.GetTempPath(), "ClaudeUsageTrackerUpdate");
+            // Validate download URL is from GitHub
+            if (!info.DownloadUrl.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
+                return false;
+
             Directory.CreateDirectory(tempDir);
-            var filePath = Path.Combine(tempDir, info.FileName);
+            filePath = Path.Combine(tempDir, Path.GetFileName(info.FileName));
 
             using var response = await Http.GetAsync(info.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
@@ -131,12 +143,14 @@ public class UpdateService
 
             onProgress?.Invoke(100);
 
-            // Launch the installer
             Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
             return true;
         }
         catch
         {
+            // Clean up downloaded file on failure
+            try { if (filePath != null && File.Exists(filePath)) File.Delete(filePath); } catch { }
+            try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch { }
             return false;
         }
     }

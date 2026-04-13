@@ -10,16 +10,8 @@
         Closing="Window_Closing">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="CardBg" Color="#1e1e1e"/>
-        <SolidColorBrush x:Key="BorderClr" Color="#2a2a2a"/>
-        <SolidColorBrush x:Key="TrackClr" Color="#262626"/>
-        <SolidColorBrush x:Key="TxtPrimary" Color="#e8e8e8"/>
         <SolidColorBrush x:Key="TxtHighlight" Color="#f5f5f5"/>
         <SolidColorBrush x:Key="TxtSub" Color="#888888"/>
-        <SolidColorBrush x:Key="Green" Color="#4ade80"/>
-        <SolidColorBrush x:Key="Yellow" Color="#facc15"/>
-        <SolidColorBrush x:Key="Red" Color="#f87171"/>
-        <SolidColorBrush x:Key="Blue" Color="#60a5fa"/>
 
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Background" Value="#262626"/>
