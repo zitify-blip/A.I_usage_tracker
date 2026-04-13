@@ -90,6 +90,8 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0" Text="Claude Usage" FontSize="20" FontWeight="Bold"
@@ -125,13 +127,19 @@
                 </Button.Template>
             </Button>
 
-            <Button Grid.Column="3" x:Name="TopMostBtn" Content="📌" ToolTip="항상 위"
+            <Button Grid.Column="3" x:Name="OpenClaudeBtn" Content="💬 Claude"
+                    Style="{StaticResource Btn}" Click="OpenClaudeBtn_Click" Margin="0,0,8,0"/>
+
+            <Button Grid.Column="4" x:Name="CheckUpdateBtn" Content="🔄 Update"
+                    Style="{StaticResource Btn}" Click="CheckUpdateBtn_Click" Margin="0,0,8,0"/>
+
+            <Button Grid.Column="5" x:Name="TopMostBtn" Content="📌" ToolTip="항상 위"
                     Style="{StaticResource Btn}" Click="TopMostBtn_Click" Margin="0,0,8,0"/>
 
-            <Button Grid.Column="4" x:Name="RefreshBtn" Content="↻ Refresh"
+            <Button Grid.Column="6" x:Name="RefreshBtn" Content="↻ Refresh"
                     Style="{StaticResource Btn}" Click="RefreshBtn_Click" Margin="0,0,8,0"/>
 
-            <Button Grid.Column="5" x:Name="LoginBtn" Content="Login"
+            <Button Grid.Column="7" x:Name="LoginBtn" Content="Login"
                     Style="{StaticResource Btn}" Click="LoginBtn_Click"/>
         </Grid>
 

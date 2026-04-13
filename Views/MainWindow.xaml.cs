@@ -452,6 +452,33 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OpenClaudeBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo("https://claude.ai") { UseShellExecute = true }); }
+        catch { }
+    }
+
+    private async void CheckUpdateBtn_Click(object sender, RoutedEventArgs e)
+    {
+        CheckUpdateBtn.IsEnabled = false;
+        CheckUpdateBtn.Content = "🔄 확인 중...";
+
+        var info = await _update.CheckForUpdateAsync();
+        if (info != null)
+        {
+            _pendingUpdate = info;
+            UpdateBtn.Visibility = Visibility.Visible;
+            CheckUpdateBtn.Content = $"🔄 v{info.Version} 발견!";
+        }
+        else
+        {
+            CheckUpdateBtn.Content = "✓ 최신 버전";
+            await Task.Delay(2000);
+            CheckUpdateBtn.Content = "🔄 Update";
+        }
+        CheckUpdateBtn.IsEnabled = true;
+    }
+
     private void TopMostBtn_Click(object sender, RoutedEventArgs e)
     {
         Topmost = !Topmost;
