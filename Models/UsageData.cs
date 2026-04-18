@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace ClaudeUsageTracker.Models;
+namespace AIUsageTracker.Models;
 
 public class UsageCategory
 {
@@ -29,6 +29,40 @@ public class ExtraUsage
 
     [JsonPropertyName("utilization")]
     public double? Utilization { get; set; }
+}
+
+public class RoutineUsage
+{
+    [JsonPropertyName("utilization")]
+    public double? Utilization { get; set; }
+
+    [JsonPropertyName("used")]
+    public int? Used { get; set; }
+
+    [JsonPropertyName("count")]
+    public int? Count { get; set; }
+
+    [JsonPropertyName("executions")]
+    public int? Executions { get; set; }
+
+    [JsonPropertyName("limit")]
+    public int? Limit { get; set; }
+
+    [JsonPropertyName("max")]
+    public int? Max { get; set; }
+
+    [JsonPropertyName("daily_limit")]
+    public int? DailyLimit { get; set; }
+
+    [JsonPropertyName("resets_at")]
+    public string? ResetsAt { get; set; }
+
+    [JsonPropertyName("reset_at")]
+    public string? ResetAt { get; set; }
+
+    public int GetUsed() => Used ?? Count ?? Executions ?? 0;
+    public int GetLimit() => Limit ?? Max ?? DailyLimit ?? 0;
+    public string? GetResetTime() => ResetsAt ?? ResetAt;
 }
 
 public class UsageApiResponse
@@ -72,6 +106,36 @@ public class UsageApiResponse
     [JsonPropertyName("sevenDayOpus")]
     public UsageCategory? SevenDayOpusAlt { get; set; }
 
+    [JsonPropertyName("seven_day_claude_design")]
+    public UsageCategory? SevenDayClaudeDesign { get; set; }
+
+    [JsonPropertyName("sevenDayClaudeDesign")]
+    public UsageCategory? SevenDayClaudeDesignAlt { get; set; }
+
+    [JsonPropertyName("seven_day_design")]
+    public UsageCategory? SevenDayDesign { get; set; }
+
+    [JsonPropertyName("claude_design")]
+    public UsageCategory? ClaudeDesign { get; set; }
+
+    [JsonPropertyName("design")]
+    public UsageCategory? Design { get; set; }
+
+    [JsonPropertyName("daily_routines")]
+    public RoutineUsage? DailyRoutines { get; set; }
+
+    [JsonPropertyName("dailyRoutines")]
+    public RoutineUsage? DailyRoutinesAlt { get; set; }
+
+    [JsonPropertyName("routines")]
+    public RoutineUsage? Routines { get; set; }
+
+    [JsonPropertyName("routine_executions")]
+    public RoutineUsage? RoutineExecutions { get; set; }
+
+    [JsonPropertyName("daily_routine_executions")]
+    public RoutineUsage? DailyRoutineExecutions { get; set; }
+
     [JsonPropertyName("extra_usage")]
     public ExtraUsage? ExtraUsage { get; set; }
 
@@ -82,6 +146,10 @@ public class UsageApiResponse
     public UsageCategory? GetSevenDay() => SevenDay ?? SevenDayAlt ?? Weekly ?? SevenDayAll ?? SevenDayAllModels;
     public UsageCategory? GetSevenDaySub() => SevenDaySonnet ?? SevenDaySonnetAlt ?? SevenDayOpus ?? SevenDayOpusAlt;
     public string GetSubModelName() => (SevenDaySonnet ?? SevenDaySonnetAlt) != null ? "Sonnet" : "Opus";
+    public UsageCategory? GetClaudeDesign() =>
+        SevenDayClaudeDesign ?? SevenDayClaudeDesignAlt ?? SevenDayDesign ?? ClaudeDesign ?? Design;
+    public RoutineUsage? GetDailyRoutines() =>
+        DailyRoutines ?? DailyRoutinesAlt ?? DailyRoutineExecutions ?? RoutineExecutions ?? Routines;
     public ExtraUsage? GetExtraUsage() => ExtraUsage ?? ExtraUsageAlt;
 }
 
@@ -110,6 +178,53 @@ public class StorageData
 {
     public List<UsageSnapshot> UsageHistory { get; set; } = new();
     public AppSettings Settings { get; set; } = new();
+
+    public List<GeminiAccount> GeminiAccounts { get; set; } = new();
+    public string? SelectedGeminiAccountId { get; set; }
+    public List<GeminiUsageRecord> GeminiUsageHistory { get; set; } = new();
+    public List<GeminiPricingOverride> GeminiPricingOverrides { get; set; } = new();
+}
+
+public class GeminiPricingOverride
+{
+    public string ModelId { get; set; } = "";
+    public double InputPricePerMTok { get; set; }
+    public double OutputPricePerMTok { get; set; }
+    public double CachePricePerMTok { get; set; }
+}
+
+public class GeminiAccount
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Alias { get; set; } = "";
+    public string EncryptedApiKey { get; set; } = "";
+    public string KeyPreview { get; set; } = "";
+    public string? ProjectId { get; set; }
+    public bool IsPrimary { get; set; }
+    public bool IsActive { get; set; } = true;
+    public long CreatedAtMs { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    public long? LastUsedAtMs { get; set; }
+
+    public double DailyBudgetUsd { get; set; } = 0;    // 0 = disabled
+    public double MonthlyBudgetUsd { get; set; } = 0;  // 0 = disabled
+    public int AlertThresholdPct { get; set; } = 80;
+
+    public string? LastAlertedWarnKey { get; set; }
+    public string? LastAlertedMaxKey { get; set; }
+}
+
+public class GeminiUsageRecord
+{
+    public long Timestamp { get; set; }
+    public string AccountId { get; set; } = "";
+    public string Model { get; set; } = "";
+    public long InputTokens { get; set; }
+    public long OutputTokens { get; set; }
+    public long CacheTokens { get; set; }
+    public long ThinkingTokens { get; set; }
+    public long ToolTokens { get; set; }
+    public double CostUsd { get; set; }
+    public int LatencyMs { get; set; }
 }
 
 public class LatestUsage
@@ -121,5 +236,15 @@ public class LatestUsage
     public double SubPct { get; set; }
     public string? SubResetAt { get; set; }
     public string SubModelName { get; set; } = "Sonnet";
+
+    public bool HasDesign { get; set; }
+    public double DesignPct { get; set; }
+    public string? DesignResetAt { get; set; }
+
+    public bool HasRoutine { get; set; }
+    public int RoutineUsed { get; set; }
+    public int RoutineLimit { get; set; }
+    public string? RoutineResetAt { get; set; }
+
     public ExtraUsage? Extra { get; set; }
 }

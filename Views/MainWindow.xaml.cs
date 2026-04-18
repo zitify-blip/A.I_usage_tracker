@@ -1,43 +1,57 @@
 using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using ClaudeUsageTracker.Models;
-using ClaudeUsageTracker.Services;
+using AIUsageTracker.Models;
+using AIUsageTracker.Services;
+using AIUsageTracker.Services.Providers;
 using Color = System.Windows.Media.Color;
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
+using IOPath = System.IO.Path;
+using IOFile = System.IO.File;
 
-namespace ClaudeUsageTracker.Views;
+namespace AIUsageTracker.Views;
 
 public partial class MainWindow : Window
 {
     private readonly UsageService _usage;
     private readonly ClaudeApiService _api;
     private readonly StorageService _storage;
+    private readonly GeminiAccountService _geminiAccounts;
+    private readonly GeminiProvider _geminiProvider;
     private readonly UpdateService _update = new();
+    private bool _suppressGeminiSelection;
     private readonly DispatcherTimer _pollTimer;
     private readonly DispatcherTimer _tickTimer;
+    private readonly DispatcherTimer _updateCheckTimer;
     private readonly Action _onStatusChanged;
     private readonly Action _onUsageUpdated;
     private Task? _updateCheckTask;
     private bool _reallyClosing;
     private bool _notified;
     private UpdateInfo? _pendingUpdate;
-    private DateTime _lastResetCatchupFetch = DateTime.MinValue;
 
     private const int SessionTotalMs = 5 * 60 * 60 * 1000;
     private const long WeekTotalMs = 7L * 24 * 60 * 60 * 1000;
 
-    public MainWindow(UsageService usage, ClaudeApiService api, StorageService storage)
+    public MainWindow(UsageService usage, ClaudeApiService api, StorageService storage,
+                       GeminiAccountService geminiAccounts, GeminiProvider geminiProvider)
     {
         InitializeComponent();
         _usage = usage;
         _api = api;
         _storage = storage;
+        _geminiAccounts = geminiAccounts;
+        _geminiProvider = geminiProvider;
+
+        _geminiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
+        _geminiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
 
         _onStatusChanged = () => Dispatcher.Invoke(UpdateStatus);
         _onUsageUpdated = () => Dispatcher.Invoke(UpdateUI);
@@ -51,7 +65,12 @@ public partial class MainWindow : Window
         _tickTimer.Tick += (_, _) => Tick();
         _tickTimer.Start();
 
+        _updateCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromHours(24) };
+        _updateCheckTimer.Tick += async (_, _) => await CheckForUpdateAsync();
+        _updateCheckTimer.Start();
+
         Loaded += async (_, _) => await StartUp();
+        SizeChanged += (_, _) => { if (MainTabs?.SelectedIndex == 0) RefreshGlobalUi(); };
 
         VersionLabel.Text = $"v{UpdateService.CurrentVersion}";
     }
@@ -112,7 +131,7 @@ public partial class MainWindow : Window
         if ((l.SessionPct >= threshold || l.WeekPct >= threshold) && !_notified)
         {
             _notified = true;
-            App.ShowBalloon("Claude Usage Alert", $"Session: {l.SessionPct:F0}% · Week: {l.WeekPct:F0}%");
+            App.ShowBalloon("Claude CLI Usage Alert", $"Session: {l.SessionPct:F0}% · Week: {l.WeekPct:F0}%");
         }
         else if (l.SessionPct < threshold && l.WeekPct < threshold)
             _notified = false;
@@ -168,8 +187,13 @@ public partial class MainWindow : Window
         SetMarker(SubMarker, SubMarkerLabel, SubMarkerCanvas, l.SubResetAt);
         SubResetText.Text = FmtResetIn(l.SubResetAt);
 
+        RenderDesign(l);
+        RenderRoutine(l);
         RenderExtra(l.Extra);
         DrawChart();
+
+        // Keep Global tab in sync
+        if (MainTabs?.SelectedIndex == 0) RefreshGlobalUi();
     }
 
     // ────────── Tick (1s) ──────────
@@ -181,18 +205,8 @@ public partial class MainWindow : Window
         UpdateTimeRing(l);
         SetMarker(WeekAllMarker, WeekAllMarkerLabel, WeekAllMarkerCanvas, l.WeekResetAt);
         SetMarker(SubMarker, SubMarkerLabel, SubMarkerCanvas, l.SubResetAt);
-
-        // When the session reset moment has passed, the server has rolled usage back to 0
-        // but our local copy still shows the pre-reset value (often 100%). Force a refetch
-        // so the UI catches up immediately instead of waiting for the 5-minute poll tick.
-        // Rate-limited to avoid looping if the server briefly keeps returning the old reset time.
-        if (DateTimeOffset.TryParse(l.SessionResetAt, out var rst) &&
-            rst <= DateTimeOffset.Now &&
-            (DateTime.Now - _lastResetCatchupFetch).TotalSeconds > 30)
-        {
-            _lastResetCatchupFetch = DateTime.Now;
-            _ = Fetch();
-        }
+        if (l.HasDesign)
+            SetMarker(DesignMarker, DesignMarkerLabel, DesignMarkerCanvas, l.DesignResetAt);
     }
 
     private void UpdateTimeRing(LatestUsage l)
@@ -250,6 +264,52 @@ public partial class MainWindow : Window
         var w = canvas.ActualWidth > 0 ? canvas.ActualWidth : 300;
         Canvas.SetLeft(marker, w * pct / 100.0);
         label.Text = $"{pct:F0}%";
+    }
+
+    // ────────── Claude Design ──────────
+
+    private void RenderDesign(LatestUsage l)
+    {
+        if (!l.HasDesign)
+        {
+            DesignCard.Opacity = 0.4;
+            DesignPctText.Text = "--";
+            DesignPctText.Foreground = B("#666");
+            DesignBar.Width = 0;
+            DesignMarker.Visibility = Visibility.Collapsed;
+            DesignResetText.Text = "Not available";
+            return;
+        }
+        DesignCard.Opacity = 1;
+        DesignPctText.Text = $"{l.DesignPct:F0}%";
+        DesignPctText.Foreground = UsageColor(l.DesignPct);
+        SetBar(DesignBar, l.DesignPct);
+        SetMarker(DesignMarker, DesignMarkerLabel, DesignMarkerCanvas, l.DesignResetAt);
+        DesignResetText.Text = FmtResetIn(l.DesignResetAt);
+    }
+
+    // ────────── Daily Routine ──────────
+
+    private void RenderRoutine(LatestUsage l)
+    {
+        if (!l.HasRoutine)
+        {
+            RoutineCard.Opacity = 0.4;
+            RoutineUsedText.Text = "--";
+            RoutineLimitText.Text = "/ --";
+            RoutineResetText.Text = "Not available";
+            return;
+        }
+        RoutineCard.Opacity = 1;
+        RoutineUsedText.Text = l.RoutineUsed.ToString();
+        RoutineLimitText.Text = $"/ {l.RoutineLimit}";
+
+        var pct = l.RoutineLimit > 0 ? (double)l.RoutineUsed / l.RoutineLimit * 100 : 0;
+        RoutineUsedText.Foreground = UsageColor(pct);
+
+        RoutineResetText.Text = string.IsNullOrEmpty(l.RoutineResetAt)
+            ? "Daily limit"
+            : FmtResetIn(l.RoutineResetAt);
     }
 
     // ────────── Extra Usage ──────────
@@ -557,7 +617,7 @@ public partial class MainWindow : Window
     public string GetTrayTooltip()
     {
         var l = _usage.Latest;
-        return $"Claude Usage\nSession: {l.SessionPct:F0}%\nWeek: {l.WeekPct:F0}%";
+        return $"A.I. Usage Tracker\nClaude CLI · Session: {l.SessionPct:F0}% · Week: {l.WeekPct:F0}%";
     }
 
     // ────────── Helpers ──────────
@@ -593,5 +653,817 @@ public partial class MainWindow : Window
         Canvas.SetLeft(tb, x);
         Canvas.SetTop(tb, y);
         return tb;
+    }
+
+    // ────────── Gemini Tab ──────────
+
+    private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.Source is not System.Windows.Controls.TabControl) return;
+        switch (MainTabs?.SelectedIndex)
+        {
+            case 0: RefreshGlobalUi(); break;    // Global
+            case 2: RefreshGeminiUi(); break;    // Gemini (Claude = 1)
+        }
+    }
+
+    private void GlobalRefreshBtn_Click(object sender, RoutedEventArgs e) => RefreshGlobalUi();
+
+    private void RefreshGlobalUi()
+    {
+        var now = DateTimeOffset.Now;
+        var today = now.Date;
+        var yesterday = today.AddDays(-1);
+        var monthStart = new DateTime(now.Year, now.Month, 1);
+        var monthEnd = monthStart.AddMonths(1);
+        var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
+        var dayOfMonth = now.Day;
+
+        long TsMs(DateTime d) => new DateTimeOffset(d, now.Offset).ToUnixTimeMilliseconds();
+
+        var all = _storage.GetGeminiUsageHistory();
+        var accounts = _geminiAccounts.GetAccounts();
+
+        // ─── Row 1: Hero tiles ───
+        var todayCost = all.Where(r => r.Timestamp >= TsMs(today) && r.Timestamp < TsMs(today.AddDays(1))).Sum(r => r.CostUsd);
+        var yesterdayCost = all.Where(r => r.Timestamp >= TsMs(yesterday) && r.Timestamp < TsMs(today)).Sum(r => r.CostUsd);
+        var monthRecs = all.Where(r => r.Timestamp >= TsMs(monthStart) && r.Timestamp < TsMs(monthEnd)).ToList();
+        var monthCost = monthRecs.Sum(r => r.CostUsd);
+
+        HeroTodayCost.Text = $"${todayCost:F2}";
+        if (yesterdayCost > 0 || todayCost > 0)
+        {
+            var delta = todayCost - yesterdayCost;
+            var sign = delta >= 0 ? "+" : "−";
+            HeroTodayDelta.Text = $"yesterday ${yesterdayCost:F2} · {sign}${Math.Abs(delta):F2}";
+            HeroTodayDelta.Foreground = delta > 0 ? B("#f87171") : delta < 0 ? B("#4ade80") : B("#888");
+        }
+        else
+        {
+            HeroTodayDelta.Text = "no usage yet";
+            HeroTodayDelta.Foreground = B("#888");
+        }
+
+        HeroMonthCost.Text = $"${monthCost:F2}";
+        var totalMonthlyBudget = accounts.Sum(a => a.MonthlyBudgetUsd);
+        var daysRemaining = daysInMonth - dayOfMonth + 1;
+
+        if (totalMonthlyBudget > 0)
+        {
+            var pct = monthCost / totalMonthlyBudget;
+            SetRatioBar(HeroMonthBarFill, pct, BudgetColor(pct));
+            HeroMonthSub.Text = $"${monthCost:F2} / ${totalMonthlyBudget:F2} ({pct:P0}) · {daysRemaining}d left";
+        }
+        else
+        {
+            HeroMonthBarFill.Width = 0;
+            HeroMonthSub.Text = $"no budget set · {daysRemaining}d left";
+        }
+
+        var avgPerDay = dayOfMonth > 0 ? monthCost / dayOfMonth : 0;
+        var projected = avgPerDay * daysInMonth;
+        HeroProjectedCost.Text = $"${projected:F2}";
+        if (totalMonthlyBudget > 0)
+        {
+            var projPct = projected / totalMonthlyBudget;
+            HeroProjectedCost.Foreground = BudgetColor(projPct);
+            HeroProjectedSub.Text = $"~${avgPerDay:F2}/day · {projPct:P0} of budget";
+        }
+        else
+        {
+            HeroProjectedCost.Foreground = B("#e8e8e8");
+            HeroProjectedSub.Text = avgPerDay > 0 ? $"based on ${avgPerDay:F2}/day avg" : "no usage yet";
+        }
+
+        // ─── Row 2: Claude quota (rings) ───
+        var l = _usage.Latest;
+        SetRing(GSessionRingFigure, GSessionRingArc, GSessionRingPath, l.SessionPct, GSessionRingBrush, true);
+        ClaudeSessionText.Text = $"{l.SessionPct:F0}%";
+        ClaudeSessionText.Foreground = UsageColor(l.SessionPct);
+        ClaudeSessionReset.Text = FmtResetIn(l.SessionResetAt);
+
+        SetRing(GWeekRingFigure, GWeekRingArc, GWeekRingPath, l.WeekPct, GWeekRingBrush, true);
+        ClaudeWeekText.Text = $"{l.WeekPct:F0}%";
+        ClaudeWeekText.Foreground = UsageColor(l.WeekPct);
+        ClaudeWeekReset.Text = FmtResetIn(l.WeekResetAt);
+
+        // ─── Row 2: Gemini budgets ───
+        var dayStartMs = TsMs(today);
+        var todayByAcc = all.Where(r => r.Timestamp >= dayStartMs)
+            .GroupBy(r => r.AccountId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.CostUsd));
+        var monthByAcc = monthRecs.GroupBy(r => r.AccountId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.CostUsd));
+
+        double budgetBarMax = 240;
+        var budgetsContainer = GeminiBudgetsList.Parent as FrameworkElement;
+        if (budgetsContainer != null && budgetsContainer.ActualWidth > 40)
+            budgetBarMax = Math.Max(120, budgetsContainer.ActualWidth - 20);
+
+        var budgetRows = accounts.Select(a => new GeminiBudgetRow(
+            a,
+            todayByAcc.TryGetValue(a.Id, out var d) ? d : 0,
+            monthByAcc.TryGetValue(a.Id, out var m) ? m : 0,
+            budgetBarMax
+        )).ToList();
+        GeminiBudgetsList.ItemsSource = budgetRows;
+        GeminiBudgetsEmpty.Visibility = budgetRows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // ─── Row 3: Trend (7-day) ───
+        Update7DayTrend(all);
+
+        // ─── Row 3: Top models ───
+        var byModel = monthRecs.GroupBy(r => r.Model)
+            .Select(g => new { Model = g.Key, Cost = g.Sum(x => x.CostUsd) })
+            .Where(x => x.Cost > 0)
+            .OrderByDescending(x => x.Cost)
+            .Take(3)
+            .ToList();
+        var topMax = byModel.FirstOrDefault()?.Cost ?? 1;
+        if (topMax <= 0) topMax = 1;
+        var totalMonth = monthRecs.Sum(r => r.CostUsd);
+        if (totalMonth <= 0) totalMonth = 1;
+
+        double topBarMax = 140;
+        var topContainer = TopModelsList.Parent as FrameworkElement;
+        if (topContainer != null && topContainer.ActualWidth > 40)
+            topBarMax = Math.Max(80, topContainer.ActualWidth - 90);
+
+        var topRows = byModel.Select(x => new TopModelRow(
+            x.Model, x.Cost, x.Cost / topMax * topBarMax, x.Cost / totalMonth)).ToList();
+        TopModelsList.ItemsSource = topRows;
+        TopModelsEmpty.Visibility = topRows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static void SetRatioBar(Border bar, double ratio, SolidColorBrush color)
+    {
+        if (bar.Parent is not Grid g || g.ActualWidth <= 0)
+        {
+            bar.Width = 0;
+            bar.Background = color;
+            return;
+        }
+        bar.Width = Math.Max(0, Math.Min(1.0, ratio)) * g.ActualWidth;
+        bar.Background = color;
+    }
+
+    private static SolidColorBrush BudgetColor(double pct)
+    {
+        if (pct >= 1.0) return B("#f87171");
+        if (pct >= 0.8) return B("#fb923c");
+        if (pct >= 0.6) return B("#facc15");
+        return B("#4ade80");
+    }
+
+    private static string ModelFamily(string? model)
+    {
+        var m = (model ?? "").ToLowerInvariant();
+        if (m.Contains("flash")) return "Flash";
+        if (m.Contains("pro")) return "Pro";
+        return "Other";
+    }
+
+    private static readonly Dictionary<string, string> FamilyColors = new()
+    {
+        ["Flash"] = "#4F7CE8",
+        ["Pro"] = "#9B72CB",
+        ["Other"] = "#64748b"
+    };
+
+    private void Update7DayTrend(IReadOnlyList<GeminiUsageRecord> all)
+    {
+        TrendCanvas.Children.Clear();
+        TrendLegend.Children.Clear();
+
+        var today = DateTimeOffset.Now.Date;
+        var days = Enumerable.Range(0, 7).Select(i => today.AddDays(-6 + i)).ToList();
+
+        var grid = days.ToDictionary(
+            d => d,
+            _ => new Dictionary<string, double> { ["Flash"] = 0, ["Pro"] = 0, ["Other"] = 0 });
+
+        foreach (var r in all)
+        {
+            var dt = DateTimeOffset.FromUnixTimeMilliseconds(r.Timestamp).ToLocalTime().Date;
+            if (!grid.ContainsKey(dt)) continue;
+            grid[dt][ModelFamily(r.Model)] += r.CostUsd;
+        }
+
+        var dayLabels = new[] { TrendDay0, TrendDay1, TrendDay2, TrendDay3, TrendDay4, TrendDay5, TrendDay6 };
+        for (int i = 0; i < 7; i++)
+            dayLabels[i].Text = days[i].ToString("M/d");
+
+        var dayTotals = days.Select(d => grid[d].Values.Sum()).ToList();
+        var trendTotal = dayTotals.Sum();
+        TrendTotalLabel.Text = $"7d · ${trendTotal:F2}";
+
+        foreach (var fam in new[] { "Flash", "Pro", "Other" })
+        {
+            if (grid.Values.Any(x => x[fam] > 0))
+                AddLegendItem(fam, FamilyColors[fam]);
+        }
+
+        var canvasWidth = TrendCanvas.ActualWidth > 0 ? TrendCanvas.ActualWidth : 480;
+        var canvasHeight = TrendCanvas.ActualHeight > 0 ? TrendCanvas.ActualHeight : 160;
+        var maxTotal = dayTotals.Count > 0 ? dayTotals.Max() : 0;
+        if (maxTotal <= 0) maxTotal = 1;
+        var slotW = canvasWidth / 7.0;
+        var barW = Math.Max(6, slotW * 0.6);
+        var gap = slotW - barW;
+        var drawableH = canvasHeight - 16;
+
+        for (int i = 0; i < 7; i++)
+        {
+            var total = dayTotals[i];
+            var stackedBottom = canvasHeight;
+            foreach (var fam in new[] { "Other", "Pro", "Flash" })
+            {
+                var cost = grid[days[i]][fam];
+                if (cost <= 0) continue;
+                var h = cost / maxTotal * drawableH;
+                var rect = new System.Windows.Shapes.Rectangle
+                {
+                    Width = barW,
+                    Height = h,
+                    Fill = B(FamilyColors[fam]),
+                    RadiusX = 2,
+                    RadiusY = 2
+                };
+                Canvas.SetLeft(rect, i * slotW + gap / 2);
+                Canvas.SetTop(rect, stackedBottom - h);
+                TrendCanvas.Children.Add(rect);
+                stackedBottom -= h;
+            }
+            if (total > 0)
+            {
+                var lbl = new TextBlock
+                {
+                    Text = total >= 1 ? $"${total:F2}" : $"${total:F3}",
+                    FontSize = 9,
+                    Foreground = B("#aaa")
+                };
+                Canvas.SetLeft(lbl, i * slotW + gap / 2 - 2);
+                Canvas.SetTop(lbl, Math.Max(0, canvasHeight - total / maxTotal * drawableH - 13));
+                TrendCanvas.Children.Add(lbl);
+            }
+        }
+    }
+
+    private void AddLegendItem(string label, string color)
+    {
+        var sp = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 0) };
+        sp.Children.Add(new Border
+        {
+            Width = 8,
+            Height = 8,
+            CornerRadius = new CornerRadius(2),
+            Background = B(color),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 4, 0)
+        });
+        sp.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 10,
+            Foreground = B("#aaa"),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        TrendLegend.Children.Add(sp);
+    }
+
+    private void RefreshGeminiUi()
+    {
+        // Populate model combo once
+        if (GeminiModelCombo.Items.Count == 0)
+        {
+            foreach (var m in GeminiPricing.Models)
+                GeminiModelCombo.Items.Add(new GeminiModelDisplay(m));
+            GeminiModelCombo.SelectedIndex = 1; // Flash default
+        }
+
+        var accounts = _geminiAccounts.GetAccounts();
+        if (accounts.Count == 0)
+        {
+            GeminiEmptyState.Visibility = Visibility.Visible;
+            GeminiDashboard.Visibility = Visibility.Collapsed;
+            GeminiAccountCombo.ItemsSource = null;
+            return;
+        }
+
+        GeminiEmptyState.Visibility = Visibility.Collapsed;
+        GeminiDashboard.Visibility = Visibility.Visible;
+
+        _suppressGeminiSelection = true;
+        GeminiAccountCombo.ItemsSource = accounts.Select(a => new GeminiAccountDisplay(a)).ToList();
+        var selected = _geminiAccounts.GetSelected();
+        if (selected != null)
+            GeminiAccountCombo.SelectedIndex = accounts.ToList().FindIndex(a => a.Id == selected.Id);
+        _suppressGeminiSelection = false;
+
+        if (selected != null)
+        {
+            GeminiActiveAlias.Text = selected.Alias;
+            GeminiActiveKeyPreview.Text = selected.KeyPreview;
+        }
+
+        RefreshGeminiStats();
+    }
+
+    private void RefreshGeminiStats()
+    {
+        var selected = _geminiAccounts.GetSelected();
+        if (selected == null) return;
+
+        var history = _storage.GetGeminiUsageHistory(selected.Id);
+        var todayStart = DateTimeOffset.Now.Date;
+        var todayMs = new DateTimeOffset(todayStart).ToUnixTimeMilliseconds();
+        var today = history.Where(r => r.Timestamp >= todayMs).ToList();
+        var last24h = DateTimeOffset.UtcNow.AddHours(-24).ToUnixTimeMilliseconds();
+        var last24hRecords = history.Where(r => r.Timestamp >= last24h).ToList();
+
+        var totalTokens = today.Sum(r => r.InputTokens + r.OutputTokens);
+        var totalCost = today.Sum(r => r.CostUsd);
+
+        GeminiTodayTokens.Text = totalTokens.ToString("N0");
+        GeminiTodayCost.Text = $"${totalCost:F4}";
+        GeminiRequestCount.Text = last24hRecords.Count.ToString();
+
+        if (selected.LastUsedAtMs.HasValue)
+        {
+            var last = DateTimeOffset.FromUnixTimeMilliseconds(selected.LastUsedAtMs.Value).ToLocalTime();
+            GeminiLastCallText.Text = $"last: {last:HH:mm:ss}";
+        }
+        else
+        {
+            GeminiLastCallText.Text = "no calls yet";
+        }
+
+        // Recent history (newest first, top 50)
+        var recent = history.OrderByDescending(r => r.Timestamp).Take(50)
+            .Select(r => new GeminiHistoryItem(r)).ToList();
+        GeminiHistoryList.ItemsSource = recent;
+        GeminiHistoryEmpty.Visibility = recent.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // Account comparison (today cost per account)
+        RefreshGeminiCompareList(todayMs);
+    }
+
+    private void RefreshGeminiCompareList(long todayMs)
+    {
+        var all = _storage.GetGeminiUsageHistory();
+        var todayByAcc = all.Where(r => r.Timestamp >= todayMs)
+            .GroupBy(r => r.AccountId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.CostUsd));
+
+        var accounts = _geminiAccounts.GetAccounts();
+        var rows = accounts.Select(a => new GeminiCompareRow(
+            a.Alias,
+            todayByAcc.TryGetValue(a.Id, out var c) ? c : 0
+        )).ToList();
+
+        var max = rows.Count > 0 ? rows.Max(r => r.Cost) : 0;
+        if (max <= 0) max = 1;
+        foreach (var r in rows) r.BarWidth = Math.Max(1, r.Cost / max * 320);
+        GeminiCompareList.ItemsSource = rows;
+    }
+
+    private async void GeminiSendBtn_Click(object sender, RoutedEventArgs e) => await SendGeminiPrompt();
+
+    private async void GeminiPromptBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter &&
+            (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0)
+        {
+            e.Handled = true;
+            await SendGeminiPrompt();
+        }
+    }
+
+    private async Task SendGeminiPrompt()
+    {
+        var selected = _geminiAccounts.GetSelected();
+        if (selected == null) return;
+
+        var prompt = GeminiPromptBox.Text?.Trim();
+        if (string.IsNullOrEmpty(prompt))
+        {
+            GeminiStatusLabel.Text = "프롬프트가 비어있습니다";
+            GeminiStatusLabel.Foreground = B("#f87171");
+            return;
+        }
+
+        if (GeminiModelCombo.SelectedItem is not GeminiModelDisplay modelDisp)
+        {
+            GeminiStatusLabel.Text = "모델 선택 필요";
+            GeminiStatusLabel.Foreground = B("#f87171");
+            return;
+        }
+
+        var key = _geminiAccounts.GetApiKey(selected.Id);
+        if (string.IsNullOrEmpty(key))
+        {
+            GeminiStatusLabel.Text = "키 복호화 실패";
+            GeminiStatusLabel.Foreground = B("#f87171");
+            return;
+        }
+
+        GeminiSendBtn.IsEnabled = false;
+        GeminiStatusLabel.Text = $"{modelDisp.Price.DisplayName} 호출 중...";
+        GeminiStatusLabel.Foreground = B("#facc15");
+
+        var result = await _geminiProvider.GenerateContentAsync(key, modelDisp.Price.ModelId, prompt);
+
+        if (!result.Ok)
+        {
+            GeminiStatusLabel.Text = $"실패: {result.Error}";
+            GeminiStatusLabel.Foreground = B("#f87171");
+            GeminiSendBtn.IsEnabled = true;
+            return;
+        }
+
+        var effective = _storage.GetEffectivePrice(modelDisp.Price.ModelId);
+        var cost = GeminiPricing.CalculateCost(effective,
+            result.InputTokens, result.OutputTokens, result.CacheTokens);
+
+        var record = new GeminiUsageRecord
+        {
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            AccountId = selected.Id,
+            Model = modelDisp.Price.ModelId,
+            InputTokens = result.InputTokens,
+            OutputTokens = result.OutputTokens,
+            CacheTokens = result.CacheTokens,
+            ThinkingTokens = result.ThinkingTokens,
+            ToolTokens = result.ToolTokens,
+            CostUsd = cost,
+            LatencyMs = result.LatencyMs
+        };
+        _storage.SaveGeminiUsage(record);
+
+        selected.LastUsedAtMs = record.Timestamp;
+        _storage.Save();
+
+        GeminiStatusLabel.Text = $"완료 · in {result.InputTokens} / out {result.OutputTokens} tokens · ${cost:F5} · {result.LatencyMs}ms";
+        GeminiStatusLabel.Foreground = B("#4ade80");
+
+        RefreshGeminiStats();
+        CheckGeminiBudget(selected);
+        GeminiSendBtn.IsEnabled = true;
+    }
+
+    private void CheckGeminiBudget(GeminiAccount account)
+    {
+        if (account.DailyBudgetUsd <= 0 && account.MonthlyBudgetUsd <= 0) return;
+
+        var history = _storage.GetGeminiUsageHistory(account.Id);
+        var now = DateTimeOffset.Now;
+
+        var dayStart = new DateTimeOffset(now.Date, now.Offset).ToUnixTimeMilliseconds();
+        var monthStart = new DateTimeOffset(new DateTime(now.Year, now.Month, 1), now.Offset).ToUnixTimeMilliseconds();
+
+        var dailyUsed = history.Where(r => r.Timestamp >= dayStart).Sum(r => r.CostUsd);
+        var monthlyUsed = history.Where(r => r.Timestamp >= monthStart).Sum(r => r.CostUsd);
+
+        var threshold = Math.Clamp(account.AlertThresholdPct, 1, 100) / 100.0;
+
+        // Daily
+        if (account.DailyBudgetUsd > 0)
+        {
+            var dayKey = now.Date.ToString("yyyy-MM-dd");
+            var pct = dailyUsed / account.DailyBudgetUsd;
+
+            if (pct >= 1.0 && account.LastAlertedMaxKey != $"D:{dayKey}")
+            {
+                account.LastAlertedMaxKey = $"D:{dayKey}";
+                _storage.Save();
+                App.ShowBalloon($"Gemini 일간 예산 초과 · {account.Alias}",
+                    $"${dailyUsed:F4} / ${account.DailyBudgetUsd:F2} ({pct:P0})");
+            }
+            else if (pct >= threshold && pct < 1.0 && account.LastAlertedWarnKey != $"D:{dayKey}")
+            {
+                account.LastAlertedWarnKey = $"D:{dayKey}";
+                _storage.Save();
+                App.ShowBalloon($"Gemini 일간 예산 경고 · {account.Alias}",
+                    $"${dailyUsed:F4} / ${account.DailyBudgetUsd:F2} ({pct:P0})");
+            }
+        }
+
+        // Monthly
+        if (account.MonthlyBudgetUsd > 0)
+        {
+            var monthKey = now.ToString("yyyy-MM");
+            var pct = monthlyUsed / account.MonthlyBudgetUsd;
+
+            if (pct >= 1.0 && account.LastAlertedMaxKey != $"M:{monthKey}")
+            {
+                account.LastAlertedMaxKey = $"M:{monthKey}";
+                _storage.Save();
+                App.ShowBalloon($"Gemini 월간 예산 초과 · {account.Alias}",
+                    $"${monthlyUsed:F2} / ${account.MonthlyBudgetUsd:F2} ({pct:P0})");
+            }
+            else if (pct >= threshold && pct < 1.0 && account.LastAlertedWarnKey != $"M:{monthKey}")
+            {
+                account.LastAlertedWarnKey = $"M:{monthKey}";
+                _storage.Save();
+                App.ShowBalloon($"Gemini 월간 예산 경고 · {account.Alias}",
+                    $"${monthlyUsed:F2} / ${account.MonthlyBudgetUsd:F2} ({pct:P0})");
+            }
+        }
+    }
+
+    private void GeminiAccountCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressGeminiSelection) return;
+        if (GeminiAccountCombo.SelectedItem is GeminiAccountDisplay d)
+            _geminiAccounts.SelectAccount(d.Account.Id);
+    }
+
+    private async void GeminiAddAccountBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new GeminiAddAccountDialog { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        GeminiStatusLabel.Text = "키 검증 중...";
+        GeminiStatusLabel.Foreground = B("#facc15");
+
+        var (ok, err, acc) = await _geminiAccounts.AddAccountAsync(dlg.Alias, dlg.ApiKey);
+        if (!ok)
+        {
+            GeminiStatusLabel.Text = $"실패: {err}";
+            GeminiStatusLabel.Foreground = B("#f87171");
+            System.Windows.MessageBox.Show(this, $"계정 추가 실패: {err}",
+                "Gemini", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        GeminiStatusLabel.Text = $"'{acc?.Alias}' 추가됨";
+        GeminiStatusLabel.Foreground = B("#4ade80");
+    }
+
+    private void GeminiManageBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new GeminiAccountManagerWindow(_geminiAccounts) { Owner = this };
+        win.ShowDialog();
+        RefreshGeminiUi();
+    }
+
+    private void GeminiPricingBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new GeminiPricingEditorWindow(_storage) { Owner = this };
+        win.ShowDialog();
+        RefreshGeminiStats();
+    }
+
+    private async void GeminiTestBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = _geminiAccounts.GetSelected();
+        if (selected == null) return;
+
+        GeminiTestBtn.IsEnabled = false;
+        GeminiStatusLabel.Text = "연결 테스트 중...";
+        GeminiStatusLabel.Foreground = B("#facc15");
+
+        var key = _geminiAccounts.GetApiKey(selected.Id);
+        if (string.IsNullOrEmpty(key))
+        {
+            GeminiStatusLabel.Text = "키 복호화 실패";
+            GeminiStatusLabel.Foreground = B("#f87171");
+            GeminiTestBtn.IsEnabled = true;
+            return;
+        }
+
+        var (ok, err, count) = await _geminiProvider.ValidateKeyAsync(key);
+        if (ok)
+        {
+            GeminiStatusLabel.Text = $"연결 성공 · 사용 가능 모델 {count}개";
+            GeminiStatusLabel.Foreground = B("#4ade80");
+
+            selected.LastUsedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            _storage.Save();
+            RefreshGeminiStats();
+        }
+        else
+        {
+            GeminiStatusLabel.Text = $"연결 실패: {err}";
+            GeminiStatusLabel.Foreground = B("#f87171");
+        }
+        GeminiTestBtn.IsEnabled = true;
+    }
+
+    private void GeminiRefreshBtn_Click(object sender, RoutedEventArgs e) => RefreshGeminiStats();
+
+    private void GeminiExportBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = _geminiAccounts.GetSelected();
+        var allAccounts = _geminiAccounts.GetAccounts();
+        if (allAccounts.Count == 0)
+        {
+            GeminiStatusLabel.Text = "내보낼 계정이 없습니다";
+            GeminiStatusLabel.Foreground = B("#f87171");
+            return;
+        }
+
+        var defaultName = selected != null
+            ? $"gemini-usage-{selected.Alias}-{DateTime.Now:yyyyMMdd-HHmmss}"
+            : $"gemini-usage-all-{DateTime.Now:yyyyMMdd-HHmmss}";
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Gemini 사용 기록 내보내기",
+            FileName = defaultName,
+            Filter = "CSV (*.csv)|*.csv|JSON (*.json)|*.json",
+            DefaultExt = ".csv"
+        };
+        if (dlg.ShowDialog(this) != true) return;
+
+        var records = selected != null
+            ? _storage.GetGeminiUsageHistory(selected.Id)
+            : _storage.GetGeminiUsageHistory();
+
+        var aliasMap = allAccounts.ToDictionary(a => a.Id, a => a.Alias);
+
+        try
+        {
+            if (dlg.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                var payload = records.Select(r => new
+                {
+                    timestamp = DateTimeOffset.FromUnixTimeMilliseconds(r.Timestamp).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                    timestampMs = r.Timestamp,
+                    accountId = r.AccountId,
+                    accountAlias = aliasMap.GetValueOrDefault(r.AccountId, "(deleted)"),
+                    model = r.Model,
+                    inputTokens = r.InputTokens,
+                    outputTokens = r.OutputTokens,
+                    cacheTokens = r.CacheTokens,
+                    thinkingTokens = r.ThinkingTokens,
+                    toolTokens = r.ToolTokens,
+                    costUsd = r.CostUsd,
+                    latencyMs = r.LatencyMs
+                });
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                IOFile.WriteAllText(dlg.FileName, json, Encoding.UTF8);
+            }
+            else
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("timestamp,account_alias,account_id,model,input_tokens,output_tokens,cache_tokens,thinking_tokens,tool_tokens,cost_usd,latency_ms");
+                foreach (var r in records)
+                {
+                    var t = DateTimeOffset.FromUnixTimeMilliseconds(r.Timestamp).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                    var alias = CsvEscape(aliasMap.GetValueOrDefault(r.AccountId, "(deleted)"));
+                    sb.Append(t).Append(',')
+                      .Append(alias).Append(',')
+                      .Append(r.AccountId).Append(',')
+                      .Append(CsvEscape(r.Model)).Append(',')
+                      .Append(r.InputTokens).Append(',')
+                      .Append(r.OutputTokens).Append(',')
+                      .Append(r.CacheTokens).Append(',')
+                      .Append(r.ThinkingTokens).Append(',')
+                      .Append(r.ToolTokens).Append(',')
+                      .Append(r.CostUsd.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)).Append(',')
+                      .Append(r.LatencyMs)
+                      .AppendLine();
+                }
+                IOFile.WriteAllText(dlg.FileName, sb.ToString(), new UTF8Encoding(true));
+            }
+
+            GeminiStatusLabel.Text = $"내보냄 · {records.Count}건 → {IOPath.GetFileName(dlg.FileName)}";
+            GeminiStatusLabel.Foreground = B("#4ade80");
+        }
+        catch (Exception ex)
+        {
+            GeminiStatusLabel.Text = $"내보내기 실패: {ex.Message}";
+            GeminiStatusLabel.Foreground = B("#f87171");
+        }
+    }
+
+    private static string CsvEscape(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        if (s.Contains(',') || s.Contains('"') || s.Contains('\n') || s.Contains('\r'))
+            return "\"" + s.Replace("\"", "\"\"") + "\"";
+        return s;
+    }
+}
+
+internal class GeminiAccountDisplay
+{
+    public GeminiAccount Account { get; }
+    public GeminiAccountDisplay(GeminiAccount a) { Account = a; }
+    public override string ToString()
+    {
+        var primary = Account.IsPrimary ? " ★" : "";
+        return $"👤 {Account.Alias}  ({Account.KeyPreview}){primary}";
+    }
+}
+
+internal class GeminiModelDisplay
+{
+    public GeminiModelPrice Price { get; }
+    public GeminiModelDisplay(GeminiModelPrice p) { Price = p; }
+    public override string ToString() => Price.DisplayName;
+}
+
+internal class GeminiBudgetRow
+{
+    public string Alias { get; }
+    public string SpendText { get; }
+    public SolidColorBrush BarBrush { get; }
+    public double BarWidth { get; }
+    public string SubText { get; }
+
+    public GeminiBudgetRow(GeminiAccount a, double todayCost, double monthCost, double barMaxPx)
+    {
+        Alias = a.Alias;
+        double pct;
+        if (a.MonthlyBudgetUsd > 0)
+        {
+            pct = monthCost / a.MonthlyBudgetUsd;
+            SpendText = $"${monthCost:F2} / ${a.MonthlyBudgetUsd:F2}";
+            SubText = $"month {pct:P0} · today ${todayCost:F2}";
+        }
+        else if (a.DailyBudgetUsd > 0)
+        {
+            pct = todayCost / a.DailyBudgetUsd;
+            SpendText = $"${todayCost:F2} / ${a.DailyBudgetUsd:F2}";
+            SubText = $"today {pct:P0} · month ${monthCost:F2}";
+        }
+        else
+        {
+            pct = 0;
+            SpendText = $"${monthCost:F2}";
+            SubText = $"no budget · today ${todayCost:F2}";
+        }
+        BarBrush = PickBrush(pct);
+        BarWidth = Math.Max(0, Math.Min(1.0, pct)) * barMaxPx;
+    }
+
+    private static SolidColorBrush PickBrush(double pct)
+    {
+        if (pct >= 1.0) return new SolidColorBrush(Color.FromRgb(0xf8, 0x71, 0x71));
+        if (pct >= 0.8) return new SolidColorBrush(Color.FromRgb(0xfb, 0x92, 0x3c));
+        if (pct >= 0.6) return new SolidColorBrush(Color.FromRgb(0xfa, 0xcc, 0x15));
+        return new SolidColorBrush(Color.FromRgb(0x4a, 0xde, 0x80));
+    }
+}
+
+internal class TopModelRow
+{
+    public string Label { get; }
+    public string CostText { get; }
+    public SolidColorBrush ColorBrush { get; }
+    public double BarWidth { get; }
+    public string ShareText { get; }
+
+    public TopModelRow(string model, double cost, double barWidth, double share)
+    {
+        Label = model;
+        CostText = $"${cost:F2}";
+        BarWidth = Math.Max(0, barWidth);
+        ShareText = $"{share:P0}";
+        var m = (model ?? "").ToLowerInvariant();
+        Color c = m.Contains("flash")
+            ? Color.FromRgb(0x4F, 0x7C, 0xE8)
+            : m.Contains("pro")
+                ? Color.FromRgb(0x9B, 0x72, 0xCB)
+                : Color.FromRgb(0x64, 0x74, 0x8b);
+        ColorBrush = new SolidColorBrush(c);
+    }
+}
+
+internal class GeminiCompareRow
+{
+    public string Label { get; }
+    public double Cost { get; }
+    public string CostText { get; }
+    public double BarWidth { get; set; }
+
+    public GeminiCompareRow(string alias, double cost)
+    {
+        Label = $"👤 {alias}";
+        Cost = cost;
+        CostText = $"${cost:F4}";
+    }
+}
+
+internal class GeminiHistoryItem
+{
+    public string TimeText { get; }
+    public string Model { get; }
+    public string InputText { get; }
+    public string OutputText { get; }
+    public string LatencyText { get; }
+    public string CostText { get; }
+
+    public GeminiHistoryItem(GeminiUsageRecord r)
+    {
+        var t = DateTimeOffset.FromUnixTimeMilliseconds(r.Timestamp).ToLocalTime();
+        TimeText = t.ToString("HH:mm:ss");
+        Model = r.Model;
+        InputText = r.InputTokens.ToString("N0");
+        OutputText = r.OutputTokens.ToString("N0");
+        LatencyText = $"{r.LatencyMs}";
+        CostText = $"${r.CostUsd:F5}";
     }
 }

@@ -1,9 +1,9 @@
 using System.Text.Json;
-using ClaudeUsageTracker.Models;
+using AIUsageTracker.Models;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 
-namespace ClaudeUsageTracker.Services;
+namespace AIUsageTracker.Services;
 
 /// <summary>
 /// Uses a hidden WebView2 navigated to claude.ai to make same-origin API calls.
@@ -14,7 +14,7 @@ public class ClaudeApiService
 {
     public static readonly string WebView2UserDataFolder = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ClaudeUsageTracker", "WebView2Data");
+        "AIUsageTracker", "WebView2Data");
 
     public static readonly string FetchViaPostMessage = @"
 (function() {

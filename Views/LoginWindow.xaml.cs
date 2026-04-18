@@ -1,8 +1,8 @@
 using System.Windows;
-using ClaudeUsageTracker.Services;
+using AIUsageTracker.Services;
 using Microsoft.Web.WebView2.Core;
 
-namespace ClaudeUsageTracker.Views;
+namespace AIUsageTracker.Views;
 
 public partial class LoginWindow : Window
 {

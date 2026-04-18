@@ -2,10 +2,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace ClaudeUsageTracker.Services;
+namespace AIUsageTracker.Services;
 
 public class UpdateInfo
 {
@@ -13,6 +14,7 @@ public class UpdateInfo
     public string DownloadUrl { get; set; } = "";
     public string FileName { get; set; } = "";
     public string ReleaseNotes { get; set; } = "";
+    public string? Sha256Url { get; set; }
 }
 
 public class UpdateService
@@ -29,7 +31,7 @@ public class UpdateService
 
     static UpdateService()
     {
-        Http.DefaultRequestHeaders.UserAgent.ParseAdd($"ClaudeUsageTracker/{CurrentVersion}");
+        Http.DefaultRequestHeaders.UserAgent.ParseAdd($"AIUsageTracker/{CurrentVersion}");
     }
 
     public static string CurrentVersion
@@ -59,22 +61,31 @@ public class UpdateService
             if (!IsNewer(latestVersion, CurrentVersion))
                 return null;
 
-            // Find installer asset (.exe or .msi)
+            // Find installer asset (.exe or .msi) and matching .sha256 sidecar
             string downloadUrl = "";
             string fileName = "";
+            string? sha256Url = null;
+            var sha256Map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             if (doc.TryGetProperty("assets", out var assets))
             {
                 foreach (var asset in assets.EnumerateArray())
                 {
                     var name = asset.GetProperty("name").GetString() ?? "";
+                    var url = asset.GetProperty("browser_download_url").GetString() ?? "";
                     var lower = name.ToLowerInvariant();
-                    if (lower.EndsWith(".exe") || lower.EndsWith(".msi") || lower.EndsWith(".zip"))
+
+                    if (lower.EndsWith(".sha256"))
                     {
-                        downloadUrl = asset.GetProperty("browser_download_url").GetString() ?? "";
-                        fileName = name;
-                        // Prefer .exe > .msi > .zip
-                        if (lower.EndsWith(".exe")) break;
+                        sha256Map[name[..^".sha256".Length]] = url;
+                    }
+                    else if (lower.EndsWith(".exe") || lower.EndsWith(".msi") || lower.EndsWith(".zip"))
+                    {
+                        if (string.IsNullOrEmpty(downloadUrl) || lower.EndsWith(".exe"))
+                        {
+                            downloadUrl = url;
+                            fileName = name;
+                        }
                     }
                 }
             }
@@ -87,12 +98,15 @@ public class UpdateService
             if (string.IsNullOrEmpty(fileName) || !Regex.IsMatch(fileName, @"^[a-zA-Z0-9._\-]+$"))
                 return null;
 
+            sha256Map.TryGetValue(fileName, out sha256Url);
+
             return new UpdateInfo
             {
                 Version = latestVersion,
                 DownloadUrl = downloadUrl,
                 FileName = fileName,
-                ReleaseNotes = body.Length > 300 ? body[..300] + "..." : body
+                ReleaseNotes = body.Length > 300 ? body[..300] + "..." : body,
+                Sha256Url = sha256Url
             };
         }
         catch (Exception ex)
@@ -107,7 +121,7 @@ public class UpdateService
     /// </summary>
     public async Task<bool> DownloadAndInstallAsync(UpdateInfo info, Action<int>? onProgress = null)
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), $"ClaudeUsageTrackerUpdate_{Guid.NewGuid():N}");
+        var tempDir = Path.Combine(Path.GetTempPath(), $"AIUsageTrackerUpdate_{Guid.NewGuid():N}");
         string? filePath = null;
 
         try
@@ -144,6 +158,18 @@ public class UpdateService
 
             onProgress?.Invoke(100);
 
+            // SHA256 integrity check (mandatory if sha256 sidecar provided)
+            if (!string.IsNullOrEmpty(info.Sha256Url))
+            {
+                if (!await VerifySha256Async(filePath, info.Sha256Url))
+                {
+                    Logger.Error($"SHA256 verification failed for {info.FileName} — installer aborted");
+                    try { File.Delete(filePath); } catch { }
+                    try { Directory.Delete(tempDir, true); } catch { }
+                    return false;
+                }
+            }
+
             Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
             return true;
         }
@@ -152,6 +178,33 @@ public class UpdateService
             Logger.Error("Update download/install failed", ex);
             try { if (filePath != null && File.Exists(filePath)) File.Delete(filePath); } catch { }
             try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch { }
+            return false;
+        }
+    }
+
+    private static async Task<bool> VerifySha256Async(string filePath, string sha256Url)
+    {
+        try
+        {
+            if (!sha256Url.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            var expected = (await Http.GetStringAsync(sha256Url))
+                .Trim().Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0]
+                .ToLowerInvariant();
+
+            if (!Regex.IsMatch(expected, @"^[0-9a-f]{64}$"))
+                return false;
+
+            await using var stream = File.OpenRead(filePath);
+            var hashBytes = await SHA256.HashDataAsync(stream);
+            var actual = Convert.ToHexString(hashBytes).ToLowerInvariant();
+
+            return actual == expected;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("SHA256 verification error", ex);
             return false;
         }
     }

@@ -1,10 +1,11 @@
 using System.Drawing;
 using System.Windows;
 using System.Windows.Threading;
-using ClaudeUsageTracker.Services;
-using ClaudeUsageTracker.Views;
+using AIUsageTracker.Services;
+using AIUsageTracker.Services.Providers;
+using AIUsageTracker.Views;
 
-namespace ClaudeUsageTracker;
+namespace AIUsageTracker;
 
 public partial class App : System.Windows.Application
 {
@@ -19,8 +20,10 @@ public partial class App : System.Windows.Application
         var storage = new StorageService();
         var api = new ClaudeApiService();
         var usage = new UsageService(storage, api);
+        var geminiProvider = new GeminiProvider();
+        var geminiAccounts = new GeminiAccountService(storage, geminiProvider);
 
-        _mainWindow = new MainWindow(usage, api, storage);
+        _mainWindow = new MainWindow(usage, api, storage, geminiAccounts, geminiProvider);
         MainWindow = _mainWindow;
 
         Logger.Info($"App started (v{UpdateService.CurrentVersion})");
@@ -34,7 +37,7 @@ public partial class App : System.Windows.Application
         _trayIcon = new System.Windows.Forms.NotifyIcon
         {
             Visible = true,
-            Text = "Claude Usage Tracker",
+            Text = "A.I. Usage Tracker",
             Icon = SystemIcons.Application
         };
 

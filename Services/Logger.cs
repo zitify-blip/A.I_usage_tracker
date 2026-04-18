@@ -1,16 +1,14 @@
 using System.IO;
 
-namespace ClaudeUsageTracker.Services;
+namespace AIUsageTracker.Services;
 
 /// <summary>
-/// Lightweight file logger writing to %AppData%\ClaudeUsageTracker\logs\app.log.
+/// Lightweight file logger writing to %AppData%\AI_usage_tracker\logs\app.log.
 /// Rotates the file when it exceeds 1 MB (keeps one previous as app.log.old).
 /// </summary>
 public static class Logger
 {
-    private static readonly string LogDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ClaudeUsageTracker", "logs");
+    private static readonly string LogDir = AppPaths.LogsDir;
 
     private static readonly string LogPath = Path.Combine(LogDir, "app.log");
     private static readonly string OldLogPath = Path.Combine(LogDir, "app.log.old");

@@ -1,20 +1,20 @@
 [Setup]
 AppId={{B8F3A2E1-4C5D-6E7F-8A9B-0C1D2E3F4A5B}
-AppName=Claude Usage Tracker
-AppVersion=1.2.1
-AppVerName=Claude Usage Tracker 1.2.1
+AppName=A.I. Usage Tracker
+AppVersion=2.4.0
+AppVerName=A.I. Usage Tracker 2.4.0
 AppPublisher=zitify
 AppPublisherURL=https://zitify.co.kr
-DefaultDirName={autopf}\ClaudeUsageTracker
-DefaultGroupName=Claude Usage Tracker
+DefaultDirName={autopf}\AI_usage_tracker
+DefaultGroupName=A.I. Usage Tracker
 OutputDir=installer_output
-OutputBaseFilename=ClaudeUsageTracker_Setup_v1.2.1
+OutputBaseFilename=AI_usage_tracker_Setup_v2.4.0
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
 ArchitecturesInstallIn64BitMode=x64compatible
-UninstallDisplayName=Claude Usage Tracker
+UninstallDisplayName=A.I. Usage Tracker
 SetupLogging=yes
 
 [Languages]
@@ -27,19 +27,19 @@ Name: "taskbarpin"; Description: "작업 표시줄에 고정"; GroupDescription:
 Name: "startupicon"; Description: "Windows 시작 시 자동 실행"; GroupDescription: "추가 옵션:"
 
 [Files]
-Source: "publish\ClaudeUsageTracker.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\AI_usage_tracker.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Claude Usage Tracker"; Filename: "{app}\ClaudeUsageTracker.exe"
-Name: "{group}\Uninstall Claude Usage Tracker"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Claude Usage Tracker"; Filename: "{app}\ClaudeUsageTracker.exe"; Tasks: desktopicon
-Name: "{userstartup}\Claude Usage Tracker"; Filename: "{app}\ClaudeUsageTracker.exe"; Tasks: startupicon
+Name: "{group}\A.I. Usage Tracker"; Filename: "{app}\AI_usage_tracker.exe"
+Name: "{group}\Uninstall A.I. Usage Tracker"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\A.I. Usage Tracker"; Filename: "{app}\AI_usage_tracker.exe"; Tasks: desktopicon
+Name: "{userstartup}\A.I. Usage Tracker"; Filename: "{app}\AI_usage_tracker.exe"; Tasks: startupicon
 
 [Run]
-Filename: "{app}\ClaudeUsageTracker.exe"; Description: "Claude Usage Tracker 실행"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\AI_usage_tracker.exe"; Description: "A.I. Usage Tracker 실행"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-Type: dirifempty; Name: "{userappdata}\ClaudeUsageTracker"
+Type: dirifempty; Name: "{userappdata}\AI_usage_tracker"
 
 [Code]
 procedure PinToTaskbar;
@@ -50,7 +50,7 @@ begin
   PsCmd := 'powershell -ExecutionPolicy Bypass -Command "' +
     '$shell = New-Object -ComObject Shell.Application; ' +
     '$folder = $shell.Namespace(''' + ExpandConstant('{app}') + '''); ' +
-    '$item = $folder.ParseName(''ClaudeUsageTracker.exe''); ' +
+    '$item = $folder.ParseName(''AI_usage_tracker.exe''); ' +
     '$verb = $item.Verbs() | Where-Object { $_.Name -match ''작업 표시줄에 고정|Pin to Tas'' }; ' +
     'if ($verb) { $verb.DoIt() }"';
   Exec('cmd.exe', '/c ' + PsCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);

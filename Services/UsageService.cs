@@ -1,7 +1,7 @@
 using System.Text.Json;
-using ClaudeUsageTracker.Models;
+using AIUsageTracker.Models;
 
-namespace ClaudeUsageTracker.Services;
+namespace AIUsageTracker.Services;
 
 public class UsageService
 {
@@ -81,6 +81,8 @@ public class UsageService
         var fiveHour = data.GetFiveHour();
         var sevenDay = data.GetSevenDay();
         var sub = data.GetSevenDaySub();
+        var design = data.GetClaudeDesign();
+        var routine = data.GetDailyRoutines();
         var extra = data.GetExtraUsage();
 
         Latest = new LatestUsage
@@ -92,6 +94,13 @@ public class UsageService
             SubPct = ToPercent(sub?.Utilization ?? 0),
             SubResetAt = sub?.GetResetTime(),
             SubModelName = data.GetSubModelName(),
+            HasDesign = design != null,
+            DesignPct = ToPercent(design?.Utilization ?? 0),
+            DesignResetAt = design?.GetResetTime(),
+            HasRoutine = routine != null && routine.GetLimit() > 0,
+            RoutineUsed = routine?.GetUsed() ?? 0,
+            RoutineLimit = routine?.GetLimit() ?? 0,
+            RoutineResetAt = routine?.GetResetTime(),
             Extra = extra
         };
 

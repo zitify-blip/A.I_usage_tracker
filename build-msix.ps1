@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Claude Usage Tracker MSIX 패키지 빌드 스크립트
+    A.I. Usage Tracker MSIX 패키지 빌드 스크립트
 
 .DESCRIPTION
     자체 서명 인증서 생성 → 앱 빌드 → MSIX 패키징 → 서명을 자동으로 수행합니다.
@@ -11,7 +11,7 @@
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "1.2.1.0",
+    [string]$Version = "2.4.0.0",
     [string]$OutputDir = "msix_output"
 )
 
@@ -20,15 +20,15 @@ $ProjectDir = $PSScriptRoot
 $PublishDir = Join-Path $ProjectDir "publish_msix"
 $MsixOutputDir = Join-Path $ProjectDir $OutputDir
 $CertDir = Join-Path $ProjectDir "certs"
-$CertPath = Join-Path $CertDir "ClaudeUsageTracker.pfx"
+$CertPath = Join-Path $CertDir "AI_usage_tracker.pfx"
 $CertPassword = if ($env:MSIX_CERT_PASSWORD) { $env:MSIX_CERT_PASSWORD } else {
     Read-Host -Prompt "인증서 비밀번호를 입력하세요" -AsSecureString |
         ForEach-Object { [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($_)) }
 }
-$PackageName = "ClaudeUsageTracker_v$($Version -replace '\.0$','')".TrimEnd('.')
+$PackageName = "AI_usage_tracker_v$($Version -replace '\.0$','')".TrimEnd('.')
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " Claude Usage Tracker MSIX Builder" -ForegroundColor Cyan
+Write-Host " A.I. Usage Tracker MSIX Builder" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -89,7 +89,7 @@ if (Test-Path $CertPath) {
         -Type Custom `
         -Subject "CN=zitify" `
         -KeyUsage DigitalSignature `
-        -FriendlyName "Claude Usage Tracker Signing Certificate" `
+        -FriendlyName "A.I. Usage Tracker Signing Certificate" `
         -CertStoreLocation "Cert:\CurrentUser\My" `
         -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
 
@@ -111,7 +111,7 @@ if (Test-Path $PublishDir) {
     Remove-Item $PublishDir -Recurse -Force
 }
 
-dotnet publish "$ProjectDir\ClaudeUsageTracker.csproj" `
+dotnet publish "$ProjectDir\AI_usage_tracker.csproj" `
     -c $Configuration `
     -r win-x64 `
     --self-contained true `

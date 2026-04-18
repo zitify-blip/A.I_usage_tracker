@@ -1,10 +1,10 @@
-<Window x:Class="ClaudeUsageTracker.Views.MainWindow"
+<Window x:Class="AIUsageTracker.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="Claude Usage Tracker"
-        Width="860" Height="600"
-        MinWidth="720" MinHeight="560"
+        Title="A.I. Usage Tracker"
+        Width="940" Height="820"
+        MinWidth="820" MinHeight="720"
         Background="#0f0f0f"
         WindowStartupLocation="CenterScreen"
         Closing="Window_Closing">
@@ -60,18 +60,484 @@
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="#f5f5f5"/>
         </Style>
+
+        <!-- Dark tab style -->
+        <Style x:Key="DarkTabItem" TargetType="TabItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderThickness="0,0,0,2" BorderBrush="Transparent"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#4ade80"/>
+                                <Setter Property="Foreground" Value="#f5f5f5"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#e8e8e8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <Grid Margin="14">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>      <!-- Header -->
-            <RowDefinition Height="3*"/>        <!-- Hero row -->
-            <RowDefinition Height="8"/>
-            <RowDefinition Height="2*"/>        <!-- Weekly cards -->
-            <RowDefinition Height="8"/>
-            <RowDefinition Height="2*"/>        <!-- Delta chart -->
-            <RowDefinition Height="Auto"/>      <!-- Footer -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+
+        <!-- ═══ GLOBAL TOP BAR ═══ -->
+        <Grid Grid.Row="0" Margin="14,10,14,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="A.I. Usage Tracker"
+                       FontSize="13" FontWeight="SemiBold"
+                       Foreground="{StaticResource TxtSub}" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" x:Name="TopMostBtn" Content="📌"
+                    ToolTip="항상 위에 고정 (전역)"
+                    Style="{StaticResource Btn}" Click="TopMostBtn_Click"
+                    Padding="10,4" FontSize="11"/>
+        </Grid>
+
+        <TabControl Grid.Row="1" x:Name="MainTabs" Background="#0f0f0f" BorderThickness="0" Padding="0"
+                    SelectedIndex="1"
+                    SelectionChanged="MainTabs_SelectionChanged">
+            <TabControl.Resources>
+                <Style TargetType="TabPanel">
+                    <Setter Property="Background" Value="#0f0f0f"/>
+                    <Setter Property="Margin" Value="14,6,14,0"/>
+                </Style>
+            </TabControl.Resources>
+
+            <TabItem Header="🌐 Global" Style="{StaticResource DarkTabItem}">
+              <Grid Margin="14">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- 0 header -->
+                    <RowDefinition Height="Auto"/>   <!-- 1 hero tiles -->
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="3*"/>     <!-- 3 health -->
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="2*"/>     <!-- 5 trend + top models -->
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Global Overview" FontSize="20" FontWeight="Bold"
+                               Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" x:Name="GlobalRefreshBtn" Content="↻ Refresh"
+                            Style="{StaticResource Btn}" Click="GlobalRefreshBtn_Click"/>
+                </Grid>
+
+                <!-- ═══════════ Row 1: HERO 3-tile (Today / Month / Projected) ═══════════ -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- TODAY -->
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                <TextBlock Text="💰 " FontSize="9" VerticalAlignment="Center"/>
+                                <TextBlock Text="TODAY" Style="{StaticResource Sec}" Margin="0"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Grid.Row="1" x:Name="HeroTodayCost" Text="$0.00"
+                                       Style="{StaticResource Big}" FontSize="28" Margin="0,6,0,4"/>
+                            <TextBlock Grid.Row="2" x:Name="HeroTodayDelta" Text="vs yesterday: --"
+                                       FontSize="11" Foreground="#888"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- THIS MONTH -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                <TextBlock Text="📊 " FontSize="9" VerticalAlignment="Center"/>
+                                <TextBlock Text="THIS MONTH" Style="{StaticResource Sec}" Margin="0"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Grid.Row="1" x:Name="HeroMonthCost" Text="$0.00"
+                                       Style="{StaticResource Big}" FontSize="28" Margin="0,6,0,6"/>
+                            <Grid Grid.Row="2" Height="6" Margin="0,0,0,6">
+                                <Border Background="#262626" CornerRadius="3"/>
+                                <Border x:Name="HeroMonthBarFill" Background="#4ade80"
+                                        CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
+                            </Grid>
+                            <TextBlock Grid.Row="3" x:Name="HeroMonthSub"
+                                       Text="no budget set · -- days left"
+                                       FontSize="11" Foreground="#888"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- PROJECTED -->
+                    <Border Grid.Column="4" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                <TextBlock Text="🔮 " FontSize="9" VerticalAlignment="Center"/>
+                                <TextBlock Text="PROJECTED EOM" Style="{StaticResource Sec}" Margin="0"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Grid.Row="1" x:Name="HeroProjectedCost" Text="$0.00"
+                                       Style="{StaticResource Big}" FontSize="28" Margin="0,6,0,4"/>
+                            <TextBlock Grid.Row="2" x:Name="HeroProjectedSub"
+                                       Text="based on -- per day"
+                                       FontSize="11" Foreground="#888"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ═══════════ Row 3: Health (Claude | Gemini budgets) ═══════════ -->
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Claude quota (dual ring gauges) -->
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                <ContentControl Style="{StaticResource ClaudeBrandIcon}"
+                                                Width="11" Height="11" Margin="0,0,6,0"
+                                                VerticalAlignment="Center"/>
+                                <TextBlock Text="CLAUDE CLI · QUOTA" Style="{StaticResource Sec}"
+                                           VerticalAlignment="Center" Margin="0"/>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Session gauge -->
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Viewbox Grid.Row="0" Stretch="Uniform" Margin="6">
+                                        <Grid Width="200" Height="200">
+                                            <Canvas Width="200" Height="200">
+                                                <Ellipse Width="172" Height="172"
+                                                         Canvas.Left="14" Canvas.Top="14"
+                                                         Stroke="#262626" StrokeThickness="14"
+                                                         Fill="Transparent"/>
+                                                <Path x:Name="GSessionRingPath" StrokeThickness="14"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                                                    <Path.Stroke>
+                                                        <SolidColorBrush x:Name="GSessionRingBrush" Color="#4ade80"/>
+                                                    </Path.Stroke>
+                                                    <Path.Data>
+                                                        <PathGeometry>
+                                                            <PathFigure x:Name="GSessionRingFigure" StartPoint="100,14">
+                                                                <ArcSegment x:Name="GSessionRingArc" Point="100,14"
+                                                                            Size="86,86" SweepDirection="Clockwise"
+                                                                            IsLargeArc="False"/>
+                                                            </PathFigure>
+                                                        </PathGeometry>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                            <TextBlock x:Name="ClaudeSessionText" Text="--%"
+                                                       FontSize="34" FontWeight="Bold" Foreground="#e8e8e8"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Viewbox>
+                                    <TextBlock Grid.Row="1" Text="5-HOUR SESSION" FontSize="10"
+                                               Foreground="#888" HorizontalAlignment="Center"
+                                               Margin="0,4,0,0"/>
+                                    <TextBlock Grid.Row="2" x:Name="ClaudeSessionReset"
+                                               Text="Resets in --" FontSize="10" Foreground="#666"
+                                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                </Grid>
+
+                                <!-- Weekly gauge -->
+                                <Grid Grid.Column="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Viewbox Grid.Row="0" Stretch="Uniform" Margin="6">
+                                        <Grid Width="200" Height="200">
+                                            <Canvas Width="200" Height="200">
+                                                <Ellipse Width="172" Height="172"
+                                                         Canvas.Left="14" Canvas.Top="14"
+                                                         Stroke="#262626" StrokeThickness="14"
+                                                         Fill="Transparent"/>
+                                                <Path x:Name="GWeekRingPath" StrokeThickness="14"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                                                    <Path.Stroke>
+                                                        <SolidColorBrush x:Name="GWeekRingBrush" Color="#4ade80"/>
+                                                    </Path.Stroke>
+                                                    <Path.Data>
+                                                        <PathGeometry>
+                                                            <PathFigure x:Name="GWeekRingFigure" StartPoint="100,14">
+                                                                <ArcSegment x:Name="GWeekRingArc" Point="100,14"
+                                                                            Size="86,86" SweepDirection="Clockwise"
+                                                                            IsLargeArc="False"/>
+                                                            </PathFigure>
+                                                        </PathGeometry>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                            <TextBlock x:Name="ClaudeWeekText" Text="--%"
+                                                       FontSize="34" FontWeight="Bold" Foreground="#e8e8e8"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Viewbox>
+                                    <TextBlock Grid.Row="1" Text="WEEKLY" FontSize="10"
+                                               Foreground="#888" HorizontalAlignment="Center"
+                                               Margin="0,4,0,0"/>
+                                    <TextBlock Grid.Row="2" x:Name="ClaudeWeekReset"
+                                               Text="Resets in --" FontSize="10" Foreground="#666"
+                                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Gemini budgets -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                                <ContentControl Style="{StaticResource GeminiBrandIcon}"
+                                                Width="11" Height="11" Margin="0,0,6,0"
+                                                VerticalAlignment="Center"/>
+                                <TextBlock Text="GEMINI · BUDGETS" Style="{StaticResource Sec}"
+                                           VerticalAlignment="Center" Margin="0"/>
+                            </StackPanel>
+                            <ItemsControl Grid.Row="1" x:Name="GeminiBudgetsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Alias}"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#e8e8e8"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding SpendText}"
+                                                           FontSize="11" Foreground="#aaa"/>
+                                            </Grid>
+                                            <Grid Grid.Row="1" Height="6" Margin="0,4,0,3">
+                                                <Border Background="#262626" CornerRadius="3"/>
+                                                <Border Background="{Binding BarBrush}"
+                                                        CornerRadius="3" HorizontalAlignment="Left"
+                                                        Width="{Binding BarWidth}"/>
+                                            </Grid>
+                                            <TextBlock Grid.Row="2" Text="{Binding SubText}"
+                                                       FontSize="10" Foreground="#666"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Grid.Row="2" x:Name="GeminiBudgetsEmpty"
+                                       Text="등록된 Gemini 계정이 없습니다."
+                                       FontSize="11" Foreground="#666"
+                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ═══════════ Row 5: Trend (2/3) + Top Models (1/3) ═══════════ -->
+                <Grid Grid.Row="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 7-day stacked bar -->
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*" MinHeight="120"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="7-DAY TREND · GEMINI COST"
+                                           Style="{StaticResource Sec}"/>
+                                <TextBlock Grid.Column="1" x:Name="TrendTotalLabel" Text="$0.00"
+                                           FontSize="11" Foreground="#aaa"/>
+                            </Grid>
+                            <StackPanel Grid.Row="1" x:Name="TrendLegend" Orientation="Horizontal"
+                                        Margin="0,2,0,6"/>
+                            <Canvas Grid.Row="2" x:Name="TrendCanvas" ClipToBounds="True"/>
+                            <Grid Grid.Row="3" x:Name="TrendAxis" Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="TrendDay0" Grid.Column="0" Text="" FontSize="9"
+                                           Foreground="#666" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TrendDay1" Grid.Column="1" Text="" FontSize="9"
+                                           Foreground="#666" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TrendDay2" Grid.Column="2" Text="" FontSize="9"
+                                           Foreground="#666" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TrendDay3" Grid.Column="3" Text="" FontSize="9"
+                                           Foreground="#666" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TrendDay4" Grid.Column="4" Text="" FontSize="9"
+                                           Foreground="#666" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TrendDay5" Grid.Column="5" Text="" FontSize="9"
+                                           Foreground="#666" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TrendDay6" Grid.Column="6" Text="" FontSize="9"
+                                           Foreground="#666" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Top 3 models -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="TOP MODELS · THIS MONTH"
+                                       Style="{StaticResource Sec}" Margin="0,0,0,8"/>
+                            <ItemsControl Grid.Row="1" x:Name="TopModelsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="8" Height="8"
+                                                        CornerRadius="2" Background="{Binding ColorBrush}"
+                                                        Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Label}"
+                                                           FontSize="11" Foreground="#e8e8e8"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding CostText}"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="#4ade80"/>
+                                            </Grid>
+                                            <Grid Grid.Row="1" Margin="14,3,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid Grid.Column="0" Height="4"
+                                                      VerticalAlignment="Center" Margin="0,0,6,0">
+                                                    <Border Background="#262626" CornerRadius="2"/>
+                                                    <Border Background="{Binding ColorBrush}"
+                                                            CornerRadius="2" HorizontalAlignment="Left"
+                                                            Width="{Binding BarWidth}"/>
+                                                </Grid>
+                                                <TextBlock Grid.Column="1" Text="{Binding ShareText}"
+                                                           FontSize="10" Foreground="#888"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Grid.Row="2" x:Name="TopModelsEmpty"
+                                       Text="이번 달 사용 기록이 없습니다."
+                                       FontSize="11" Foreground="#666"
+                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+              </Grid>
+            </TabItem>
+
+            <TabItem Style="{StaticResource DarkTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <ContentControl Style="{StaticResource ClaudeBrandIcon}"
+                                        Width="12" Height="12" Margin="0,0,6,0"
+                                        VerticalAlignment="Center"/>
+                        <TextBlock Text="Claude CLI" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+              <Grid Margin="14">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>      <!-- Header -->
+                    <RowDefinition Height="3*"/>        <!-- Hero row -->
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="2*"/>        <!-- Weekly cards -->
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="2*"/>        <!-- Delta chart -->
+                </Grid.RowDefinitions>
 
         <!-- ═══ HEADER ═══ -->
         <Grid Grid.Row="0" Margin="0,0,0,10">
@@ -83,10 +549,9 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="Claude Usage" FontSize="20" FontWeight="Bold"
+            <TextBlock Grid.Column="0" Text="Claude CLI Usage" FontSize="20" FontWeight="Bold"
                        Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
 
             <Border Grid.Column="1" Margin="12,0,0,0" CornerRadius="4" Padding="8,3" Background="#1a1a1a"
@@ -119,19 +584,23 @@
                 </Button.Template>
             </Button>
 
-            <Button Grid.Column="3" x:Name="OpenClaudeBtn" Content="💬 Claude"
-                    Style="{StaticResource Btn}" Click="OpenClaudeBtn_Click" Margin="0,0,8,0"/>
+            <Button Grid.Column="3" x:Name="OpenClaudeBtn"
+                    Style="{StaticResource Btn}" Click="OpenClaudeBtn_Click" Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <ContentControl Style="{StaticResource ClaudeBrandIcon}"
+                                    Width="11" Height="11" Margin="0,0,6,0"
+                                    VerticalAlignment="Center"/>
+                    <TextBlock Text="Claude CLI" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
 
             <Button Grid.Column="4" x:Name="CheckUpdateBtn" Content="🔄 Update"
                     Style="{StaticResource Btn}" Click="CheckUpdateBtn_Click" Margin="0,0,8,0"/>
 
-            <Button Grid.Column="5" x:Name="TopMostBtn" Content="📌" ToolTip="항상 위"
-                    Style="{StaticResource Btn}" Click="TopMostBtn_Click" Margin="0,0,8,0"/>
-
-            <Button Grid.Column="6" x:Name="RefreshBtn" Content="↻ Refresh"
+            <Button Grid.Column="5" x:Name="RefreshBtn" Content="↻ Refresh"
                     Style="{StaticResource Btn}" Click="RefreshBtn_Click" Margin="0,0,8,0"/>
 
-            <Button Grid.Column="7" x:Name="LoginBtn" Content="Login"
+            <Button Grid.Column="6" x:Name="LoginBtn" Content="Login"
                     Style="{StaticResource Btn}" Click="LoginBtn_Click"/>
         </Grid>
 
@@ -231,32 +700,57 @@
                 </Grid>
             </Border>
 
-            <!-- Extra Usage -->
-            <Border Grid.Column="2" x:Name="ExtraCard" Style="{StaticResource Card}">
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="EXTRA USAGE" Style="{StaticResource Sec}"/>
-                    <TextBlock x:Name="ExtraUsedText" Text="$0.00" Style="{StaticResource Big}"/>
-                    <TextBlock x:Name="ExtraLimitText" Text="of $0.00" FontSize="11"
-                               Foreground="#888" Margin="0,2,0,8"/>
-                    <Grid Height="6" Margin="0,0,0,6">
-                        <Border Background="#262626" CornerRadius="3"/>
-                        <Border x:Name="ExtraBar" Background="#4ade80" CornerRadius="3"
-                                HorizontalAlignment="Left" Width="0"/>
-                    </Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock x:Name="ExtraPctText" Text="0%" FontSize="12" FontWeight="Bold"
-                                   Foreground="#e8e8e8"/>
-                        <TextBlock Text="  Monthly" FontSize="10" Foreground="#888" VerticalAlignment="Center"/>
+            <!-- Right column: Routine (top) + Extra Usage (bottom) -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="6"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Daily Routine -->
+                <Border Grid.Row="0" x:Name="RoutineCard" Style="{StaticResource Card}">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="DAILY ROUTINES" Style="{StaticResource Sec}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="RoutineUsedText" Text="0" Style="{StaticResource Big}"/>
+                            <TextBlock x:Name="RoutineLimitText" Text="/ 0" FontSize="12"
+                                       Foreground="#888" VerticalAlignment="Bottom" Margin="4,0,0,4"/>
+                        </StackPanel>
+                        <TextBlock x:Name="RoutineResetText" Text="Resets in --"
+                                   FontSize="10" Foreground="#888" Margin="0,2,0,0"/>
                     </StackPanel>
-                    <TextBlock x:Name="ExtraDisabledText" Text="Disabled" FontSize="11"
-                               Foreground="#f87171" Visibility="Collapsed" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
+                </Border>
+
+                <!-- Extra Usage -->
+                <Border Grid.Row="2" x:Name="ExtraCard" Style="{StaticResource Card}">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="EXTRA USAGE" Style="{StaticResource Sec}"/>
+                        <TextBlock x:Name="ExtraUsedText" Text="$0.00" Style="{StaticResource Big}"/>
+                        <TextBlock x:Name="ExtraLimitText" Text="of $0.00" FontSize="11"
+                                   Foreground="#888" Margin="0,2,0,8"/>
+                        <Grid Height="6" Margin="0,0,0,6">
+                            <Border Background="#262626" CornerRadius="3"/>
+                            <Border x:Name="ExtraBar" Background="#4ade80" CornerRadius="3"
+                                    HorizontalAlignment="Left" Width="0"/>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="ExtraPctText" Text="0%" FontSize="12" FontWeight="Bold"
+                                       Foreground="#e8e8e8"/>
+                            <TextBlock Text="  Monthly" FontSize="10" Foreground="#888" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="ExtraDisabledText" Text="Disabled" FontSize="11"
+                                   Foreground="#f87171" Visibility="Collapsed" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Grid>
 
         <!-- ═══ WEEKLY CARDS ═══ -->
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="8"/>
                 <ColumnDefinition Width="*"/>
@@ -336,6 +830,44 @@
                                FontSize="10" Foreground="#888"/>
                 </Grid>
             </Border>
+
+            <!-- Claude Design -->
+            <Border Grid.Column="4" x:Name="DesignCard" Style="{StaticResource Card}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="WEEKLY · CLAUDE DESIGN"
+                               Style="{StaticResource Sec}"/>
+                    <TextBlock Grid.Row="1" x:Name="DesignPctText" Text="0%" Style="{StaticResource Big}"
+                               Margin="0,0,0,8"/>
+                    <Grid Grid.Row="2" Height="18" VerticalAlignment="Center" Margin="0,0,0,6">
+                        <Grid Height="6" VerticalAlignment="Center">
+                            <Border Background="#262626" CornerRadius="3"/>
+                            <Border x:Name="DesignBar" Background="#4ade80" CornerRadius="3"
+                                    HorizontalAlignment="Left" Width="0"/>
+                        </Grid>
+                        <Canvas x:Name="DesignMarkerCanvas" ClipToBounds="False">
+                            <Grid x:Name="DesignMarker" Canvas.Left="0" Canvas.Top="-2"
+                                  Visibility="Collapsed">
+                                <Rectangle Width="2" Height="22" Fill="White" HorizontalAlignment="Center"/>
+                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Top"
+                                         HorizontalAlignment="Center" Margin="0,-2,0,0"/>
+                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Bottom"
+                                         HorizontalAlignment="Center" Margin="0,0,0,-2"/>
+                                <TextBlock x:Name="DesignMarkerLabel" Text="--%"
+                                           FontSize="8" Foreground="White" FontWeight="Bold"
+                                           Canvas.Top="-14" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Canvas>
+                    </Grid>
+                    <TextBlock Grid.Row="3" x:Name="DesignResetText" Text="Resets in --"
+                               FontSize="10" Foreground="#888"/>
+                </Grid>
+            </Border>
         </Grid>
 
         <!-- ═══ DELTA CHART ═══ -->
@@ -356,27 +888,358 @@
             </Grid>
         </Border>
 
-        <!-- ═══ FOOTER ═══ -->
-        <Grid Grid.Row="6" Margin="0,6,0,0">
+              </Grid>
+            </TabItem>
+
+            <TabItem Style="{StaticResource DarkTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <ContentControl Style="{StaticResource GeminiBrandIcon}"
+                                        Width="12" Height="12" Margin="0,0,6,0"
+                                        VerticalAlignment="Center"/>
+                        <TextBlock Text="Gemini API" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+              <Grid Margin="14">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- Header + Account Switcher -->
+                    <RowDefinition Height="*"/>      <!-- Content -->
+                </Grid.RowDefinitions>
+
+                <!-- Gemini Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Gemini API Usage" FontSize="20" FontWeight="Bold"
+                               Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
+
+                    <!-- Account switcher -->
+                    <Border Grid.Column="2" CornerRadius="6" Background="#1a1a1a"
+                            BorderBrush="#2a2a2a" BorderThickness="1" Padding="4"
+                            HorizontalAlignment="Left" VerticalAlignment="Center" MinWidth="260">
+                        <ComboBox x:Name="GeminiAccountCombo"
+                                  Background="Transparent" Foreground="#e8e8e8"
+                                  BorderThickness="0" FontSize="12" Padding="8,4"
+                                  SelectionChanged="GeminiAccountCombo_SelectionChanged"/>
+                    </Border>
+
+                    <Button Grid.Column="3" x:Name="GeminiAddAccountBtn" Content="+ 계정 추가"
+                            Style="{StaticResource Btn}" Click="GeminiAddAccountBtn_Click"
+                            Margin="8,0,6,0"/>
+                    <Button Grid.Column="4" x:Name="GeminiExportBtn" Content="⭳ Export"
+                            Style="{StaticResource Btn}" Click="GeminiExportBtn_Click"
+                            Margin="0,0,6,0"/>
+                    <Button Grid.Column="5" x:Name="GeminiPricingBtn" Content="$ 단가"
+                            Style="{StaticResource Btn}" Click="GeminiPricingBtn_Click"
+                            Margin="0,0,6,0"/>
+                    <Button Grid.Column="6" x:Name="GeminiManageBtn" Content="⚙ 관리"
+                            Style="{StaticResource Btn}" Click="GeminiManageBtn_Click"/>
+                </Grid>
+
+                <!-- Gemini Content -->
+                <Grid Grid.Row="1" x:Name="GeminiContent">
+                    <!-- Empty state -->
+                    <StackPanel x:Name="GeminiEmptyState" VerticalAlignment="Center"
+                                HorizontalAlignment="Center">
+                        <ContentControl Style="{StaticResource GeminiBrandIcon}"
+                                        Width="56" Height="56" HorizontalAlignment="Center"
+                                        Margin="0,0,0,12"/>
+                        <TextBlock Text="Gemini 계정이 등록되지 않았습니다"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TxtHighlight}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                        <TextBlock Text="Google AI Studio API Key를 등록하여 사용량을 추적하세요"
+                                   FontSize="11" Foreground="{StaticResource TxtSub}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                        <Button Content="+ 첫 계정 추가하기" Style="{StaticResource Btn}"
+                                Click="GeminiAddAccountBtn_Click" HorizontalAlignment="Center"
+                                Padding="22,8"/>
+                    </StackPanel>
+
+                    <!-- Dashboard (shown when account exists) -->
+                    <Grid x:Name="GeminiDashboard" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="8"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Active account info bar -->
+                        <Border Grid.Row="0" Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="ACTIVE ACCOUNT" Style="{StaticResource Sec}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="GeminiActiveAlias" Text="--"
+                                                   FontSize="18" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                        <TextBlock x:Name="GeminiActiveKeyPreview" Text=""
+                                                   FontSize="11" Foreground="#888"
+                                                   VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" x:Name="GeminiStatusLabel"
+                                           Text="대기 중" FontSize="11" Foreground="#888"
+                                           VerticalAlignment="Center" Margin="0,0,12,0"
+                                           TextTrimming="CharacterEllipsis" MaxWidth="280"/>
+                                <Button Grid.Column="2" x:Name="GeminiTestBtn" Content="🔌 연결 테스트"
+                                        Style="{StaticResource Btn}" Click="GeminiTestBtn_Click"
+                                        Margin="0,0,8,0"/>
+                                <Button Grid.Column="3" x:Name="GeminiRefreshBtn" Content="↻ Refresh"
+                                        Style="{StaticResource Btn}" Click="GeminiRefreshBtn_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Usage summary cards -->
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Summary row -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Style="{StaticResource Card}">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="TODAY · TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="GeminiTodayTokens" Text="0"
+                                                   Style="{StaticResource Big}"/>
+                                        <TextBlock Text="input + output" FontSize="10"
+                                                   Foreground="#888" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="2" Style="{StaticResource Card}">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="TODAY · COST" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="GeminiTodayCost" Text="$0.00"
+                                                   Style="{StaticResource Big}"/>
+                                        <TextBlock Text="estimated" FontSize="10"
+                                                   Foreground="#888" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="4" Style="{StaticResource Card}">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="REQUESTS · 24H" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="GeminiRequestCount" Text="0"
+                                                   Style="{StaticResource Big}"/>
+                                        <TextBlock x:Name="GeminiLastCallText" Text="no calls yet"
+                                                   FontSize="10" Foreground="#888" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Accounts comparison (today cost) -->
+                            <Border Grid.Row="2" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="TODAY · COST BY ACCOUNT"
+                                               Style="{StaticResource Sec}"/>
+                                    <ItemsControl Grid.Row="1" x:Name="GeminiCompareList" Margin="0,4,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="130"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="90"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                                               FontSize="11" Foreground="#e8e8e8"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <Grid Grid.Column="1" Height="10" VerticalAlignment="Center"
+                                                          Margin="4,0">
+                                                        <Border Background="#262626" CornerRadius="5"/>
+                                                        <Border Background="#4ade80" CornerRadius="5"
+                                                                HorizontalAlignment="Left"
+                                                                Width="{Binding BarWidth}"/>
+                                                    </Grid>
+                                                    <TextBlock Grid.Column="2" Text="{Binding CostText}"
+                                                               FontSize="11" FontWeight="SemiBold"
+                                                               Foreground="#4ade80"
+                                                               HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Border>
+
+                            <!-- Test Prompt -->
+                            <Border Grid.Row="4" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="5" Text="TEST PROMPT"
+                                               Style="{StaticResource Sec}" Margin="0,0,0,6"/>
+
+                                    <ComboBox Grid.Row="1" Grid.Column="0" x:Name="GeminiModelCombo"
+                                              MinWidth="160" Padding="8,4" FontSize="12"/>
+
+                                    <TextBox Grid.Row="1" Grid.Column="2" x:Name="GeminiPromptBox"
+                                             Background="#1a1a1a" Foreground="#f5f5f5"
+                                             BorderBrush="#2a2a2a" Padding="8,6" FontSize="12"
+                                             CaretBrush="#4ade80"
+                                             Text="Say hi in one short sentence."
+                                             KeyDown="GeminiPromptBox_KeyDown"/>
+
+                                    <Button Grid.Row="1" Grid.Column="4" x:Name="GeminiSendBtn"
+                                            Content="📤 Send" Style="{StaticResource Btn}"
+                                            Background="#1a3a1a" BorderBrush="#4ade80"
+                                            Click="GeminiSendBtn_Click" MinWidth="90"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Usage history list -->
+                            <Border Grid.Row="6" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Text="RECENT USAGE (this account)"
+                                               Style="{StaticResource Sec}"/>
+
+                                    <Grid Grid.Row="1" Margin="0,6,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="TIME" FontSize="9" Foreground="#666"/>
+                                        <TextBlock Grid.Column="1" Text="MODEL" FontSize="9" Foreground="#666"/>
+                                        <TextBlock Grid.Column="2" Text="INPUT" FontSize="9" Foreground="#666"
+                                                   HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="3" Text="OUTPUT" FontSize="9" Foreground="#666"
+                                                   HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="4" Text="ms" FontSize="9" Foreground="#666"
+                                                   HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="5" Text="COST" FontSize="9" Foreground="#666"
+                                                   HorizontalAlignment="Right"/>
+                                    </Grid>
+
+                                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl x:Name="GeminiHistoryList">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,3">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="70"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="70"/>
+                                                            <ColumnDefinition Width="70"/>
+                                                            <ColumnDefinition Width="60"/>
+                                                            <ColumnDefinition Width="80"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="{Binding TimeText}"
+                                                                   FontSize="11" Foreground="#aaa"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Model}"
+                                                                   FontSize="11" Foreground="#e8e8e8"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding InputText}"
+                                                                   FontSize="11" Foreground="#aaa"
+                                                                   HorizontalAlignment="Right"/>
+                                                        <TextBlock Grid.Column="3" Text="{Binding OutputText}"
+                                                                   FontSize="11" Foreground="#aaa"
+                                                                   HorizontalAlignment="Right"/>
+                                                        <TextBlock Grid.Column="4" Text="{Binding LatencyText}"
+                                                                   FontSize="11" Foreground="#666"
+                                                                   HorizontalAlignment="Right"/>
+                                                        <TextBlock Grid.Column="5" Text="{Binding CostText}"
+                                                                   FontSize="11" Foreground="#4ade80"
+                                                                   HorizontalAlignment="Right"
+                                                                   FontWeight="SemiBold"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+
+                                    <TextBlock x:Name="GeminiHistoryEmpty" Grid.Row="2"
+                                               Text="아직 호출 기록이 없습니다. 위에서 테스트 프롬프트를 전송해보세요."
+                                               FontSize="11" Foreground="#666"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+              </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- ═══ GLOBAL FOOTER ═══ -->
+        <Grid Grid.Row="2" Margin="14,4,14,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="LastUpdateLabel" Grid.Column="0"
-                       Text="Last update: --:--:--" FontSize="10" Foreground="#888"/>
-            <TextBlock x:Name="VersionLabel" Grid.Column="1" Text="v1.0.0" FontSize="10" Foreground="#666"
-                       HorizontalAlignment="Center"/>
-            <TextBlock Grid.Column="2" FontSize="10" Foreground="#888">
+                       Text="Last update: --:--:--" FontSize="10" Foreground="#888"
+                       VerticalAlignment="Center"/>
+            <TextBlock x:Name="VersionLabel" Grid.Column="1" Text="v1.0.0"
+                       FontSize="10" Foreground="#666"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="2" FontSize="10" Foreground="#888"
+                       VerticalAlignment="Center">
                 made by <Run x:Name="CreditLink" Text="zitify" Foreground="#4ade80"
                              Cursor="Hand" TextDecorations="Underline"
                              MouseLeftButtonDown="CreditLink_Click"/>
             </TextBlock>
         </Grid>
 
-        <!-- Hidden WebView2 for API calls (shares cookies with LoginWindow) -->
-        <wv2:WebView2 x:Name="BgWebView" Width="1" Height="1"
+        <!-- Hidden WebView2 for Claude API calls (shares cookies with LoginWindow) -->
+        <wv2:WebView2 x:Name="BgWebView" Grid.Row="1" Width="1" Height="1"
                       HorizontalAlignment="Left" VerticalAlignment="Top"
-                      Visibility="Collapsed" Grid.RowSpan="7"/>
+                      Visibility="Collapsed"/>
     </Grid>
 </Window>
