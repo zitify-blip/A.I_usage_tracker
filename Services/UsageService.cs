@@ -134,8 +134,9 @@ public class UsageService
             ParseUsageData(usage);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Error("ProcessRawFetchResult failed", ex);
             return false;
         }
     }

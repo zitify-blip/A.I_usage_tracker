@@ -17,26 +17,34 @@ public partial class MainWindow : Window
 {
     private readonly UsageService _usage;
     private readonly ClaudeApiService _api;
+    private readonly StorageService _storage;
     private readonly UpdateService _update = new();
     private readonly DispatcherTimer _pollTimer;
     private readonly DispatcherTimer _tickTimer;
+    private readonly Action _onStatusChanged;
+    private readonly Action _onUsageUpdated;
+    private Task? _updateCheckTask;
     private bool _reallyClosing;
     private bool _notified;
     private UpdateInfo? _pendingUpdate;
+    private DateTime _lastResetCatchupFetch = DateTime.MinValue;
 
     private const int SessionTotalMs = 5 * 60 * 60 * 1000;
     private const long WeekTotalMs = 7L * 24 * 60 * 60 * 1000;
 
-    public MainWindow(UsageService usage, ClaudeApiService api)
+    public MainWindow(UsageService usage, ClaudeApiService api, StorageService storage)
     {
         InitializeComponent();
         _usage = usage;
         _api = api;
+        _storage = storage;
 
-        _usage.StatusChanged += () => Dispatcher.Invoke(UpdateStatus);
-        _usage.UsageUpdated += () => Dispatcher.Invoke(UpdateUI);
+        _onStatusChanged = () => Dispatcher.Invoke(UpdateStatus);
+        _onUsageUpdated = () => Dispatcher.Invoke(UpdateUI);
+        _usage.StatusChanged += _onStatusChanged;
+        _usage.UsageUpdated += _onUsageUpdated;
 
-        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
+        _pollTimer = new DispatcherTimer { Interval = CurrentPollInterval() };
         _pollTimer.Tick += async (_, _) => await Fetch();
 
         _tickTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -47,6 +55,9 @@ public partial class MainWindow : Window
 
         VersionLabel.Text = $"v{UpdateService.CurrentVersion}";
     }
+
+    private TimeSpan CurrentPollInterval() =>
+        TimeSpan.FromSeconds(_storage.Settings.ClampedPollIntervalSeconds());
 
     // ────────── Startup ──────────
 
@@ -64,8 +75,8 @@ public partial class MainWindow : Window
         if (result == null)
             OpenLogin();
 
-        // Check for updates in background
-        _ = CheckForUpdateAsync();
+        // Check for updates in background (tracked for cleanup)
+        _updateCheckTask = CheckForUpdateAsync();
     }
 
     private async Task CheckForUpdateAsync()
@@ -95,13 +106,15 @@ public partial class MainWindow : Window
 
     private void CheckNotify()
     {
+        if (!_storage.Settings.NotifyEnabled) return;
+        var threshold = _storage.Settings.ClampedNotifyThreshold();
         var l = _usage.Latest;
-        if ((l.SessionPct >= 80 || l.WeekPct >= 80) && !_notified)
+        if ((l.SessionPct >= threshold || l.WeekPct >= threshold) && !_notified)
         {
             _notified = true;
             App.ShowBalloon("Claude Usage Alert", $"Session: {l.SessionPct:F0}% · Week: {l.WeekPct:F0}%");
         }
-        else if (l.SessionPct < 80 && l.WeekPct < 80)
+        else if (l.SessionPct < threshold && l.WeekPct < threshold)
             _notified = false;
     }
 
@@ -168,6 +181,18 @@ public partial class MainWindow : Window
         UpdateTimeRing(l);
         SetMarker(WeekAllMarker, WeekAllMarkerLabel, WeekAllMarkerCanvas, l.WeekResetAt);
         SetMarker(SubMarker, SubMarkerLabel, SubMarkerCanvas, l.SubResetAt);
+
+        // When the session reset moment has passed, the server has rolled usage back to 0
+        // but our local copy still shows the pre-reset value (often 100%). Force a refetch
+        // so the UI catches up immediately instead of waiting for the 5-minute poll tick.
+        // Rate-limited to avoid looping if the server briefly keeps returning the old reset time.
+        if (DateTimeOffset.TryParse(l.SessionResetAt, out var rst) &&
+            rst <= DateTimeOffset.Now &&
+            (DateTime.Now - _lastResetCatchupFetch).TotalSeconds > 30)
+        {
+            _lastResetCatchupFetch = DateTime.Now;
+            _ = Fetch();
+        }
     }
 
     private void UpdateTimeRing(LatestUsage l)
@@ -443,7 +468,7 @@ public partial class MainWindow : Window
     private void OpenClaudeBtn_Click(object sender, RoutedEventArgs e)
     {
         try { Process.Start(new ProcessStartInfo("https://claude.ai") { UseShellExecute = true }); }
-        catch { }
+        catch (Exception ex) { Logger.Warn("OpenClaudeBtn_Click failed", ex); }
     }
 
     private async void CheckUpdateBtn_Click(object sender, RoutedEventArgs e)
@@ -509,7 +534,7 @@ public partial class MainWindow : Window
     private void CreditLink_Click(object sender, MouseButtonEventArgs e)
     {
         try { Process.Start(new ProcessStartInfo("https://zitify.co.kr") { UseShellExecute = true }); }
-        catch { }
+        catch (Exception ex) { Logger.Warn("CreditLink_Click failed", ex); }
     }
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -522,6 +547,8 @@ public partial class MainWindow : Window
         _reallyClosing = true;
         _pollTimer.Stop();
         _tickTimer.Stop();
+        _usage.StatusChanged -= _onStatusChanged;
+        _usage.UsageUpdated -= _onUsageUpdated;
         Close();
     }
 

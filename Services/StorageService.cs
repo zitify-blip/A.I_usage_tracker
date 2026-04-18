@@ -35,10 +35,12 @@ public class StorageService
                 _data = JsonSerializer.Deserialize<StorageData>(json, JsonOptions) ?? new StorageData();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warn("Storage load failed, using defaults", ex);
             _data = new StorageData();
         }
+        _data.Settings ??= new AppSettings();
     }
 
     public void Save()
@@ -48,18 +50,25 @@ public class StorageService
             Directory.CreateDirectory(StorageDir);
             var json = JsonSerializer.Serialize(_data, JsonOptions);
 
-            // Write to temp file first, then replace atomically to prevent corruption
             var tempPath = StoragePath + ".tmp";
             File.WriteAllText(tempPath, json);
             File.Move(tempPath, StoragePath, overwrite: true);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[Storage] Save failed: {ex.Message}");
+            Logger.Error("Storage save failed", ex);
         }
     }
 
     public List<UsageSnapshot> GetHistory() => _data.UsageHistory;
+
+    public AppSettings Settings => _data.Settings;
+
+    public void SaveSettings(AppSettings settings)
+    {
+        _data.Settings = settings;
+        Save();
+    }
 
     public void SaveSnapshot(UsageSnapshot snapshot)
     {

@@ -20,8 +20,10 @@ public partial class App : System.Windows.Application
         var api = new ClaudeApiService();
         var usage = new UsageService(storage, api);
 
-        _mainWindow = new MainWindow(usage, api);
+        _mainWindow = new MainWindow(usage, api, storage);
         MainWindow = _mainWindow;
+
+        Logger.Info($"App started (v{UpdateService.CurrentVersion})");
 
         SetupTray();
         _mainWindow.Show();
@@ -41,7 +43,7 @@ public partial class App : System.Windows.Application
             var p = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "icon.ico");
             if (System.IO.File.Exists(p)) _trayIcon.Icon = new Icon(p);
         }
-        catch { }
+        catch (Exception ex) { Logger.Warn("Tray icon load failed", ex); }
 
         var menu = new System.Windows.Forms.ContextMenuStrip();
         menu.Items.Add("Show Window", null, (_, _) => ShowWin());

@@ -173,11 +173,18 @@ public class ClaudeApiService
             else
             {
                 var error = result.TryGetProperty("error", out var errProp) ? errProp.GetString() : "unknown";
+                Logger.Warn($"API fetch returned error: {error}");
                 return (false, error, null);
             }
         }
-        catch
+        catch (JsonException ex)
         {
+            Logger.Error("Usage API response parse failed", ex);
+            return (false, "parse_failed", null);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Usage API request failed", ex);
             return (false, "request_failed", null);
         }
     }

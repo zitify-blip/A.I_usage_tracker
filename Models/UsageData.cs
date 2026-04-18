@@ -98,8 +98,12 @@ public class UsageSnapshot
 
 public class AppSettings
 {
-    public int PollIntervalMinutes { get; set; } = 5;
+    public int PollIntervalSeconds { get; set; } = 300;
     public int NotifyThreshold { get; set; } = 80;
+    public bool NotifyEnabled { get; set; } = true;
+
+    public int ClampedPollIntervalSeconds() => Math.Clamp(PollIntervalSeconds, 30, 3600);
+    public int ClampedNotifyThreshold() => Math.Clamp(NotifyThreshold, 1, 100);
 }
 
 public class StorageData

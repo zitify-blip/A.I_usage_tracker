@@ -1,14 +1,14 @@
 [Setup]
 AppId={{B8F3A2E1-4C5D-6E7F-8A9B-0C1D2E3F4A5B}
 AppName=Claude Usage Tracker
-AppVersion=1.2.0
-AppVerName=Claude Usage Tracker 1.2.0
+AppVersion=1.2.1
+AppVerName=Claude Usage Tracker 1.2.1
 AppPublisher=zitify
 AppPublisherURL=https://zitify.co.kr
 DefaultDirName={autopf}\ClaudeUsageTracker
 DefaultGroupName=Claude Usage Tracker
 OutputDir=installer_output
-OutputBaseFilename=ClaudeUsageTracker_Setup_v1.2.0
+OutputBaseFilename=ClaudeUsageTracker_Setup_v1.2.1
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern

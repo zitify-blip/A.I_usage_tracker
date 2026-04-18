@@ -45,8 +45,9 @@ public partial class LoginWindow : Window
                 StatusText.Text = "";
             };
         }
-        catch
+        catch (Exception ex)
         {
+            Services.Logger.Error("LoginWindow WebView init failed", ex);
             StatusText.Text = "WebView 초기화 실패";
         }
     }
@@ -111,8 +112,9 @@ public partial class LoginWindow : Window
                 DoneBtn.IsEnabled = true;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Services.Logger.Error("LoginWindow fetch failed", ex);
             StatusText.Text = "데이터 조회 실패 — 다시 시도하세요";
             DoneBtn.IsEnabled = true;
         }

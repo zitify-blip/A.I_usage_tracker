@@ -19,7 +19,7 @@ public class UpdateService
 {
     // GitHub owner/repo — change this to your actual repo
     private const string GitHubOwner = "zitify-blip";
-    private const string GitHubRepo = "zitify_claude_usage_tracker";
+    private const string GitHubRepo = "A.I_usage_tracker";
     private const string GitHubApiUrl = $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/releases/latest";
 
     private static readonly HttpClient Http = new()
@@ -95,8 +95,9 @@ public class UpdateService
                 ReleaseNotes = body.Length > 300 ? body[..300] + "..." : body
             };
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warn("Update check failed", ex);
             return null;
         }
     }
@@ -146,9 +147,9 @@ public class UpdateService
             Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
             return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // Clean up downloaded file on failure
+            Logger.Error("Update download/install failed", ex);
             try { if (filePath != null && File.Exists(filePath)) File.Delete(filePath); } catch { }
             try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch { }
             return false;

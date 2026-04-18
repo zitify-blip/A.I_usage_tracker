@@ -1,11 +1,16 @@
 bin/
 obj/
 .vs/
+.idea/
+.claude/
+*.iml
 *.user
 *.suo
 *.DotSettings.user
 *.ide/
+publish/
 publish_msix/
+installer_output/
 msix_output/
 certs/
 *.log
