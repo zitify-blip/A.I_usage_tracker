@@ -754,8 +754,8 @@ public partial class MainWindow : Window
         switch (MainTabs?.SelectedIndex)
         {
             case 0: RefreshGlobalUi(); break;    // Global
-            case 2: RefreshGeminiUi(); break;    // Gemini API
-            case 3: RefreshAnthropicUi(); break; // Claude API
+            case 2: RefreshAnthropicUi(); break; // Claude API
+            case 3: RefreshGeminiUi(); break;    // Gemini API
             case 4: RefreshOpenAiUi(); break;    // OpenAI API
             case 5: RefreshCodexUi(); break;     // OpenAI CLI
             case 6: RefreshGrokUi(); break;      // Grok API

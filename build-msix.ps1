@@ -11,7 +11,7 @@
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "2.8.1.0",
+    [string]$Version = "2.8.2.0",
     [string]$OutputDir = "msix_output"
 )
 
