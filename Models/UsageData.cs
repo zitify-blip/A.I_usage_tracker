@@ -187,6 +187,40 @@ public class StorageData
     public List<AnthropicApiAccount> AnthropicApiAccounts { get; set; } = new();
     public string? SelectedAnthropicApiAccountId { get; set; }
     public List<AnthropicApiUsageSnapshot> AnthropicApiUsageHistory { get; set; } = new();
+
+    public List<OpenAiApiAccount> OpenAiApiAccounts { get; set; } = new();
+    public string? SelectedOpenAiApiAccountId { get; set; }
+    public List<OpenAiApiUsageSnapshot> OpenAiApiUsageHistory { get; set; } = new();
+}
+
+public class OpenAiApiAccount
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Alias { get; set; } = "";
+    public string EncryptedApiKey { get; set; } = "";
+    public string KeyPreview { get; set; } = "";
+    public string? OrganizationId { get; set; }
+    public bool IsPrimary { get; set; }
+    public bool IsActive { get; set; } = true;
+    public long CreatedAtMs { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    public long? LastUsedAtMs { get; set; }
+
+    public double DailyBudgetUsd { get; set; } = 0;
+    public double MonthlyBudgetUsd { get; set; } = 0;
+    public int AlertThresholdPct { get; set; } = 80;
+}
+
+public class OpenAiApiUsageSnapshot
+{
+    public long Timestamp { get; set; }
+    public string AccountId { get; set; } = "";
+    public string Model { get; set; } = "";
+    public long InputTokens { get; set; }
+    public long OutputTokens { get; set; }
+    public long CachedInputTokens { get; set; }
+    public double CostUsd { get; set; }
+    public string PeriodStart { get; set; } = "";
+    public string PeriodEnd { get; set; } = "";
 }
 
 public class AnthropicApiAccount

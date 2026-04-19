@@ -52,8 +52,12 @@ public partial class App : System.Windows.Application
         var geminiAccounts = new GeminiAccountService(storage, geminiProvider);
         var anthropicProvider = new AnthropicApiProvider();
         var anthropicAccounts = new AnthropicApiAccountService(storage, anthropicProvider);
+        var openAiProvider = new OpenAiApiProvider();
+        var openAiAccounts = new OpenAiApiAccountService(storage, openAiProvider);
+        var codex = new CodexCliService();
 
-        _mainWindow = new MainWindow(usage, api, storage, geminiAccounts, geminiProvider, anthropicAccounts);
+        _mainWindow = new MainWindow(usage, api, storage, geminiAccounts, geminiProvider,
+                                     anthropicAccounts, openAiAccounts, codex);
         MainWindow = _mainWindow;
 
         Logger.Info($"App started (v{UpdateService.CurrentVersion})");

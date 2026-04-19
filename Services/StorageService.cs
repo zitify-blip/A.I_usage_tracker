@@ -212,4 +212,45 @@ public class StorageService
         accountId == null
             ? _data.AnthropicApiUsageHistory
             : _data.AnthropicApiUsageHistory.Where(r => r.AccountId == accountId).ToList();
+
+    // ────────── OpenAI API ──────────
+
+    public List<OpenAiApiAccount> OpenAiApiAccounts => _data.OpenAiApiAccounts;
+    public string? SelectedOpenAiApiAccountId => _data.SelectedOpenAiApiAccountId;
+
+    public void AddOpenAiApiAccount(OpenAiApiAccount account)
+    {
+        _data.OpenAiApiAccounts.Add(account);
+        if (string.IsNullOrEmpty(_data.SelectedOpenAiApiAccountId))
+            _data.SelectedOpenAiApiAccountId = account.Id;
+        Save();
+    }
+
+    public void RemoveOpenAiApiAccount(string accountId)
+    {
+        _data.OpenAiApiAccounts.RemoveAll(a => a.Id == accountId);
+        _data.OpenAiApiUsageHistory.RemoveAll(r => r.AccountId == accountId);
+        if (_data.SelectedOpenAiApiAccountId == accountId)
+            _data.SelectedOpenAiApiAccountId = _data.OpenAiApiAccounts.FirstOrDefault()?.Id;
+        Save();
+    }
+
+    public void SetSelectedOpenAiApiAccount(string? accountId)
+    {
+        _data.SelectedOpenAiApiAccountId = accountId;
+        Save();
+    }
+
+    public void SaveOpenAiApiUsage(IEnumerable<OpenAiApiUsageSnapshot> records)
+    {
+        _data.OpenAiApiUsageHistory.AddRange(records);
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
+        _data.OpenAiApiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        Save();
+    }
+
+    public IReadOnlyList<OpenAiApiUsageSnapshot> GetOpenAiApiUsageHistory(string? accountId = null) =>
+        accountId == null
+            ? _data.OpenAiApiUsageHistory
+            : _data.OpenAiApiUsageHistory.Where(r => r.AccountId == accountId).ToList();
 }

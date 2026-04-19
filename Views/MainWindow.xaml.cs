@@ -26,10 +26,15 @@ public partial class MainWindow : Window
     private readonly GeminiAccountService _geminiAccounts;
     private readonly GeminiProvider _geminiProvider;
     private readonly AnthropicApiAccountService _anthropicAccounts;
+    private readonly OpenAiApiAccountService _openAiAccounts;
+    private readonly CodexCliService _codex;
     private readonly UpdateService _update = new();
     private bool _suppressGeminiSelection;
     private bool _suppressAnthropicSelection;
+    private bool _suppressOpenAiSelection;
     private int _anthropicRangeDays = 7;
+    private int _openAiRangeDays = 7;
+    private int _codexRangeDays = 7;
     private readonly DispatcherTimer _pollTimer;
     private readonly DispatcherTimer _tickTimer;
     private readonly DispatcherTimer _updateCheckTimer;
@@ -47,7 +52,9 @@ public partial class MainWindow : Window
 
     public MainWindow(UsageService usage, ClaudeApiService api, StorageService storage,
                        GeminiAccountService geminiAccounts, GeminiProvider geminiProvider,
-                       AnthropicApiAccountService anthropicAccounts)
+                       AnthropicApiAccountService anthropicAccounts,
+                       OpenAiApiAccountService openAiAccounts,
+                       CodexCliService codex)
     {
         InitializeComponent();
         _usage = usage;
@@ -56,12 +63,17 @@ public partial class MainWindow : Window
         _geminiAccounts = geminiAccounts;
         _geminiProvider = geminiProvider;
         _anthropicAccounts = anthropicAccounts;
+        _openAiAccounts = openAiAccounts;
+        _codex = codex;
 
         _geminiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
         _geminiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
 
         _anthropicAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
         _anthropicAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
+
+        _openAiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshOpenAiUi);
+        _openAiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshOpenAiUi);
 
         _onStatusChanged = () => Dispatcher.Invoke(UpdateStatus);
         _onUsageUpdated = () => Dispatcher.Invoke(UpdateUI);
@@ -732,6 +744,8 @@ public partial class MainWindow : Window
             case 0: RefreshGlobalUi(); break;    // Global
             case 2: RefreshGeminiUi(); break;    // Gemini API
             case 3: RefreshAnthropicUi(); break; // Claude API
+            case 4: RefreshOpenAiUi(); break;    // OpenAI API
+            case 5: RefreshCodexUi(); break;     // OpenAI CLI
         }
     }
 
@@ -1548,6 +1562,217 @@ public partial class MainWindow : Window
             "Claude API", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (r != MessageBoxResult.Yes) return;
         _anthropicAccounts.RemoveAccount(selected.Id);
+    }
+
+    // ──────────────── OpenAI API tab ────────────────
+
+    private void RefreshOpenAiUi()
+    {
+        if (OpenAiAccountCombo == null) return;
+        var accounts = _openAiAccounts.GetAccounts();
+
+        if (accounts.Count == 0)
+        {
+            OpenAiEmptyState.Visibility = Visibility.Visible;
+            OpenAiDashboard.Visibility = Visibility.Collapsed;
+            OpenAiAccountCombo.ItemsSource = null;
+            return;
+        }
+
+        OpenAiEmptyState.Visibility = Visibility.Collapsed;
+        OpenAiDashboard.Visibility = Visibility.Visible;
+
+        _suppressOpenAiSelection = true;
+        OpenAiAccountCombo.ItemsSource = accounts.Select(a => new OpenAiAccountDisplay(a)).ToList();
+        var selected = _openAiAccounts.GetSelected();
+        if (selected != null)
+        {
+            for (int i = 0; i < OpenAiAccountCombo.Items.Count; i++)
+            {
+                if (OpenAiAccountCombo.Items[i] is OpenAiAccountDisplay d && d.Account.Id == selected.Id)
+                {
+                    OpenAiAccountCombo.SelectedIndex = i;
+                    break;
+                }
+            }
+            OpenAiActiveAlias.Text = selected.Alias;
+            OpenAiActiveKeyPreview.Text = selected.KeyPreview;
+            OpenAiActiveOrg.Text = string.IsNullOrEmpty(selected.OrganizationId) ? "" : $"org: {selected.OrganizationId}";
+        }
+        _suppressOpenAiSelection = false;
+
+        RenderOpenAiUsage();
+    }
+
+    private void RenderOpenAiUsage()
+    {
+        var selected = _openAiAccounts.GetSelected();
+        if (selected == null) return;
+
+        var history = _storage.GetOpenAiApiUsageHistory(selected.Id);
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-_openAiRangeDays).ToUnixTimeMilliseconds();
+        var recent = history.Where(r => r.Timestamp >= cutoff).ToList();
+
+        var grouped = recent
+            .GroupBy(r => r.Model)
+            .Select(g => new OpenAiModelRow(
+                g.Key,
+                g.Sum(x => x.InputTokens),
+                g.Sum(x => x.OutputTokens),
+                g.Sum(x => x.CachedInputTokens),
+                g.Sum(x => x.CostUsd)))
+            .OrderByDescending(r => r.Cost)
+            .ToList();
+
+        OpenAiModelGrid.ItemsSource = grouped;
+        OpenAiTotalCost.Text = $"${grouped.Sum(g => g.Cost):F4}";
+        OpenAiTotalInput.Text = grouped.Sum(g => g.Input).ToString("N0");
+        OpenAiTotalOutput.Text = grouped.Sum(g => g.Output).ToString("N0");
+        OpenAiTotalCached.Text = grouped.Sum(g => g.Cached).ToString("N0");
+    }
+
+    private void OpenAiAccountCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressOpenAiSelection) return;
+        if (OpenAiAccountCombo.SelectedItem is OpenAiAccountDisplay d)
+            _openAiAccounts.SelectAccount(d.Account.Id);
+    }
+
+    private void OpenAiRangeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (OpenAiRangeCombo?.SelectedItem is ComboBoxItem item &&
+            int.TryParse(item.Tag?.ToString(), out var days))
+        {
+            _openAiRangeDays = days;
+            RenderOpenAiUsage();
+        }
+    }
+
+    private async void OpenAiAddAccountBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenAiAddAccountDialog { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+        OpenAiStatusLabel.Text = "검증 중...";
+        var (ok, err, _) = await _openAiAccounts.AddAccountAsync(dlg.Alias, dlg.ApiKey);
+        OpenAiStatusLabel.Text = ok ? "추가 완료" : $"실패: {err}";
+        if (ok) await FetchOpenAiUsageAsync();
+    }
+
+    private async void OpenAiRefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        await FetchOpenAiUsageAsync();
+    }
+
+    private async Task FetchOpenAiUsageAsync()
+    {
+        var selected = _openAiAccounts.GetSelected();
+        if (selected == null) return;
+        OpenAiStatusLabel.Text = "조회 중...";
+        OpenAiRefreshBtn.IsEnabled = false;
+        try
+        {
+            var end = DateTimeOffset.UtcNow;
+            var start = end.AddDays(-_openAiRangeDays);
+            var result = await _openAiAccounts.FetchUsageAsync(selected.Id, start, end);
+            if (!result.Ok)
+            {
+                OpenAiStatusLabel.Text = $"실패: {result.Error}";
+                return;
+            }
+            OpenAiStatusLabel.Text = $"갱신 {DateTime.Now:HH:mm:ss} · {result.Buckets.Count} models";
+            RenderOpenAiUsage();
+        }
+        finally
+        {
+            OpenAiRefreshBtn.IsEnabled = true;
+        }
+    }
+
+    private void OpenAiRemoveBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = _openAiAccounts.GetSelected();
+        if (selected == null) return;
+        var r = System.Windows.MessageBox.Show(this,
+            $"'{selected.Alias}' 계정을 제거하시겠습니까?\n관련 사용량 이력도 함께 삭제됩니다.",
+            "OpenAI API", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (r != MessageBoxResult.Yes) return;
+        _openAiAccounts.RemoveAccount(selected.Id);
+    }
+
+    // ──────────────── OpenAI CLI (Codex) tab ────────────────
+
+    private void RefreshCodexUi()
+    {
+        if (CodexLogPathHint != null)
+            CodexLogPathHint.Text = $"{_codex.SessionsDir}\\rollout-*.jsonl 경로를 확인하세요";
+        RenderCodexUsage();
+    }
+
+    private void RenderCodexUsage()
+    {
+        if (CodexDashboard == null) return;
+        var since = DateTimeOffset.UtcNow.AddDays(-_codexRangeDays);
+        var summary = _codex.Aggregate(since);
+
+        if (summary.Models.Count == 0)
+        {
+            CodexEmptyState.Visibility = Visibility.Visible;
+            CodexDashboard.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        CodexEmptyState.Visibility = Visibility.Collapsed;
+        CodexDashboard.Visibility = Visibility.Visible;
+        CodexModelGrid.ItemsSource = summary.Models;
+        CodexSessionsCount.Text = summary.SessionsTotal.ToString("N0");
+        CodexInputTokens.Text = summary.InputTotal.ToString("N0");
+        CodexOutputTokens.Text = summary.OutputTotal.ToString("N0");
+        CodexEstCost.Text = $"${summary.CostTotal:F4}";
+    }
+
+    private void CodexRangeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CodexRangeCombo?.SelectedItem is ComboBoxItem item &&
+            int.TryParse(item.Tag?.ToString(), out var days))
+        {
+            _codexRangeDays = days;
+            RenderCodexUsage();
+        }
+    }
+
+    private void CodexRefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        RenderCodexUsage();
+    }
+}
+
+internal class OpenAiAccountDisplay
+{
+    public OpenAiApiAccount Account { get; }
+    public OpenAiAccountDisplay(OpenAiApiAccount a) { Account = a; }
+    public override string ToString()
+    {
+        var pri = Account.IsPrimary ? " ★" : "";
+        return $"👤 {Account.Alias}{pri}  ({Account.KeyPreview})";
+    }
+}
+
+internal class OpenAiModelRow
+{
+    public string Model { get; }
+    public long Input { get; }
+    public long Output { get; }
+    public long Cached { get; }
+    public double Cost { get; }
+
+    public string InputDisplay => Input.ToString("N0");
+    public string OutputDisplay => Output.ToString("N0");
+    public string CachedDisplay => Cached.ToString("N0");
+    public string CostDisplay => $"${Cost:F4}";
+
+    public OpenAiModelRow(string model, long input, long output, long cached, double cost)
+    {
+        Model = model; Input = input; Output = output; Cached = cached; Cost = cost;
     }
 }
 

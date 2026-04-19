@@ -1396,6 +1396,307 @@
                     </Grid>
                 </Grid>
             </TabItem>
+
+            <!-- ═══ OPENAI API TAB (v2.7.0) ═══ -->
+            <TabItem Style="{StaticResource DarkTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="◯" Foreground="#10a37f" FontSize="13" FontWeight="Bold"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="OpenAI API" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="OpenAI API Usage" FontSize="20" FontWeight="Bold"
+                                   Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
+
+                        <Border Grid.Column="2" CornerRadius="6" Background="#1a1a1a"
+                                BorderBrush="#2a2a2a" BorderThickness="1" Padding="4"
+                                HorizontalAlignment="Left" VerticalAlignment="Center" MinWidth="260">
+                            <ComboBox x:Name="OpenAiAccountCombo"
+                                      Background="Transparent" Foreground="#e8e8e8"
+                                      BorderThickness="0" FontSize="12" Padding="8,4"
+                                      SelectionChanged="OpenAiAccountCombo_SelectionChanged"/>
+                        </Border>
+
+                        <Button Grid.Column="3" x:Name="OpenAiAddAccountBtn" Content="+ 계정 추가"
+                                Style="{StaticResource Btn}" Click="OpenAiAddAccountBtn_Click"
+                                Margin="8,0,6,0"/>
+                        <Button Grid.Column="4" x:Name="OpenAiRefreshBtn" Content="↻ 새로고침"
+                                Style="{StaticResource Btn}" Click="OpenAiRefreshBtn_Click"
+                                Margin="0,0,6,0"/>
+                        <Button Grid.Column="5" x:Name="OpenAiRemoveBtn" Content="🗑 제거"
+                                Style="{StaticResource Btn}" Click="OpenAiRemoveBtn_Click"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1" x:Name="OpenAiContent">
+                        <StackPanel x:Name="OpenAiEmptyState" VerticalAlignment="Center"
+                                    HorizontalAlignment="Center">
+                            <TextBlock Text="◯" Foreground="#10a37f" FontSize="56" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="OpenAI API 계정이 등록되지 않았습니다"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TxtHighlight}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock Text="Admin API Key (sk-admin-*)를 등록하여 사용량을 조회하세요"
+                                       FontSize="11" Foreground="{StaticResource TxtSub}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                            <Button Content="+ 첫 계정 추가하기" Style="{StaticResource Btn}"
+                                    Click="OpenAiAddAccountBtn_Click" HorizontalAlignment="Center"
+                                    Padding="22,8"/>
+                        </StackPanel>
+
+                        <Grid x:Name="OpenAiDashboard" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="ACTIVE ACCOUNT" Style="{StaticResource Sec}"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock x:Name="OpenAiActiveAlias" Text="--"
+                                                       FontSize="18" FontWeight="Bold"
+                                                       Foreground="{StaticResource TxtHighlight}"/>
+                                            <TextBlock x:Name="OpenAiActiveKeyPreview" Text=""
+                                                       FontSize="11" Foreground="#888"
+                                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        </StackPanel>
+                                        <TextBlock x:Name="OpenAiActiveOrg" Text=""
+                                                   FontSize="10" Foreground="#666" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="조회 기간" FontSize="10" Foreground="#888"
+                                                   HorizontalAlignment="Right"/>
+                                        <ComboBox x:Name="OpenAiRangeCombo" Width="120"
+                                                  SelectionChanged="OpenAiRangeCombo_SelectionChanged">
+                                            <ComboBoxItem Content="오늘" Tag="1"/>
+                                            <ComboBoxItem Content="7일" Tag="7" IsSelected="True"/>
+                                            <ComboBoxItem Content="30일" Tag="30"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="TOTAL COST" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="OpenAiTotalCost" Text="$0.00"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="INPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="OpenAiTotalInput" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="OUTPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="OpenAiTotalOutput" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3">
+                                        <TextBlock Text="CACHED INPUT" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="OpenAiTotalCached" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="4" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="MODEL BREAKDOWN" Style="{StaticResource Sec}"
+                                               Margin="0,0,0,8"/>
+                                    <DataGrid Grid.Row="1" x:Name="OpenAiModelGrid"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True" HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              Background="Transparent" Foreground="#e8e8e8"
+                                              BorderThickness="0" RowBackground="Transparent"
+                                              AlternatingRowBackground="#181818"
+                                              HorizontalGridLinesBrush="#222"
+                                              CanUserAddRows="False" CanUserDeleteRows="False"
+                                              CanUserResizeRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="*"/>
+                                            <DataGridTextColumn Header="Input" Binding="{Binding InputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Output" Binding="{Binding OutputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Cached" Binding="{Binding CachedDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Cost" Binding="{Binding CostDisplay}" Width="100"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock x:Name="OpenAiStatusLabel" Grid.Row="4"
+                                       VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                                       Margin="0,0,8,8" FontSize="10" Foreground="#888"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══ OPENAI CLI (CODEX) TAB (v2.7.0) ═══ -->
+            <TabItem Style="{StaticResource DarkTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="◯" Foreground="#10a37f" FontSize="13" FontWeight="Bold"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="OpenAI CLI" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Codex CLI Sessions" FontSize="20" FontWeight="Bold"
+                                   Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" x:Name="CodexRangeCombo" Width="120"
+                                  SelectionChanged="CodexRangeCombo_SelectionChanged" Margin="0,0,8,0">
+                            <ComboBoxItem Content="오늘" Tag="1"/>
+                            <ComboBoxItem Content="7일" Tag="7" IsSelected="True"/>
+                            <ComboBoxItem Content="30일" Tag="30"/>
+                        </ComboBox>
+                        <Button Grid.Column="3" x:Name="CodexRefreshBtn" Content="↻ 새로고침"
+                                Style="{StaticResource Btn}" Click="CodexRefreshBtn_Click"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <StackPanel x:Name="CodexEmptyState" VerticalAlignment="Center"
+                                    HorizontalAlignment="Center">
+                            <TextBlock Text="◯" Foreground="#10a37f" FontSize="56" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="Codex CLI 세션 로그가 없습니다"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TxtHighlight}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="CodexLogPathHint"
+                                       Text="~/.codex/sessions/rollout-*.jsonl 경로를 확인하세요"
+                                       FontSize="11" Foreground="{StaticResource TxtSub}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Grid x:Name="CodexDashboard" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="SESSIONS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexSessionsCount" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="INPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexInputTokens" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="OUTPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexOutputTokens" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3">
+                                        <TextBlock Text="EST. COST" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexEstCost" Text="$0.00"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="MODEL BREAKDOWN" Style="{StaticResource Sec}"
+                                               Margin="0,0,0,8"/>
+                                    <DataGrid Grid.Row="1" x:Name="CodexModelGrid"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True" HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              Background="Transparent" Foreground="#e8e8e8"
+                                              BorderThickness="0" RowBackground="Transparent"
+                                              AlternatingRowBackground="#181818"
+                                              HorizontalGridLinesBrush="#222"
+                                              CanUserAddRows="False" CanUserDeleteRows="False"
+                                              CanUserResizeRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="*"/>
+                                            <DataGridTextColumn Header="Sessions" Binding="{Binding Sessions}" Width="80"/>
+                                            <DataGridTextColumn Header="Input" Binding="{Binding InputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Output" Binding="{Binding OutputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Cost" Binding="{Binding CostDisplay}" Width="100"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
         </TabControl>
 
         <!-- ═══ GLOBAL FOOTER ═══ -->
