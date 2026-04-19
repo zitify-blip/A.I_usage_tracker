@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using AIUsageTracker.Services;
@@ -9,6 +11,22 @@ namespace AIUsageTracker;
 
 public partial class App : System.Windows.Application
 {
+    private const string SingleInstanceMutexName = "Global\\AIUsageTracker_SingleInstance";
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    private const int SW_RESTORE = 9;
+
+    private System.Threading.Mutex? _instanceMutex;
     private System.Windows.Forms.NotifyIcon? _trayIcon;
     private MainWindow? _mainWindow;
     private readonly DispatcherTimer _tooltipTimer = new() { Interval = TimeSpan.FromSeconds(5) };
@@ -16,6 +34,16 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _instanceMutex = new System.Threading.Mutex(true, SingleInstanceMutexName, out var createdNew);
+        if (!createdNew)
+        {
+            ActivateExistingInstance();
+            _instanceMutex.Dispose();
+            _instanceMutex = null;
+            Shutdown();
+            return;
+        }
 
         var storage = new StorageService();
         var api = new ClaudeApiService();
@@ -87,12 +115,37 @@ public partial class App : System.Windows.Application
             app._trayIcon.ShowBalloonTip(3000, title, text, System.Windows.Forms.ToolTipIcon.Warning);
     }
 
+    private static void ActivateExistingInstance()
+    {
+        try
+        {
+            var current = Process.GetCurrentProcess();
+            var others = Process.GetProcessesByName(current.ProcessName)
+                .Where(p => p.Id != current.Id);
+            foreach (var p in others)
+            {
+                var hWnd = p.MainWindowHandle;
+                if (hWnd == IntPtr.Zero) continue;
+                if (IsIconic(hWnd)) ShowWindow(hWnd, SW_RESTORE);
+                SetForegroundWindow(hWnd);
+                return;
+            }
+        }
+        catch (Exception ex) { Logger.Warn("ActivateExistingInstance failed", ex); }
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
         if (_trayIcon != null)
         {
             _trayIcon.Dispose();
             _trayIcon = null;
+        }
+        if (_instanceMutex != null)
+        {
+            try { _instanceMutex.ReleaseMutex(); } catch { }
+            _instanceMutex.Dispose();
+            _instanceMutex = null;
         }
         base.OnExit(e);
     }
