@@ -495,8 +495,6 @@ public partial class MainWindow : Window
     {
         if (_pendingUpdate == null) return;
 
-        if (MainTabs != null) MainTabs.SelectedIndex = 0;
-
         UpdateBtn.IsEnabled = false;
 
         // Find the TextBlock inside the button template

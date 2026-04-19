@@ -139,10 +139,40 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="Global Overview" FontSize="20" FontWeight="Bold"
                                Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" x:Name="GlobalRefreshBtn" Content="↻ Refresh"
+
+                    <!-- Update notification button (hidden by default) -->
+                    <Button Grid.Column="1" x:Name="UpdateBtn" Visibility="Collapsed"
+                            Click="UpdateBtn_Click" Cursor="Hand" Margin="0,0,8,0"
+                            BorderThickness="0" Padding="10,5">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="bd" Background="#1a3a1a" CornerRadius="6" BorderBrush="#4ade80"
+                                        BorderThickness="1" Padding="{TemplateBinding Padding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="UpdateBtnIcon" Text="⬆" FontSize="12" Foreground="#4ade80"
+                                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="UpdateBtnText" Text="업데이트 가능" FontSize="11"
+                                                   FontWeight="SemiBold" Foreground="#4ade80" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bd" Property="Background" Value="#2a4a2a"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <Button Grid.Column="2" x:Name="CheckUpdateBtn" Content="🔄 Update"
+                            Style="{StaticResource Btn}" Click="CheckUpdateBtn_Click" Margin="0,0,8,0"/>
+
+                    <Button Grid.Column="3" x:Name="GlobalRefreshBtn" Content="↻ Refresh"
                             Style="{StaticResource Btn}" Click="GlobalRefreshBtn_Click"/>
                 </Grid>
 
@@ -548,7 +578,6 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0" Text="Claude CLI Usage" FontSize="20" FontWeight="Bold"
@@ -560,30 +589,6 @@
                            Foreground="{StaticResource TxtSub}" FontWeight="SemiBold"/>
             </Border>
 
-            <!-- Update notification button (hidden by default) -->
-            <Button Grid.Column="2" x:Name="UpdateBtn" Visibility="Collapsed"
-                    Click="UpdateBtn_Click" Cursor="Hand" HorizontalAlignment="Right" Margin="0,0,12,0"
-                    BorderThickness="0" Padding="10,5">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="#1a3a1a" CornerRadius="6" BorderBrush="#4ade80"
-                                BorderThickness="1" Padding="{TemplateBinding Padding}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock x:Name="UpdateBtnIcon" Text="⬆" FontSize="12" Foreground="#4ade80"
-                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock x:Name="UpdateBtnText" Text="업데이트 가능" FontSize="11"
-                                           FontWeight="SemiBold" Foreground="#4ade80" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#2a4a2a"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-            </Button>
-
             <Button Grid.Column="3" x:Name="OpenClaudeBtn"
                     Style="{StaticResource Btn}" Click="OpenClaudeBtn_Click" Margin="0,0,8,0">
                 <StackPanel Orientation="Horizontal">
@@ -594,13 +599,10 @@
                 </StackPanel>
             </Button>
 
-            <Button Grid.Column="4" x:Name="CheckUpdateBtn" Content="🔄 Update"
-                    Style="{StaticResource Btn}" Click="CheckUpdateBtn_Click" Margin="0,0,8,0"/>
-
-            <Button Grid.Column="5" x:Name="RefreshBtn" Content="↻ Refresh"
+            <Button Grid.Column="4" x:Name="RefreshBtn" Content="↻ Refresh"
                     Style="{StaticResource Btn}" Click="RefreshBtn_Click" Margin="0,0,8,0"/>
 
-            <Button Grid.Column="6" x:Name="LoginBtn" Content="Login"
+            <Button Grid.Column="5" x:Name="LoginBtn" Content="Login"
                     Style="{StaticResource Btn}" Click="LoginBtn_Click"/>
         </Grid>
 
