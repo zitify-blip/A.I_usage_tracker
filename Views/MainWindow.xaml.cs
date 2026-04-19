@@ -62,7 +62,6 @@ public partial class MainWindow : Window
                        GrokApiAccountService grokAccounts,
                        GrokCliService grokCli)
     {
-        InitializeComponent();
         _usage = usage;
         _api = api;
         _storage = storage;
@@ -73,6 +72,8 @@ public partial class MainWindow : Window
         _codex = codex;
         _grokAccounts = grokAccounts;
         _grokCli = grokCli;
+
+        InitializeComponent();
 
         _grokAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGrokUi);
         _grokAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGrokUi);
