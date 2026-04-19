@@ -493,20 +493,29 @@ public partial class MainWindow : Window
 
     private async void UpdateBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (_pendingUpdate == null) return;
-
         UpdateBtn.IsEnabled = false;
 
-        // Find the TextBlock inside the button template
         void SetBtnText(string text)
         {
             StatusLabel.Text = text;
             StatusLabel.Foreground = B("#facc15");
         }
 
-        SetBtnText($"v{_pendingUpdate.Version} 다운로드 중...");
+        SetBtnText("최신 버전 확인 중...");
 
-        var success = await _update.DownloadAndInstallAsync(_pendingUpdate, pct =>
+        var fresh = await _update.CheckForUpdateAsync();
+        if (fresh == null)
+        {
+            _pendingUpdate = null;
+            UpdateBtn.Visibility = Visibility.Collapsed;
+            SetBtnText("이미 최신 버전입니다");
+            return;
+        }
+
+        _pendingUpdate = fresh;
+        SetBtnText($"v{fresh.Version} 다운로드 중...");
+
+        var success = await _update.DownloadAndInstallAsync(fresh, pct =>
         {
             Dispatcher.Invoke(() => SetBtnText($"다운로드 중... {pct}%"));
         });
