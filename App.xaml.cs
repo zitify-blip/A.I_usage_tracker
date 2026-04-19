@@ -50,8 +50,10 @@ public partial class App : System.Windows.Application
         var usage = new UsageService(storage, api);
         var geminiProvider = new GeminiProvider();
         var geminiAccounts = new GeminiAccountService(storage, geminiProvider);
+        var anthropicProvider = new AnthropicApiProvider();
+        var anthropicAccounts = new AnthropicApiAccountService(storage, anthropicProvider);
 
-        _mainWindow = new MainWindow(usage, api, storage, geminiAccounts, geminiProvider);
+        _mainWindow = new MainWindow(usage, api, storage, geminiAccounts, geminiProvider, anthropicAccounts);
         MainWindow = _mainWindow;
 
         Logger.Info($"App started (v{UpdateService.CurrentVersion})");

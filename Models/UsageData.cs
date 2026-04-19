@@ -183,6 +183,41 @@ public class StorageData
     public string? SelectedGeminiAccountId { get; set; }
     public List<GeminiUsageRecord> GeminiUsageHistory { get; set; } = new();
     public List<GeminiPricingOverride> GeminiPricingOverrides { get; set; } = new();
+
+    public List<AnthropicApiAccount> AnthropicApiAccounts { get; set; } = new();
+    public string? SelectedAnthropicApiAccountId { get; set; }
+    public List<AnthropicApiUsageSnapshot> AnthropicApiUsageHistory { get; set; } = new();
+}
+
+public class AnthropicApiAccount
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Alias { get; set; } = "";
+    public string EncryptedApiKey { get; set; } = "";
+    public string KeyPreview { get; set; } = "";
+    public string? OrganizationId { get; set; }
+    public bool IsPrimary { get; set; }
+    public bool IsActive { get; set; } = true;
+    public long CreatedAtMs { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    public long? LastUsedAtMs { get; set; }
+
+    public double DailyBudgetUsd { get; set; } = 0;
+    public double MonthlyBudgetUsd { get; set; } = 0;
+    public int AlertThresholdPct { get; set; } = 80;
+}
+
+public class AnthropicApiUsageSnapshot
+{
+    public long Timestamp { get; set; }
+    public string AccountId { get; set; } = "";
+    public string Model { get; set; } = "";
+    public long InputTokens { get; set; }
+    public long OutputTokens { get; set; }
+    public long CacheWriteTokens { get; set; }
+    public long CacheReadTokens { get; set; }
+    public double CostUsd { get; set; }
+    public string PeriodStart { get; set; } = "";
+    public string PeriodEnd { get; set; } = "";
 }
 
 public class GeminiPricingOverride

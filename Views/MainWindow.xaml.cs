@@ -25,8 +25,11 @@ public partial class MainWindow : Window
     private readonly StorageService _storage;
     private readonly GeminiAccountService _geminiAccounts;
     private readonly GeminiProvider _geminiProvider;
+    private readonly AnthropicApiAccountService _anthropicAccounts;
     private readonly UpdateService _update = new();
     private bool _suppressGeminiSelection;
+    private bool _suppressAnthropicSelection;
+    private int _anthropicRangeDays = 7;
     private readonly DispatcherTimer _pollTimer;
     private readonly DispatcherTimer _tickTimer;
     private readonly DispatcherTimer _updateCheckTimer;
@@ -43,7 +46,8 @@ public partial class MainWindow : Window
     private const long WeekTotalMs = 7L * 24 * 60 * 60 * 1000;
 
     public MainWindow(UsageService usage, ClaudeApiService api, StorageService storage,
-                       GeminiAccountService geminiAccounts, GeminiProvider geminiProvider)
+                       GeminiAccountService geminiAccounts, GeminiProvider geminiProvider,
+                       AnthropicApiAccountService anthropicAccounts)
     {
         InitializeComponent();
         _usage = usage;
@@ -51,9 +55,13 @@ public partial class MainWindow : Window
         _storage = storage;
         _geminiAccounts = geminiAccounts;
         _geminiProvider = geminiProvider;
+        _anthropicAccounts = anthropicAccounts;
 
         _geminiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
         _geminiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
+
+        _anthropicAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
+        _anthropicAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
 
         _onStatusChanged = () => Dispatcher.Invoke(UpdateStatus);
         _onUsageUpdated = () => Dispatcher.Invoke(UpdateUI);
@@ -722,7 +730,8 @@ public partial class MainWindow : Window
         switch (MainTabs?.SelectedIndex)
         {
             case 0: RefreshGlobalUi(); break;    // Global
-            case 2: RefreshGeminiUi(); break;    // Gemini (Claude = 1)
+            case 2: RefreshGeminiUi(); break;    // Gemini API
+            case 3: RefreshAnthropicUi(); break; // Claude API
         }
     }
 
@@ -1403,6 +1412,175 @@ public partial class MainWindow : Window
         if (s.Contains(',') || s.Contains('"') || s.Contains('\n') || s.Contains('\r'))
             return "\"" + s.Replace("\"", "\"\"") + "\"";
         return s;
+    }
+
+    // ────────── Claude API Tab (v2.6.0) ──────────
+
+    private void RefreshAnthropicUi()
+    {
+        if (AnthropicAccountCombo == null) return;
+        var accounts = _anthropicAccounts.GetAccounts();
+
+        if (accounts.Count == 0)
+        {
+            AnthropicEmptyState.Visibility = Visibility.Visible;
+            AnthropicDashboard.Visibility = Visibility.Collapsed;
+            AnthropicAccountCombo.ItemsSource = null;
+            return;
+        }
+
+        AnthropicEmptyState.Visibility = Visibility.Collapsed;
+        AnthropicDashboard.Visibility = Visibility.Visible;
+
+        _suppressAnthropicSelection = true;
+        AnthropicAccountCombo.ItemsSource = accounts.Select(a => new AnthropicAccountDisplay(a)).ToList();
+        var selected = _anthropicAccounts.GetSelected();
+        if (selected != null)
+        {
+            for (int i = 0; i < AnthropicAccountCombo.Items.Count; i++)
+            {
+                if (AnthropicAccountCombo.Items[i] is AnthropicAccountDisplay d && d.Account.Id == selected.Id)
+                {
+                    AnthropicAccountCombo.SelectedIndex = i;
+                    break;
+                }
+            }
+            AnthropicActiveAlias.Text = selected.Alias;
+            AnthropicActiveKeyPreview.Text = selected.KeyPreview;
+            AnthropicActiveOrg.Text = string.IsNullOrEmpty(selected.OrganizationId) ? "" : $"org: {selected.OrganizationId}";
+        }
+        _suppressAnthropicSelection = false;
+
+        RenderAnthropicUsage();
+    }
+
+    private void RenderAnthropicUsage()
+    {
+        var selected = _anthropicAccounts.GetSelected();
+        if (selected == null) return;
+
+        var history = _storage.GetAnthropicApiUsageHistory(selected.Id);
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-_anthropicRangeDays).ToUnixTimeMilliseconds();
+        var recent = history.Where(r => r.Timestamp >= cutoff).ToList();
+
+        var grouped = recent
+            .GroupBy(r => r.Model)
+            .Select(g => new AnthropicModelRow(
+                g.Key,
+                g.Sum(x => x.InputTokens),
+                g.Sum(x => x.OutputTokens),
+                g.Sum(x => x.CacheWriteTokens),
+                g.Sum(x => x.CacheReadTokens),
+                g.Sum(x => x.CostUsd)))
+            .OrderByDescending(r => r.Cost)
+            .ToList();
+
+        AnthropicModelGrid.ItemsSource = grouped;
+        AnthropicTotalCost.Text = $"${grouped.Sum(g => g.Cost):F4}";
+        AnthropicTotalInput.Text = grouped.Sum(g => g.Input).ToString("N0");
+        AnthropicTotalOutput.Text = grouped.Sum(g => g.Output).ToString("N0");
+        AnthropicTotalCache.Text = (grouped.Sum(g => g.CacheWrite) + grouped.Sum(g => g.CacheRead)).ToString("N0");
+    }
+
+    private void AnthropicAccountCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressAnthropicSelection) return;
+        if (AnthropicAccountCombo.SelectedItem is AnthropicAccountDisplay d)
+            _anthropicAccounts.SelectAccount(d.Account.Id);
+    }
+
+    private void AnthropicRangeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AnthropicRangeCombo?.SelectedItem is ComboBoxItem item &&
+            int.TryParse(item.Tag?.ToString(), out var days))
+        {
+            _anthropicRangeDays = days;
+            RenderAnthropicUsage();
+        }
+    }
+
+    private async void AnthropicAddAccountBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new AnthropicAddAccountDialog { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+        AnthropicStatusLabel.Text = "검증 중...";
+        var (ok, err, _) = await _anthropicAccounts.AddAccountAsync(dlg.Alias, dlg.ApiKey);
+        AnthropicStatusLabel.Text = ok ? "추가 완료" : $"실패: {err}";
+        if (ok) await FetchAnthropicUsageAsync();
+    }
+
+    private async void AnthropicRefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        await FetchAnthropicUsageAsync();
+    }
+
+    private async Task FetchAnthropicUsageAsync()
+    {
+        var selected = _anthropicAccounts.GetSelected();
+        if (selected == null) return;
+        AnthropicStatusLabel.Text = "조회 중...";
+        AnthropicRefreshBtn.IsEnabled = false;
+        try
+        {
+            var end = DateTimeOffset.UtcNow;
+            var start = end.AddDays(-_anthropicRangeDays);
+            var result = await _anthropicAccounts.FetchUsageAsync(selected.Id, start, end);
+            if (!result.Ok)
+            {
+                AnthropicStatusLabel.Text = $"실패: {result.Error}";
+                return;
+            }
+            AnthropicStatusLabel.Text = $"갱신 {DateTime.Now:HH:mm:ss} · {result.Buckets.Count} models";
+            RenderAnthropicUsage();
+        }
+        finally
+        {
+            AnthropicRefreshBtn.IsEnabled = true;
+        }
+    }
+
+    private void AnthropicRemoveBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = _anthropicAccounts.GetSelected();
+        if (selected == null) return;
+        var r = System.Windows.MessageBox.Show(this,
+            $"'{selected.Alias}' 계정을 제거하시겠습니까?\n관련 사용량 이력도 함께 삭제됩니다.",
+            "Claude API", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (r != MessageBoxResult.Yes) return;
+        _anthropicAccounts.RemoveAccount(selected.Id);
+    }
+}
+
+internal class AnthropicAccountDisplay
+{
+    public AnthropicApiAccount Account { get; }
+    public AnthropicAccountDisplay(AnthropicApiAccount a) { Account = a; }
+    public override string ToString()
+    {
+        var pri = Account.IsPrimary ? " ★" : "";
+        return $"👤 {Account.Alias}{pri}  ({Account.KeyPreview})";
+    }
+}
+
+internal class AnthropicModelRow
+{
+    public string Model { get; }
+    public long Input { get; }
+    public long Output { get; }
+    public long CacheWrite { get; }
+    public long CacheRead { get; }
+    public double Cost { get; }
+
+    public string InputDisplay => Input.ToString("N0");
+    public string OutputDisplay => Output.ToString("N0");
+    public string CacheWriteDisplay => CacheWrite.ToString("N0");
+    public string CacheReadDisplay => CacheRead.ToString("N0");
+    public string CostDisplay => $"${Cost:F4}";
+
+    public AnthropicModelRow(string model, long input, long output, long cacheWrite, long cacheRead, double cost)
+    {
+        Model = model; Input = input; Output = output;
+        CacheWrite = cacheWrite; CacheRead = cacheRead; Cost = cost;
     }
 }
 

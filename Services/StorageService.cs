@@ -171,4 +171,45 @@ public class StorageService
             p => string.Equals(p.ModelId, modelId, StringComparison.OrdinalIgnoreCase));
         Save();
     }
+
+    // ────────── Anthropic API ──────────
+
+    public List<AnthropicApiAccount> AnthropicApiAccounts => _data.AnthropicApiAccounts;
+    public string? SelectedAnthropicApiAccountId => _data.SelectedAnthropicApiAccountId;
+
+    public void AddAnthropicApiAccount(AnthropicApiAccount account)
+    {
+        _data.AnthropicApiAccounts.Add(account);
+        if (string.IsNullOrEmpty(_data.SelectedAnthropicApiAccountId))
+            _data.SelectedAnthropicApiAccountId = account.Id;
+        Save();
+    }
+
+    public void RemoveAnthropicApiAccount(string accountId)
+    {
+        _data.AnthropicApiAccounts.RemoveAll(a => a.Id == accountId);
+        _data.AnthropicApiUsageHistory.RemoveAll(r => r.AccountId == accountId);
+        if (_data.SelectedAnthropicApiAccountId == accountId)
+            _data.SelectedAnthropicApiAccountId = _data.AnthropicApiAccounts.FirstOrDefault()?.Id;
+        Save();
+    }
+
+    public void SetSelectedAnthropicApiAccount(string? accountId)
+    {
+        _data.SelectedAnthropicApiAccountId = accountId;
+        Save();
+    }
+
+    public void SaveAnthropicApiUsage(IEnumerable<AnthropicApiUsageSnapshot> records)
+    {
+        _data.AnthropicApiUsageHistory.AddRange(records);
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
+        _data.AnthropicApiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        Save();
+    }
+
+    public IReadOnlyList<AnthropicApiUsageSnapshot> GetAnthropicApiUsageHistory(string? accountId = null) =>
+        accountId == null
+            ? _data.AnthropicApiUsageHistory
+            : _data.AnthropicApiUsageHistory.Where(r => r.AccountId == accountId).ToList();
 }
