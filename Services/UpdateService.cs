@@ -133,26 +133,30 @@ public class UpdateService
             Directory.CreateDirectory(tempDir);
             filePath = Path.Combine(tempDir, Path.GetFileName(info.FileName));
 
-            using var response = await Http.GetAsync(info.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
-            response.EnsureSuccessStatusCode();
-
-            var totalBytes = response.Content.Headers.ContentLength ?? -1;
-            long downloadedBytes = 0;
-
-            await using var contentStream = await response.Content.ReadAsStreamAsync();
-            await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
-
-            var buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = await contentStream.ReadAsync(buffer)) > 0)
+            using var downloadCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+            using (var response = await Http.GetAsync(info.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, downloadCts.Token))
             {
-                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
-                downloadedBytes += bytesRead;
+                response.EnsureSuccessStatusCode();
 
-                if (totalBytes > 0)
+                var totalBytes = response.Content.Headers.ContentLength ?? -1;
+                long downloadedBytes = 0;
+
+                await using var contentStream = await response.Content.ReadAsStreamAsync(downloadCts.Token);
+                await using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
-                    var pct = (int)(downloadedBytes * 100 / totalBytes);
-                    onProgress?.Invoke(pct);
+                    var buffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = await contentStream.ReadAsync(buffer, downloadCts.Token)) > 0)
+                    {
+                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), downloadCts.Token);
+                        downloadedBytes += bytesRead;
+
+                        if (totalBytes > 0)
+                        {
+                            var pct = (int)(downloadedBytes * 100 / totalBytes);
+                            onProgress?.Invoke(pct);
+                        }
+                    }
                 }
             }
 
