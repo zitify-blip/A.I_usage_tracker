@@ -253,4 +253,31 @@ public class StorageService
         accountId == null
             ? _data.OpenAiApiUsageHistory
             : _data.OpenAiApiUsageHistory.Where(r => r.AccountId == accountId).ToList();
+
+    // ────────── Grok / xAI API ──────────
+
+    public List<GrokApiAccount> GrokApiAccounts => _data.GrokApiAccounts;
+    public string? SelectedGrokApiAccountId => _data.SelectedGrokApiAccountId;
+
+    public void AddGrokApiAccount(GrokApiAccount account)
+    {
+        _data.GrokApiAccounts.Add(account);
+        if (string.IsNullOrEmpty(_data.SelectedGrokApiAccountId))
+            _data.SelectedGrokApiAccountId = account.Id;
+        Save();
+    }
+
+    public void RemoveGrokApiAccount(string accountId)
+    {
+        _data.GrokApiAccounts.RemoveAll(a => a.Id == accountId);
+        if (_data.SelectedGrokApiAccountId == accountId)
+            _data.SelectedGrokApiAccountId = _data.GrokApiAccounts.FirstOrDefault()?.Id;
+        Save();
+    }
+
+    public void SetSelectedGrokApiAccount(string? accountId)
+    {
+        _data.SelectedGrokApiAccountId = accountId;
+        Save();
+    }
 }

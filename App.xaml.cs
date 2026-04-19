@@ -55,9 +55,13 @@ public partial class App : System.Windows.Application
         var openAiProvider = new OpenAiApiProvider();
         var openAiAccounts = new OpenAiApiAccountService(storage, openAiProvider);
         var codex = new CodexCliService();
+        var grokProvider = new GrokApiProvider();
+        var grokAccounts = new GrokApiAccountService(storage, grokProvider);
+        var grokCli = new GrokCliService();
 
         _mainWindow = new MainWindow(usage, api, storage, geminiAccounts, geminiProvider,
-                                     anthropicAccounts, openAiAccounts, codex);
+                                     anthropicAccounts, openAiAccounts, codex,
+                                     grokAccounts, grokCli);
         MainWindow = _mainWindow;
 
         Logger.Info($"App started (v{UpdateService.CurrentVersion})");

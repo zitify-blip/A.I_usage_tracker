@@ -28,13 +28,17 @@ public partial class MainWindow : Window
     private readonly AnthropicApiAccountService _anthropicAccounts;
     private readonly OpenAiApiAccountService _openAiAccounts;
     private readonly CodexCliService _codex;
+    private readonly GrokApiAccountService _grokAccounts;
+    private readonly GrokCliService _grokCli;
     private readonly UpdateService _update = new();
     private bool _suppressGeminiSelection;
     private bool _suppressAnthropicSelection;
     private bool _suppressOpenAiSelection;
+    private bool _suppressGrokSelection;
     private int _anthropicRangeDays = 7;
     private int _openAiRangeDays = 7;
     private int _codexRangeDays = 7;
+    private int _grokCliRangeDays = 7;
     private readonly DispatcherTimer _pollTimer;
     private readonly DispatcherTimer _tickTimer;
     private readonly DispatcherTimer _updateCheckTimer;
@@ -54,7 +58,9 @@ public partial class MainWindow : Window
                        GeminiAccountService geminiAccounts, GeminiProvider geminiProvider,
                        AnthropicApiAccountService anthropicAccounts,
                        OpenAiApiAccountService openAiAccounts,
-                       CodexCliService codex)
+                       CodexCliService codex,
+                       GrokApiAccountService grokAccounts,
+                       GrokCliService grokCli)
     {
         InitializeComponent();
         _usage = usage;
@@ -65,6 +71,11 @@ public partial class MainWindow : Window
         _anthropicAccounts = anthropicAccounts;
         _openAiAccounts = openAiAccounts;
         _codex = codex;
+        _grokAccounts = grokAccounts;
+        _grokCli = grokCli;
+
+        _grokAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGrokUi);
+        _grokAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGrokUi);
 
         _geminiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
         _geminiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
@@ -746,6 +757,8 @@ public partial class MainWindow : Window
             case 3: RefreshAnthropicUi(); break; // Claude API
             case 4: RefreshOpenAiUi(); break;    // OpenAI API
             case 5: RefreshCodexUi(); break;     // OpenAI CLI
+            case 6: RefreshGrokUi(); break;      // Grok API
+            case 7: RefreshGrokCliUi(); break;   // Grok CLI
         }
     }
 
@@ -1743,6 +1756,154 @@ public partial class MainWindow : Window
     private void CodexRefreshBtn_Click(object sender, RoutedEventArgs e)
     {
         RenderCodexUsage();
+    }
+
+    // ──────────────── Grok / xAI API tab ────────────────
+
+    private void RefreshGrokUi()
+    {
+        if (GrokAccountCombo == null) return;
+        var accounts = _grokAccounts.GetAccounts();
+
+        if (accounts.Count == 0)
+        {
+            GrokEmptyState.Visibility = Visibility.Visible;
+            GrokDashboard.Visibility = Visibility.Collapsed;
+            GrokAccountCombo.ItemsSource = null;
+            return;
+        }
+
+        GrokEmptyState.Visibility = Visibility.Collapsed;
+        GrokDashboard.Visibility = Visibility.Visible;
+
+        _suppressGrokSelection = true;
+        GrokAccountCombo.ItemsSource = accounts.Select(a => new GrokAccountDisplay(a)).ToList();
+        var selected = _grokAccounts.GetSelected();
+        if (selected != null)
+        {
+            for (int i = 0; i < GrokAccountCombo.Items.Count; i++)
+            {
+                if (GrokAccountCombo.Items[i] is GrokAccountDisplay d && d.Account.Id == selected.Id)
+                {
+                    GrokAccountCombo.SelectedIndex = i;
+                    break;
+                }
+            }
+            GrokActiveAlias.Text = selected.Alias;
+            GrokActiveKeyPreview.Text = selected.KeyPreview;
+            GrokActiveMeta.Text = selected.AllowedModels.Count > 0
+                ? $"{selected.AllowedModels.Count} allowed models"
+                : "";
+
+            GrokKeyName.Text = selected.KeyName ?? "--";
+            GrokUserId.Text = selected.UserId ?? "--";
+            GrokTeamId.Text = selected.TeamId ?? "--";
+            GrokKeyStatus.Text = selected.IsActive ? "ACTIVE" : "DISABLED";
+            GrokKeyStatus.Foreground = selected.IsActive
+                ? new SolidColorBrush(Color.FromRgb(0x4a, 0xde, 0x80))
+                : new SolidColorBrush(Color.FromRgb(0xf8, 0x71, 0x71));
+            GrokAllowedModels.ItemsSource = selected.AllowedModels;
+        }
+        _suppressGrokSelection = false;
+    }
+
+    private void GrokAccountCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressGrokSelection) return;
+        if (GrokAccountCombo.SelectedItem is GrokAccountDisplay d)
+            _grokAccounts.SelectAccount(d.Account.Id);
+    }
+
+    private async void GrokAddAccountBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new GrokAddAccountDialog { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+        GrokStatusLabel.Text = "검증 중...";
+        var (ok, err, _) = await _grokAccounts.AddAccountAsync(dlg.Alias, dlg.ApiKey);
+        GrokStatusLabel.Text = ok ? "추가 완료" : $"실패: {err}";
+    }
+
+    private async void GrokRefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = _grokAccounts.GetSelected();
+        if (selected == null) return;
+        GrokStatusLabel.Text = "조회 중...";
+        GrokRefreshBtn.IsEnabled = false;
+        try
+        {
+            var (ok, err, _) = await _grokAccounts.RefreshKeyInfoAsync(selected.Id);
+            GrokStatusLabel.Text = ok ? $"갱신 {DateTime.Now:HH:mm:ss}" : $"실패: {err}";
+            if (ok) RefreshGrokUi();
+        }
+        finally { GrokRefreshBtn.IsEnabled = true; }
+    }
+
+    private void GrokRemoveBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = _grokAccounts.GetSelected();
+        if (selected == null) return;
+        var r = System.Windows.MessageBox.Show(this,
+            $"'{selected.Alias}' 계정을 제거하시겠습니까?",
+            "Grok API", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (r != MessageBoxResult.Yes) return;
+        _grokAccounts.RemoveAccount(selected.Id);
+    }
+
+    // ──────────────── Grok CLI tab ────────────────
+
+    private void RefreshGrokCliUi()
+    {
+        if (GrokCliPathHint != null)
+            GrokCliPathHint.Text = $"검사 경로: {string.Join(" · ", _grokCli.CandidateDirs)}";
+        RenderGrokCliUsage();
+    }
+
+    private void RenderGrokCliUsage()
+    {
+        if (GrokCliDashboard == null) return;
+        var since = DateTimeOffset.UtcNow.AddDays(-_grokCliRangeDays);
+        var summary = _grokCli.Aggregate(since);
+
+        if (summary.Models.Count == 0)
+        {
+            GrokCliEmptyState.Visibility = Visibility.Visible;
+            GrokCliDashboard.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        GrokCliEmptyState.Visibility = Visibility.Collapsed;
+        GrokCliDashboard.Visibility = Visibility.Visible;
+        GrokCliModelGrid.ItemsSource = summary.Models;
+        GrokCliSessionsCount.Text = summary.SessionsTotal.ToString("N0");
+        GrokCliInputTokens.Text = summary.InputTotal.ToString("N0");
+        GrokCliOutputTokens.Text = summary.OutputTotal.ToString("N0");
+        GrokCliEstCost.Text = $"${summary.CostTotal:F4}";
+    }
+
+    private void GrokCliRangeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (GrokCliRangeCombo?.SelectedItem is ComboBoxItem item &&
+            int.TryParse(item.Tag?.ToString(), out var days))
+        {
+            _grokCliRangeDays = days;
+            RenderGrokCliUsage();
+        }
+    }
+
+    private void GrokCliRefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        RenderGrokCliUsage();
+    }
+}
+
+internal class GrokAccountDisplay
+{
+    public GrokApiAccount Account { get; }
+    public GrokAccountDisplay(GrokApiAccount a) { Account = a; }
+    public override string ToString()
+    {
+        var pri = Account.IsPrimary ? " ★" : "";
+        return $"👤 {Account.Alias}{pri}  ({Account.KeyPreview})";
     }
 }
 

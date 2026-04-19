@@ -1697,6 +1697,274 @@
                     </Grid>
                 </Grid>
             </TabItem>
+
+            <!-- ═══ GROK / xAI API TAB (v2.8.0) ═══ -->
+            <TabItem Style="{StaticResource DarkTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="X" Foreground="#000000" FontSize="11" FontWeight="Bold"
+                                   Background="#ffffff" Padding="3,0,3,0"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Grok API" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Grok (xAI) API" FontSize="20" FontWeight="Bold"
+                                   Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
+
+                        <Border Grid.Column="2" CornerRadius="6" Background="#1a1a1a"
+                                BorderBrush="#2a2a2a" BorderThickness="1" Padding="4"
+                                HorizontalAlignment="Left" VerticalAlignment="Center" MinWidth="260">
+                            <ComboBox x:Name="GrokAccountCombo"
+                                      Background="Transparent" Foreground="#e8e8e8"
+                                      BorderThickness="0" FontSize="12" Padding="8,4"
+                                      SelectionChanged="GrokAccountCombo_SelectionChanged"/>
+                        </Border>
+
+                        <Button Grid.Column="3" x:Name="GrokAddAccountBtn" Content="+ 계정 추가"
+                                Style="{StaticResource Btn}" Click="GrokAddAccountBtn_Click"
+                                Margin="8,0,6,0"/>
+                        <Button Grid.Column="4" x:Name="GrokRefreshBtn" Content="↻ 키 정보 갱신"
+                                Style="{StaticResource Btn}" Click="GrokRefreshBtn_Click"
+                                Margin="0,0,6,0"/>
+                        <Button Grid.Column="5" x:Name="GrokRemoveBtn" Content="🗑 제거"
+                                Style="{StaticResource Btn}" Click="GrokRemoveBtn_Click"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1" x:Name="GrokContent">
+                        <StackPanel x:Name="GrokEmptyState" VerticalAlignment="Center"
+                                    HorizontalAlignment="Center">
+                            <TextBlock Text="𝕏" Foreground="#ffffff" FontSize="56" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="Grok / xAI 계정이 등록되지 않았습니다"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TxtHighlight}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock Text="API Key (xai-*)를 등록하여 키 정보를 확인하세요"
+                                       FontSize="11" Foreground="{StaticResource TxtSub}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                            <Button Content="+ 첫 계정 추가하기" Style="{StaticResource Btn}"
+                                    Click="GrokAddAccountBtn_Click" HorizontalAlignment="Center"
+                                    Padding="22,8"/>
+                        </StackPanel>
+
+                        <Grid x:Name="GrokDashboard" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="ACTIVE ACCOUNT" Style="{StaticResource Sec}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="GrokActiveAlias" Text="--"
+                                                   FontSize="18" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                        <TextBlock x:Name="GrokActiveKeyPreview" Text=""
+                                                   FontSize="11" Foreground="#888"
+                                                   VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="GrokActiveMeta" Text=""
+                                               FontSize="10" Foreground="#666" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="KEY INFO" Style="{StaticResource Sec}"/>
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Foreground="#888" FontSize="11"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="GrokKeyName" Text="--" Foreground="#e8e8e8" FontSize="11"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="User ID" Foreground="#888" FontSize="11"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GrokUserId" Text="--" Foreground="#e8e8e8" FontSize="11"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Team ID" Foreground="#888" FontSize="11"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="GrokTeamId" Text="--" Foreground="#e8e8e8" FontSize="11"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Status" Foreground="#888" FontSize="11"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="GrokKeyStatus" Text="--" Foreground="#4ade80" FontSize="11"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="4" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="ALLOWED MODELS" Style="{StaticResource Sec}"
+                                               Margin="0,0,0,8"/>
+                                    <TextBlock Grid.Row="1" FontSize="10" Foreground="#888"
+                                               Margin="0,0,0,8" TextWrapping="Wrap"
+                                               Text="xAI는 조직 사용량 조회 엔드포인트를 공식 제공하지 않습니다. 사용량 / 청구 내역은 console.x.ai에서 확인하세요."/>
+                                    <ListBox Grid.Row="2" x:Name="GrokAllowedModels"
+                                             Background="Transparent" Foreground="#e8e8e8"
+                                             BorderThickness="0"/>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock x:Name="GrokStatusLabel" Grid.Row="4"
+                                       VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                                       Margin="0,0,8,8" FontSize="10" Foreground="#888"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══ GROK CLI TAB (v2.8.0) ═══ -->
+            <TabItem Style="{StaticResource DarkTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="X" Foreground="#000000" FontSize="11" FontWeight="Bold"
+                                   Background="#ffffff" Padding="3,0,3,0"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Grok CLI" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Grok CLI Sessions (베스트-에포트)"
+                                   FontSize="20" FontWeight="Bold"
+                                   Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" x:Name="GrokCliRangeCombo" Width="120"
+                                  SelectionChanged="GrokCliRangeCombo_SelectionChanged" Margin="0,0,8,0">
+                            <ComboBoxItem Content="오늘" Tag="1"/>
+                            <ComboBoxItem Content="7일" Tag="7" IsSelected="True"/>
+                            <ComboBoxItem Content="30일" Tag="30"/>
+                        </ComboBox>
+                        <Button Grid.Column="3" x:Name="GrokCliRefreshBtn" Content="↻ 새로고침"
+                                Style="{StaticResource Btn}" Click="GrokCliRefreshBtn_Click"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <StackPanel x:Name="GrokCliEmptyState" VerticalAlignment="Center"
+                                    HorizontalAlignment="Center">
+                            <TextBlock Text="𝕏" Foreground="#ffffff" FontSize="56" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="Grok CLI 세션 로그를 찾을 수 없습니다"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TxtHighlight}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="GrokCliPathHint"
+                                       Text="~/.grok 또는 ~/.grok-cli 경로를 검사합니다 (커뮤니티 CLI 호환)"
+                                       FontSize="11" Foreground="{StaticResource TxtSub}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Grid x:Name="GrokCliDashboard" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="SESSIONS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="GrokCliSessionsCount" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="INPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="GrokCliInputTokens" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="OUTPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="GrokCliOutputTokens" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3">
+                                        <TextBlock Text="EST. COST" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="GrokCliEstCost" Text="$0.00"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="MODEL BREAKDOWN" Style="{StaticResource Sec}"
+                                               Margin="0,0,0,8"/>
+                                    <DataGrid Grid.Row="1" x:Name="GrokCliModelGrid"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True" HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              Background="Transparent" Foreground="#e8e8e8"
+                                              BorderThickness="0" RowBackground="Transparent"
+                                              AlternatingRowBackground="#181818"
+                                              HorizontalGridLinesBrush="#222"
+                                              CanUserAddRows="False" CanUserDeleteRows="False"
+                                              CanUserResizeRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="*"/>
+                                            <DataGridTextColumn Header="Sessions" Binding="{Binding Sessions}" Width="80"/>
+                                            <DataGridTextColumn Header="Input" Binding="{Binding InputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Output" Binding="{Binding OutputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Cost" Binding="{Binding CostDisplay}" Width="100"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
         </TabControl>
 
         <!-- ═══ GLOBAL FOOTER ═══ -->

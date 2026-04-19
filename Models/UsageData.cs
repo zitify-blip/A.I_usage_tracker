@@ -191,6 +191,25 @@ public class StorageData
     public List<OpenAiApiAccount> OpenAiApiAccounts { get; set; } = new();
     public string? SelectedOpenAiApiAccountId { get; set; }
     public List<OpenAiApiUsageSnapshot> OpenAiApiUsageHistory { get; set; } = new();
+
+    public List<GrokApiAccount> GrokApiAccounts { get; set; } = new();
+    public string? SelectedGrokApiAccountId { get; set; }
+}
+
+public class GrokApiAccount
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Alias { get; set; } = "";
+    public string EncryptedApiKey { get; set; } = "";
+    public string KeyPreview { get; set; } = "";
+    public string? KeyName { get; set; }
+    public string? UserId { get; set; }
+    public string? TeamId { get; set; }
+    public List<string> AllowedModels { get; set; } = new();
+    public bool IsPrimary { get; set; }
+    public bool IsActive { get; set; } = true;
+    public long CreatedAtMs { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    public long? LastUsedAtMs { get; set; }
 }
 
 public class OpenAiApiAccount
