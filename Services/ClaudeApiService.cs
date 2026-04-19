@@ -188,4 +188,92 @@ public class ClaudeApiService
             return (false, "request_failed", null);
         }
     }
+
+    public async Task<(bool ok, string? error)> SendMessageAsync(string message)
+    {
+        if (_webView?.CoreWebView2 == null || !_ready)
+            return (false, "webview_not_ready");
+
+        try
+        {
+            var tcs = new TaskCompletionSource<string>();
+
+            void MsgHandler(object? s, CoreWebView2WebMessageReceivedEventArgs args)
+            {
+                tcs.TrySetResult(args.WebMessageAsJson);
+                _webView.CoreWebView2.WebMessageReceived -= MsgHandler;
+            }
+            _webView.CoreWebView2.WebMessageReceived += MsgHandler;
+
+            var script = $@"
+(function() {{
+  var msg = {JsonSerializer.Serialize(message)};
+  var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'UTC';
+  fetch('https://claude.ai/api/organizations', {{ credentials: 'include' }})
+    .then(function(r) {{ return r.json(); }})
+    .then(function(orgs) {{
+      var orgId = orgs[0].uuid;
+      var convUuid = crypto.randomUUID();
+      fetch('https://claude.ai/api/organizations/' + orgId + '/chat_conversations', {{
+        method: 'POST', credentials: 'include',
+        headers: {{ 'Content-Type': 'application/json' }},
+        body: JSON.stringify({{ uuid: convUuid, name: '' }})
+      }})
+        .then(function(r) {{
+          if (!r.ok) throw new Error('create_conv_' + r.status);
+          return r.json();
+        }})
+        .then(function(conv) {{
+          fetch('https://claude.ai/api/organizations/' + orgId + '/chat_conversations/' + conv.uuid + '/completion', {{
+            method: 'POST', credentials: 'include',
+            headers: {{ 'Content-Type': 'application/json', 'Accept': 'text/event-stream' }},
+            body: JSON.stringify({{
+              prompt: msg,
+              parent_message_uuid: '00000000-0000-4000-8000-000000000000',
+              timezone: tz,
+              personalized_styles: [], tools: [], attachments: [], files: [], sync_sources: [],
+              rendering_mode: 'messages'
+            }})
+          }}).then(function(r) {{
+            window.chrome.webview.postMessage({{ ok: r.ok, status: r.status, conv: conv.uuid }});
+          }}).catch(function(e) {{
+            window.chrome.webview.postMessage({{ ok: false, error: 'completion_failed', message: String(e) }});
+          }});
+        }})
+        .catch(function(e) {{
+          window.chrome.webview.postMessage({{ ok: false, error: 'create_conv_failed', message: String(e) }});
+        }});
+    }})
+    .catch(function(e) {{
+      window.chrome.webview.postMessage({{ ok: false, error: 'orgs_failed', message: String(e) }});
+    }});
+}})()";
+
+            await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(30000));
+            if (completed != tcs.Task)
+            {
+                _webView.CoreWebView2.WebMessageReceived -= MsgHandler;
+                return (false, "timeout");
+            }
+
+            var resultJson = tcs.Task.Result;
+            if (resultJson.StartsWith("\"") && resultJson.EndsWith("\""))
+                resultJson = JsonSerializer.Deserialize<string>(resultJson) ?? resultJson;
+
+            var result = JsonSerializer.Deserialize<JsonElement>(resultJson);
+            var ok = result.TryGetProperty("ok", out var okProp) && okProp.GetBoolean();
+            if (ok) return (true, null);
+
+            var error = result.TryGetProperty("error", out var errProp) ? errProp.GetString() : "unknown";
+            Logger.Warn($"SendMessage returned error: {error}");
+            return (false, error);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("SendMessage failed", ex);
+            return (false, "exception");
+        }
+    }
 }
