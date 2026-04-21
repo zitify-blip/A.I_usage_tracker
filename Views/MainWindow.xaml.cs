@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     private readonly CodexCliService _codex;
     private readonly GrokApiAccountService _grokAccounts;
     private readonly GrokCliService _grokCli;
+    private readonly GeminiRelayService _geminiRelay;
     private readonly UpdateService _update = new();
     private bool _suppressGeminiSelection;
     private bool _suppressAnthropicSelection;
@@ -60,7 +61,8 @@ public partial class MainWindow : Window
                        OpenAiApiAccountService openAiAccounts,
                        CodexCliService codex,
                        GrokApiAccountService grokAccounts,
-                       GrokCliService grokCli)
+                       GrokCliService grokCli,
+                       GeminiRelayService geminiRelay)
     {
         _usage = usage;
         _api = api;
@@ -72,6 +74,7 @@ public partial class MainWindow : Window
         _codex = codex;
         _grokAccounts = grokAccounts;
         _grokCli = grokCli;
+        _geminiRelay = geminiRelay;
 
         InitializeComponent();
 
@@ -80,6 +83,13 @@ public partial class MainWindow : Window
 
         _geminiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
         _geminiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
+
+        _geminiRelay.StatusChanged += () => Dispatcher.Invoke(RefreshGeminiRelayUi);
+        _geminiRelay.UsageRecorded += _ => Dispatcher.Invoke(() =>
+        {
+            RefreshGeminiStats();
+            RefreshGeminiRelayUi();
+        });
 
         _anthropicAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
         _anthropicAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
@@ -1063,6 +1073,122 @@ public partial class MainWindow : Window
         }
 
         RefreshGeminiStats();
+        RefreshGeminiRelayUi();
+    }
+
+    private void RefreshGeminiRelayUi()
+    {
+        if (GeminiRelayPortBox == null) return; // not yet loaded
+
+        // Sync port box from settings (one-shot on first load)
+        if (string.IsNullOrWhiteSpace(GeminiRelayPortBox.Text) ||
+            GeminiRelayPortBox.Text == "47821" && _storage.Settings.GeminiRelayPort != 47821)
+        {
+            GeminiRelayPortBox.Text = _storage.Settings.ClampedGeminiRelayPort().ToString();
+        }
+
+        GeminiRelayAutoStartCheck.IsChecked = _storage.Settings.GeminiRelayAutoStart;
+
+        if (_geminiRelay.IsRunning)
+        {
+            GeminiRelayStatusText.Text = $"● Running on 127.0.0.1:{_geminiRelay.Port}";
+            GeminiRelayStatusText.Foreground = B("#4ade80");
+            GeminiRelayStartBtn.Content = "⏹ Stop";
+            GeminiRelayStartBtn.Background = B("#3a1a1a");
+            GeminiRelayStartBtn.BorderBrush = B("#f87171");
+            GeminiRelayPortBox.IsEnabled = false;
+
+            var stats = $"served: {_geminiRelay.RequestsServed}";
+            if (_geminiRelay.StartedAt.HasValue)
+            {
+                var up = DateTime.Now - _geminiRelay.StartedAt.Value;
+                stats += $" · up {(up.TotalHours >= 1 ? $"{up.TotalHours:F1}h" : $"{up.TotalMinutes:F0}m")}";
+            }
+            GeminiRelayStatsText.Text = stats;
+        }
+        else
+        {
+            var err = _geminiRelay.LastError;
+            GeminiRelayStatusText.Text = string.IsNullOrEmpty(err) ? "● Stopped" : $"● Error: {err}";
+            GeminiRelayStatusText.Foreground = B(string.IsNullOrEmpty(err) ? "#888" : "#f87171");
+            GeminiRelayStartBtn.Content = "▶ Start";
+            GeminiRelayStartBtn.Background = B("#1a3a1a");
+            GeminiRelayStartBtn.BorderBrush = B("#4ade80");
+            GeminiRelayPortBox.IsEnabled = true;
+            GeminiRelayStatsText.Text = "";
+        }
+    }
+
+    private void GeminiRelayStartBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_geminiRelay.IsRunning)
+        {
+            _geminiRelay.Stop();
+            return;
+        }
+
+        if (!int.TryParse(GeminiRelayPortBox.Text?.Trim(), out var port) || port < 1024 || port > 65535)
+        {
+            GeminiRelayStatusText.Text = "Invalid port (1024-65535)";
+            GeminiRelayStatusText.Foreground = B("#f87171");
+            return;
+        }
+
+        _storage.Settings.GeminiRelayPort = port;
+        _storage.SaveSettings(_storage.Settings);
+
+        if (!_geminiRelay.Start(port, out var err))
+        {
+            GeminiRelayStatusText.Text = $"● Start failed: {err}";
+            GeminiRelayStatusText.Foreground = B("#f87171");
+        }
+    }
+
+    private void GeminiRelayAutoStart_Changed(object sender, RoutedEventArgs e)
+    {
+        if (GeminiRelayAutoStartCheck == null) return;
+        _storage.Settings.GeminiRelayAutoStart = GeminiRelayAutoStartCheck.IsChecked == true;
+        _storage.SaveSettings(_storage.Settings);
+    }
+
+    private void GeminiRelayCopyBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var port = _geminiRelay.IsRunning ? _geminiRelay.Port
+                                          : _storage.Settings.ClampedGeminiRelayPort();
+        var selected = _geminiAccounts.GetSelected();
+        var alias = selected?.Alias ?? "default";
+
+        var snippet =
+            $"# A.I. Usage Tracker — Gemini Local Relay\r\n" +
+            $"# Base URL: http://127.0.0.1:{port}\r\n" +
+            $"# API key: tracker-{alias}\r\n" +
+            $"\r\n" +
+            $"# Environment variables:\r\n" +
+            $"setx GOOGLE_API_KEY tracker-{alias}\r\n" +
+            $"setx GEMINI_API_KEY tracker-{alias}\r\n" +
+            $"setx GOOGLE_GENAI_BASE_URL http://127.0.0.1:{port}\r\n" +
+            $"\r\n" +
+            $"# cURL example:\r\n" +
+            $"curl -X POST \"http://127.0.0.1:{port}/v1beta/models/gemini-2.5-flash:generateContent?key=tracker-{alias}\" ^\r\n" +
+            $"  -H \"Content-Type: application/json\" ^\r\n" +
+            $"  -d \"{{\\\"contents\\\":[{{\\\"parts\\\":[{{\\\"text\\\":\\\"hi\\\"}}]}}]}}\"\r\n" +
+            $"\r\n" +
+            $"# Python (google-generativeai):\r\n" +
+            $"# import google.generativeai as genai\r\n" +
+            $"# genai.configure(api_key=\"tracker-{alias}\", transport=\"rest\",\r\n" +
+            $"#                 client_options={{\"api_endpoint\": \"http://127.0.0.1:{port}\"}})\r\n";
+
+        try
+        {
+            System.Windows.Clipboard.SetText(snippet);
+            GeminiRelayStatusText.Text = "사용법이 클립보드에 복사되었습니다";
+            GeminiRelayStatusText.Foreground = B("#4ade80");
+        }
+        catch (Exception ex)
+        {
+            GeminiRelayStatusText.Text = $"복사 실패: {ex.Message}";
+            GeminiRelayStatusText.Foreground = B("#f87171");
+        }
     }
 
     private void RefreshGeminiStats()

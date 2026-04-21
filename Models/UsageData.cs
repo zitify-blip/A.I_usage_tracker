@@ -170,8 +170,12 @@ public class AppSettings
     public int NotifyThreshold { get; set; } = 80;
     public bool NotifyEnabled { get; set; } = true;
 
+    public int GeminiRelayPort { get; set; } = 47821;
+    public bool GeminiRelayAutoStart { get; set; } = false;
+
     public int ClampedPollIntervalSeconds() => Math.Clamp(PollIntervalSeconds, 30, 3600);
     public int ClampedNotifyThreshold() => Math.Clamp(NotifyThreshold, 1, 100);
+    public int ClampedGeminiRelayPort() => Math.Clamp(GeminiRelayPort, 1024, 65535);
 }
 
 public class StorageData
@@ -313,6 +317,8 @@ public class GeminiUsageRecord
     public long ToolTokens { get; set; }
     public double CostUsd { get; set; }
     public int LatencyMs { get; set; }
+    public string Source { get; set; } = "playground"; // "playground" | "relay"
+    public string? ClientUserAgent { get; set; }
 }
 
 public class LatestUsage

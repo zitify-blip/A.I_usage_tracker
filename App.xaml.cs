@@ -29,6 +29,7 @@ public partial class App : System.Windows.Application
     private System.Threading.Mutex? _instanceMutex;
     private System.Windows.Forms.NotifyIcon? _trayIcon;
     private MainWindow? _mainWindow;
+    private GeminiRelayService? _geminiRelay;
     private readonly DispatcherTimer _tooltipTimer = new() { Interval = TimeSpan.FromSeconds(5) };
 
     protected override void OnStartup(StartupEventArgs e)
@@ -50,6 +51,8 @@ public partial class App : System.Windows.Application
         var usage = new UsageService(storage, api);
         var geminiProvider = new GeminiProvider();
         var geminiAccounts = new GeminiAccountService(storage, geminiProvider);
+        var geminiRelay = new GeminiRelayService(storage, geminiAccounts);
+        _geminiRelay = geminiRelay;
         var anthropicProvider = new AnthropicApiProvider();
         var anthropicAccounts = new AnthropicApiAccountService(storage, anthropicProvider);
         var openAiProvider = new OpenAiApiProvider();
@@ -61,10 +64,17 @@ public partial class App : System.Windows.Application
 
         _mainWindow = new MainWindow(usage, api, storage, geminiAccounts, geminiProvider,
                                      anthropicAccounts, openAiAccounts, codex,
-                                     grokAccounts, grokCli);
+                                     grokAccounts, grokCli, geminiRelay);
         MainWindow = _mainWindow;
 
         Logger.Info($"App started (v{UpdateService.CurrentVersion})");
+
+        if (storage.Settings.GeminiRelayAutoStart)
+        {
+            var port = storage.Settings.ClampedGeminiRelayPort();
+            if (!geminiRelay.Start(port, out var relayErr))
+                Logger.Warn($"GeminiRelay auto-start failed: {relayErr}");
+        }
 
         SetupTray();
         _mainWindow.Show();
@@ -146,6 +156,9 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        try { _geminiRelay?.Stop(); } catch { }
+        _geminiRelay = null;
+
         if (_trayIcon != null)
         {
             _trayIcon.Dispose();

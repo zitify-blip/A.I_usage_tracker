@@ -1195,6 +1195,8 @@
                                 <RowDefinition Height="8"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
@@ -1315,8 +1317,78 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Usage history list -->
+                            <!-- Local Relay -->
                             <Border Grid.Row="6" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="LOCAL RELAY (PoC)"
+                                                   Style="{StaticResource Sec}"/>
+                                        <TextBlock Grid.Column="1" x:Name="GeminiRelayStatusText"
+                                                   Text="● Stopped" FontSize="11" Foreground="#888"
+                                                   Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" x:Name="GeminiRelayStatsText"
+                                                   Text="" FontSize="10" Foreground="#666"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <Grid Grid.Row="1" Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="6"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="12"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="6"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="Port"
+                                                   FontSize="11" Foreground="#aaa"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="2" x:Name="GeminiRelayPortBox"
+                                                 Width="70" Padding="6,3" FontSize="12"
+                                                 Background="#1a1a1a" Foreground="#f5f5f5"
+                                                 BorderBrush="#2a2a2a" CaretBrush="#4ade80"
+                                                 Text="47821"/>
+
+                                        <CheckBox Grid.Column="4" x:Name="GeminiRelayAutoStartCheck"
+                                                  Content="앱 시작 시 자동 실행"
+                                                  FontSize="11" Foreground="#aaa"
+                                                  VerticalAlignment="Center"
+                                                  Checked="GeminiRelayAutoStart_Changed"
+                                                  Unchecked="GeminiRelayAutoStart_Changed"/>
+
+                                        <Button Grid.Column="6" x:Name="GeminiRelayStartBtn"
+                                                Content="▶ Start" Style="{StaticResource Btn}"
+                                                Background="#1a3a1a" BorderBrush="#4ade80"
+                                                Click="GeminiRelayStartBtn_Click" MinWidth="80"/>
+                                        <Button Grid.Column="8" x:Name="GeminiRelayCopyBtn"
+                                                Content="📋 사용법 복사" Style="{StaticResource Btn}"
+                                                Click="GeminiRelayCopyBtn_Click" MinWidth="100"/>
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="2" x:Name="GeminiRelayHelpText"
+                                               FontSize="10" Foreground="#666" Margin="0,8,0,0"
+                                               TextWrapping="Wrap"
+                                               Text="시작 후, 다른 프로그램/SDK의 base URL을 http://127.0.0.1:47821 로, API 키를 'tracker-&lt;alias&gt;' (예: tracker-default)로 설정하세요. 모든 호출이 이 대시보드에 집계됩니다."/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Usage history list -->
+                            <Border Grid.Row="8" Style="{StaticResource Card}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
