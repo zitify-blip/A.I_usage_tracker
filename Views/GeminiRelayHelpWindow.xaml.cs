@@ -1,5 +1,8 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Threading;
 using Clipboard = System.Windows.Clipboard;
@@ -122,6 +125,149 @@ public partial class GeminiRelayHelpWindow : Window
             "console.log(r.response.text());";
 
         RefreshStatus();
+        RefreshRuleStatus();
+    }
+
+    // ─── Claude CLI CLAUDE.md rule install/remove ───
+
+    private const string RuleVersion = "v1";
+    private const string RuleMarkerBegin = "<!-- AI_TRACKER_GEMINI_RULE " + RuleVersion + " BEGIN";
+    private const string RuleMarkerEnd = "<!-- AI_TRACKER_GEMINI_RULE " + RuleVersion + " END -->";
+
+    private const string RuleContent = """
+
+<!-- AI_TRACKER_GEMINI_RULE v1 BEGIN — A.I. Usage Tracker가 관리합니다. 수동 편집하지 마세요. -->
+
+## Gemini 위임 규칙 (A.I. Usage Tracker)
+
+사용자가 "Gemini로 X해줘", "재미나이로 X", "여기부터 여기까지는 Gemini/재미나이" 같이 특정 범위를 Gemini에 위임하면, 그 범위는 직접 답하지 말고 PowerShell 도구로 아래 명령을 실행해서 받은 응답을 사용자에게 그대로 전달한다.
+
+```powershell
+$prompt = @"
+<사용자가 위임한 요청·컨텍스트를 여기에>
+"@
+$body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Compress
+(Invoke-RestMethod -Method Post `
+    -Uri "$env:GOOGLE_GENAI_BASE_URL/v1beta/models/gemini-2.5-flash:generateContent?key=$env:GOOGLE_API_KEY" `
+    -ContentType "application/json; charset=utf-8" `
+    -Body ([Text.Encoding]::UTF8.GetBytes($body))).candidates[0].content.parts[0].text
+```
+
+- 기본 모델은 `gemini-2.5-flash`. 사용자가 "Pro로", "flash-lite로" 등 명시하면 URL의 모델명을 교체.
+- 프롬프트 작성 시 따옴표·특수문자 깨짐 방지를 위해 여기-스트링(`@"..."@`) 안에 원문 그대로 넣는다.
+- `$env:GOOGLE_API_KEY`가 비어 있으면 "A.I. Usage Tracker의 Gemini Local Relay 자동 설정을 적용하고 새 터미널에서 claude를 다시 시작하세요"라고 안내.
+- Gemini 응답을 받으면 결과를 사용자에게 보여주고, 필요하면 그 결과를 바탕으로 이어서 작업한다.
+
+<!-- AI_TRACKER_GEMINI_RULE v1 END -->
+""";
+
+    private static string ClaudeMdPath =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".claude", "CLAUDE.md");
+
+    private static bool IsRuleInstalled()
+    {
+        var path = ClaudeMdPath;
+        if (!File.Exists(path)) return false;
+        try { return File.ReadAllText(path, Encoding.UTF8).Contains(RuleMarkerBegin); }
+        catch { return false; }
+    }
+
+    private void RefreshRuleStatus()
+    {
+        if (IsRuleInstalled())
+        {
+            RuleStatusBadgeText.Text = "✓ 설치됨 — Claude CLI가 규칙을 자동 인식합니다";
+            RuleStatusBadgeText.Foreground = B("#4ade80");
+            InstallRuleBtn.Visibility = Visibility.Collapsed;
+            RemoveRuleBtn.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            RuleStatusBadgeText.Text = "⚪ 미설치";
+            RuleStatusBadgeText.Foreground = B("#9ca3af");
+            InstallRuleBtn.Visibility = Visibility.Visible;
+            InstallRuleBtn.Content = "⚡ 규칙 설치";
+            RemoveRuleBtn.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void InstallRule_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var path = ClaudeMdPath;
+            var dir = Path.GetDirectoryName(path)!;
+            Directory.CreateDirectory(dir);
+
+            string existing = File.Exists(path) ? File.ReadAllText(path, Encoding.UTF8) : "";
+
+            if (existing.Contains(RuleMarkerBegin))
+            {
+                // Already there (stale state); strip old and re-install for idempotency
+                existing = StripRuleBlock(existing);
+            }
+
+            var trimmed = existing.TrimEnd('\r', '\n');
+            var combined = trimmed.Length == 0
+                ? RuleContent.TrimStart('\r', '\n')
+                : trimmed + "\r\n" + RuleContent;
+
+            File.WriteAllText(path, combined, new UTF8Encoding(false));
+            RefreshRuleStatus();
+            FlashStatus("✓ CLAUDE.md에 규칙 설치 완료 · 새 Claude 세션부터 반영됩니다", ok: true);
+        }
+        catch (Exception ex)
+        {
+            FlashStatus($"설치 실패: {ex.Message}", ok: false);
+        }
+    }
+
+    private void RemoveRule_Click(object sender, RoutedEventArgs e)
+    {
+        var res = MessageBox.Show(
+            $"{ClaudeMdPath}\n\n파일에서 Gemini 위임 규칙 블록만 제거합니다. 수동으로 작성한 다른 내용은 건드리지 않습니다.\n\n진행할까요?",
+            "Claude CLI 규칙 제거",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question);
+        if (res != MessageBoxResult.OK) return;
+
+        try
+        {
+            var path = ClaudeMdPath;
+            if (!File.Exists(path))
+            {
+                RefreshRuleStatus();
+                return;
+            }
+            var content = File.ReadAllText(path, Encoding.UTF8);
+            var stripped = StripRuleBlock(content);
+
+            if (stripped.Trim().Length == 0)
+            {
+                // leave an empty file rather than deleting — user may have other tooling watching it
+                File.WriteAllText(path, "", new UTF8Encoding(false));
+            }
+            else
+            {
+                File.WriteAllText(path, stripped.TrimEnd('\r', '\n') + "\r\n", new UTF8Encoding(false));
+            }
+            RefreshRuleStatus();
+            FlashStatus("✓ 규칙 제거 완료 · 새 Claude 세션부터 적용됩니다", ok: true);
+        }
+        catch (Exception ex)
+        {
+            FlashStatus($"제거 실패: {ex.Message}", ok: false);
+        }
+    }
+
+    private static string StripRuleBlock(string content)
+    {
+        // Remove from BEGIN marker line through END marker line (inclusive),
+        // including any preceding blank line and surrounding newlines, so re-installs stay clean.
+        var pattern = @"\r?\n?\r?\n?" + Regex.Escape(RuleMarkerBegin) + @"[\s\S]*?" + Regex.Escape(RuleMarkerEnd) + @"\r?\n?";
+        return Regex.Replace(content, pattern, "");
     }
 
     private string ExpectedValue(string varName) => varName.EndsWith("_KEY") ? _trackerKey : _baseUrl;
