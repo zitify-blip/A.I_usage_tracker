@@ -212,7 +212,7 @@ public partial class MainWindow : Window
     {
         var l = _usage.Latest;
 
-        SetRing(UsageRingFigure, UsageRingArc, UsageRingPath, l.SessionPct, UsageRingBrush, true);
+        SetBar(UsageBar, l.SessionPct);
         UsagePctText.Text = $"{l.SessionPct:F0}%";
         UsagePctText.Foreground = UsageColor(l.SessionPct);
 
@@ -306,11 +306,21 @@ public partial class MainWindow : Window
         if (l.SessionResetAt == null || !DateTimeOffset.TryParse(l.SessionResetAt, out var rst)) return;
         var rem = Math.Max(0, (rst - DateTimeOffset.Now).TotalMilliseconds);
         var pct = rem / SessionTotalMs * 100;
-        SetRing(TimeRingFigure, TimeRingArc, TimeRingPath, pct, TimeRingBrush, false);
+        SetTimeBar(TimeBar, pct);
         TimeLeftText.Text = FmtRemain((long)rem);
-        TimeLeftPctText.Text = $"{pct:F0}% of 5h left";
+        TimeLeftPctText.Text = $" {pct:F0}% of 5h left";
         SessionResetAtLabel.Text = $"Resets at {rst.ToLocalTime():ddd HH:mm}";
-        TimeRingBrush.Color = pct > 30 ? C("#60a5fa") : pct > 10 ? C("#facc15") : C("#f87171");
+        var color = pct > 30 ? B("#60a5fa") : pct > 10 ? B("#facc15") : B("#f87171");
+        TimeLeftText.Foreground = color;
+    }
+
+    private static void SetTimeBar(Border bar, double pct)
+    {
+        if (bar.Parent is not Grid g || g.ActualWidth <= 0) return;
+        bar.Width = g.ActualWidth * Math.Clamp(pct, 0, 100) / 100.0;
+        bar.Background = pct > 30 ? new SolidColorBrush(C("#60a5fa"))
+                       : pct > 10 ? new SolidColorBrush(C("#facc15"))
+                                  : new SolidColorBrush(C("#f87171"));
     }
 
     // ────────── Ring ──────────
@@ -1158,37 +1168,8 @@ public partial class MainWindow : Window
         var selected = _geminiAccounts.GetSelected();
         var alias = selected?.Alias ?? "default";
 
-        var snippet =
-            $"# A.I. Usage Tracker — Gemini Local Relay\r\n" +
-            $"# Base URL: http://127.0.0.1:{port}\r\n" +
-            $"# API key: tracker-{alias}\r\n" +
-            $"\r\n" +
-            $"# Environment variables:\r\n" +
-            $"setx GOOGLE_API_KEY tracker-{alias}\r\n" +
-            $"setx GEMINI_API_KEY tracker-{alias}\r\n" +
-            $"setx GOOGLE_GENAI_BASE_URL http://127.0.0.1:{port}\r\n" +
-            $"\r\n" +
-            $"# cURL example:\r\n" +
-            $"curl -X POST \"http://127.0.0.1:{port}/v1beta/models/gemini-2.5-flash:generateContent?key=tracker-{alias}\" ^\r\n" +
-            $"  -H \"Content-Type: application/json\" ^\r\n" +
-            $"  -d \"{{\\\"contents\\\":[{{\\\"parts\\\":[{{\\\"text\\\":\\\"hi\\\"}}]}}]}}\"\r\n" +
-            $"\r\n" +
-            $"# Python (google-generativeai):\r\n" +
-            $"# import google.generativeai as genai\r\n" +
-            $"# genai.configure(api_key=\"tracker-{alias}\", transport=\"rest\",\r\n" +
-            $"#                 client_options={{\"api_endpoint\": \"http://127.0.0.1:{port}\"}})\r\n";
-
-        try
-        {
-            System.Windows.Clipboard.SetText(snippet);
-            GeminiRelayStatusText.Text = "사용법이 클립보드에 복사되었습니다";
-            GeminiRelayStatusText.Foreground = B("#4ade80");
-        }
-        catch (Exception ex)
-        {
-            GeminiRelayStatusText.Text = $"복사 실패: {ex.Message}";
-            GeminiRelayStatusText.Foreground = B("#f87171");
-        }
+        var win = new GeminiRelayHelpWindow(port, alias) { Owner = this };
+        win.ShowDialog();
     }
 
     private void RefreshGeminiStats()

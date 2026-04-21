@@ -628,76 +628,61 @@
                                    FontSize="10" Foreground="#888" HorizontalAlignment="Right"/>
                     </Grid>
 
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="1" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="14"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                        <!-- Usage Ring -->
-                        <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Viewbox Stretch="Uniform" MaxWidth="150" MaxHeight="150">
-                                <Canvas Width="200" Height="200">
-                                    <Ellipse Width="172" Height="172" Canvas.Left="14" Canvas.Top="14"
-                                             Stroke="#262626" StrokeThickness="14" Fill="Transparent"/>
-                                    <Path x:Name="UsageRingPath" StrokeThickness="14"
-                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round">
-                                        <Path.Stroke>
-                                            <SolidColorBrush x:Name="UsageRingBrush" Color="#4ade80"/>
-                                        </Path.Stroke>
-                                        <Path.Data>
-                                            <PathGeometry>
-                                                <PathFigure x:Name="UsageRingFigure" StartPoint="100,14">
-                                                    <ArcSegment x:Name="UsageRingArc" Point="100,14"
-                                                                Size="86,86" IsLargeArc="False"
-                                                                SweepDirection="Clockwise"/>
-                                                </PathFigure>
-                                            </PathGeometry>
-                                        </Path.Data>
-                                    </Path>
-                                </Canvas>
-                            </Viewbox>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <TextBlock x:Name="UsagePctText" Text="0%" Style="{StaticResource Big}"
-                                           HorizontalAlignment="Center"/>
-                                <TextBlock Text="Used" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
-                                <TextBlock Text="of session" FontSize="9" Foreground="#666"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
+                        <!-- Usage Bar -->
+                        <StackPanel Grid.Row="0">
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="USAGE" FontSize="10"
+                                           Foreground="#888" FontWeight="SemiBold"
+                                           VerticalAlignment="Bottom"/>
+                                <TextBlock Grid.Column="2" VerticalAlignment="Bottom">
+                                    <Run x:Name="UsagePctText" Text="0%" FontSize="22"
+                                         FontWeight="Bold" Foreground="#4ade80"/>
+                                    <Run Text=" of session" FontSize="10" Foreground="#666"/>
+                                </TextBlock>
+                            </Grid>
+                            <Grid Height="10">
+                                <Border Background="#262626" CornerRadius="5"/>
+                                <Border x:Name="UsageBar" Background="#4ade80" CornerRadius="5"
+                                        HorizontalAlignment="Left" Width="0"/>
+                            </Grid>
+                        </StackPanel>
 
-                        <!-- Time Left Ring -->
-                        <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Viewbox Stretch="Uniform" MaxWidth="150" MaxHeight="150">
-                                <Canvas Width="200" Height="200">
-                                    <Ellipse Width="172" Height="172" Canvas.Left="14" Canvas.Top="14"
-                                             Stroke="#262626" StrokeThickness="14" Fill="Transparent"/>
-                                    <Path x:Name="TimeRingPath" StrokeThickness="14"
-                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round">
-                                        <Path.Stroke>
-                                            <SolidColorBrush x:Name="TimeRingBrush" Color="#60a5fa"/>
-                                        </Path.Stroke>
-                                        <Path.Data>
-                                            <PathGeometry>
-                                                <PathFigure x:Name="TimeRingFigure" StartPoint="100,14">
-                                                    <ArcSegment x:Name="TimeRingArc" Point="100,14"
-                                                                Size="86,86" IsLargeArc="False"
-                                                                SweepDirection="Clockwise"/>
-                                                </PathFigure>
-                                            </PathGeometry>
-                                        </Path.Data>
-                                    </Path>
-                                </Canvas>
-                            </Viewbox>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <TextBlock x:Name="TimeLeftText" Text="--" Style="{StaticResource Big}"
-                                           HorizontalAlignment="Center"/>
-                                <TextBlock Text="Time Left" FontSize="10" Foreground="#888"
-                                           HorizontalAlignment="Center"/>
-                                <TextBlock x:Name="TimeLeftPctText" Text="of 5h left" FontSize="9"
-                                           Foreground="#666" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
+                        <!-- Time Left Bar -->
+                        <StackPanel Grid.Row="2">
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="TIME LEFT" FontSize="10"
+                                           Foreground="#888" FontWeight="SemiBold"
+                                           VerticalAlignment="Bottom"/>
+                                <TextBlock Grid.Column="2" VerticalAlignment="Bottom">
+                                    <Run x:Name="TimeLeftText" Text="--" FontSize="22"
+                                         FontWeight="Bold" Foreground="#60a5fa"/>
+                                    <Run x:Name="TimeLeftPctText" Text=" of 5h left" FontSize="10"
+                                         Foreground="#666"/>
+                                </TextBlock>
+                            </Grid>
+                            <Grid Height="10">
+                                <Border Background="#262626" CornerRadius="5"/>
+                                <Border x:Name="TimeBar" Background="#60a5fa" CornerRadius="5"
+                                        HorizontalAlignment="Left" Width="0"/>
+                            </Grid>
+                        </StackPanel>
                     </Grid>
                 </Grid>
             </Border>
@@ -1376,7 +1361,7 @@
                                                 Background="#1a3a1a" BorderBrush="#4ade80"
                                                 Click="GeminiRelayStartBtn_Click" MinWidth="80"/>
                                         <Button Grid.Column="8" x:Name="GeminiRelayCopyBtn"
-                                                Content="📋 사용법 복사" Style="{StaticResource Btn}"
+                                                Content="📖 사용법 보기" Style="{StaticResource Btn}"
                                                 Click="GeminiRelayCopyBtn_Click" MinWidth="100"/>
                                     </Grid>
 
