@@ -659,7 +659,7 @@
                             </Grid>
                         </StackPanel>
 
-                        <!-- Time Left Bar -->
+                        <!-- Session Window Bar (elapsed = left→right) -->
                         <StackPanel Grid.Row="2">
                             <Grid Margin="0,0,0,6">
                                 <Grid.ColumnDefinitions>
@@ -667,20 +667,29 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="TIME LEFT" FontSize="10"
+                                <TextBlock Grid.Column="0" Text="SESSION WINDOW" FontSize="10"
                                            Foreground="#888" FontWeight="SemiBold"
                                            VerticalAlignment="Bottom"/>
                                 <TextBlock Grid.Column="2" VerticalAlignment="Bottom">
                                     <Run x:Name="TimeLeftText" Text="--" FontSize="22"
                                          FontWeight="Bold" Foreground="#60a5fa"/>
-                                    <Run x:Name="TimeLeftPctText" Text=" of 5h left" FontSize="10"
+                                    <Run x:Name="TimeLeftPctText" Text=" left" FontSize="10"
                                          Foreground="#666"/>
                                 </TextBlock>
                             </Grid>
-                            <Grid Height="10">
-                                <Border Background="#262626" CornerRadius="5"/>
-                                <Border x:Name="TimeBar" Background="#60a5fa" CornerRadius="5"
+                            <Grid Height="12" x:Name="TimeBarRoot">
+                                <Border Background="#262626" CornerRadius="6" Height="10"
+                                        VerticalAlignment="Center"/>
+                                <Border x:Name="TimeBar" Background="#60a5fa" CornerRadius="6"
+                                        Height="10" VerticalAlignment="Center"
                                         HorizontalAlignment="Left" Width="0"/>
+                                <Canvas x:Name="TimePlayheadCanvas" ClipToBounds="False">
+                                    <Grid x:Name="TimePlayhead" Canvas.Left="0" Canvas.Top="-2">
+                                        <Ellipse Width="16" Height="16" Fill="#60a5fa"
+                                                 Stroke="#0f0f0f" StrokeThickness="2"
+                                                 Margin="-8,0,0,0"/>
+                                    </Grid>
+                                </Canvas>
                             </Grid>
                         </StackPanel>
                     </Grid>

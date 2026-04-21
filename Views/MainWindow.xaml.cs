@@ -305,22 +305,29 @@ public partial class MainWindow : Window
     {
         if (l.SessionResetAt == null || !DateTimeOffset.TryParse(l.SessionResetAt, out var rst)) return;
         var rem = Math.Max(0, (rst - DateTimeOffset.Now).TotalMilliseconds);
-        var pct = rem / SessionTotalMs * 100;
-        SetTimeBar(TimeBar, pct);
+        var elapsedPct = Math.Clamp((SessionTotalMs - rem) / SessionTotalMs * 100, 0, 100);
+        var remPct = 100 - elapsedPct;
+
+        UpdateTimeBar(elapsedPct, remPct);
         TimeLeftText.Text = FmtRemain((long)rem);
-        TimeLeftPctText.Text = $" {pct:F0}% of 5h left";
+        TimeLeftPctText.Text = $" left · {elapsedPct:F0}% elapsed";
         SessionResetAtLabel.Text = $"Resets at {rst.ToLocalTime():ddd HH:mm}";
-        var color = pct > 30 ? B("#60a5fa") : pct > 10 ? B("#facc15") : B("#f87171");
-        TimeLeftText.Foreground = color;
+        TimeLeftText.Foreground = remPct > 30 ? B("#60a5fa") : remPct > 10 ? B("#facc15") : B("#f87171");
     }
 
-    private static void SetTimeBar(Border bar, double pct)
+    private void UpdateTimeBar(double elapsedPct, double remPct)
     {
-        if (bar.Parent is not Grid g || g.ActualWidth <= 0) return;
-        bar.Width = g.ActualWidth * Math.Clamp(pct, 0, 100) / 100.0;
-        bar.Background = pct > 30 ? new SolidColorBrush(C("#60a5fa"))
-                       : pct > 10 ? new SolidColorBrush(C("#facc15"))
-                                  : new SolidColorBrush(C("#f87171"));
+        if (TimeBarRoot.ActualWidth <= 0) return;
+        var width = TimeBarRoot.ActualWidth;
+        var fill = width * Math.Clamp(elapsedPct, 0, 100) / 100.0;
+        TimeBar.Width = fill;
+
+        var color = remPct > 30 ? C("#60a5fa") : remPct > 10 ? C("#facc15") : C("#f87171");
+        TimeBar.Background = new SolidColorBrush(color);
+        if (TimePlayhead.Children.Count > 0 && TimePlayhead.Children[0] is Ellipse e)
+            e.Fill = new SolidColorBrush(color);
+
+        Canvas.SetLeft(TimePlayhead, fill);
     }
 
     // ────────── Ring ──────────
