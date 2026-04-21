@@ -115,8 +115,10 @@
                             Click="CopyBaseUrl_Click" MinWidth="70"/>
                 </Grid>
 
-                <!-- Section 2: Env vars -->
-                <TextBlock Text="ENVIRONMENT VARIABLES (Windows cmd)" Style="{StaticResource SecTitle}"/>
+                <!-- Section 2a: Env vars — PowerShell (current + persist) -->
+                <TextBlock Text="환경변수 · PowerShell (현재 셸 + 영구 한 번에)" Style="{StaticResource SecTitle}"/>
+                <TextBlock Text="이 스니펫을 PowerShell에 그대로 붙여넣으면, 지금 이 셸에 즉시 적용되고 동시에 사용자 환경변수에도 저장됩니다. 기존 터미널/IDE를 재시작할 필요가 없습니다."
+                           FontSize="10" Foreground="#888" TextWrapping="Wrap" Margin="0,0,0,6"/>
                 <Grid Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -124,9 +126,23 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" x:Name="EnvBox" Style="{StaticResource CodeBox}"
-                             Height="80" TextWrapping="NoWrap"/>
+                             Height="150"/>
                     <Button Grid.Column="2" Content="📋 복사" Style="{StaticResource Btn}"
                             Click="CopyEnv_Click" MinWidth="70" VerticalAlignment="Top"/>
+                </Grid>
+
+                <!-- Section 2b: Env vars — cmd.exe (current + persist) -->
+                <TextBlock Text="환경변수 · cmd.exe (set + setx 쌍)" Style="{StaticResource SecTitle}"/>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" x:Name="EnvCmdBox" Style="{StaticResource CodeBox}"
+                             Height="130"/>
+                    <Button Grid.Column="2" Content="📋 복사" Style="{StaticResource Btn}"
+                            Click="CopyEnvCmd_Click" MinWidth="70" VerticalAlignment="Top"/>
                 </Grid>
 
                 <!-- Section 3: cURL -->

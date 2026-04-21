@@ -29,9 +29,28 @@ public partial class GeminiRelayHelpWindow : Window
         BaseUrlBox.Text = $"Base URL : {_baseUrl}\r\nAPI Key  : {_trackerKey}";
 
         EnvBox.Text =
+            "# 이 스니펫을 본인 PowerShell 창에 붙여넣으면\r\n" +
+            "# 해당 창에 즉시 적용 + 사용자 환경변수에도 영구 저장됩니다.\r\n" +
+            "$vars = @{\r\n" +
+            $"    GOOGLE_API_KEY         = '{_trackerKey}'\r\n" +
+            $"    GEMINI_API_KEY         = '{_trackerKey}'\r\n" +
+            $"    GOOGLE_GENAI_BASE_URL  = '{_baseUrl}'\r\n" +
+            $"    GOOGLE_GEMINI_BASE_URL = '{_baseUrl}'\r\n" +
+            "}\r\n" +
+            "foreach ($k in $vars.Keys) {\r\n" +
+            "    Set-Item \"env:$k\" $vars[$k]\r\n" +
+            "    [Environment]::SetEnvironmentVariable($k, $vars[$k], 'User')\r\n" +
+            "}";
+
+        EnvCmdBox.Text =
+            "REM 현재 cmd.exe 창에 즉시 적용 (set) + 영구 저장 (setx) 쌍\r\n" +
+            $"set GOOGLE_API_KEY={_trackerKey}\r\n" +
             $"setx GOOGLE_API_KEY {_trackerKey}\r\n" +
+            $"set GEMINI_API_KEY={_trackerKey}\r\n" +
             $"setx GEMINI_API_KEY {_trackerKey}\r\n" +
+            $"set GOOGLE_GENAI_BASE_URL={_baseUrl}\r\n" +
             $"setx GOOGLE_GENAI_BASE_URL {_baseUrl}\r\n" +
+            $"set GOOGLE_GEMINI_BASE_URL={_baseUrl}\r\n" +
             $"setx GOOGLE_GEMINI_BASE_URL {_baseUrl}";
 
         CurlBox.Text =
@@ -103,7 +122,8 @@ public partial class GeminiRelayHelpWindow : Window
     }
 
     private void CopyBaseUrl_Click(object sender, RoutedEventArgs e) => Copy(BaseUrlBox, "Base URL");
-    private void CopyEnv_Click(object sender, RoutedEventArgs e) => Copy(EnvBox, "환경 변수");
+    private void CopyEnv_Click(object sender, RoutedEventArgs e) => Copy(EnvBox, "PowerShell 스니펫");
+    private void CopyEnvCmd_Click(object sender, RoutedEventArgs e) => Copy(EnvCmdBox, "cmd.exe 스니펫");
     private void CopyCurl_Click(object sender, RoutedEventArgs e) => Copy(CurlBox, "cURL");
     private void CopyPyLegacy_Click(object sender, RoutedEventArgs e) => Copy(PyLegacyBox, "Python (legacy)");
     private void CopyPyNew_Click(object sender, RoutedEventArgs e) => Copy(PyNewBox, "Python (genai)");
@@ -116,7 +136,8 @@ public partial class GeminiRelayHelpWindow : Window
             $"# Base URL : {_baseUrl}\r\n" +
             $"# API Key  : {_trackerKey}\r\n" +
             $"\r\n" +
-            $"# ─── Environment variables (Windows cmd) ───\r\n{EnvBox.Text}\r\n\r\n" +
+            $"# ─── Env vars · PowerShell (current + persist) ───\r\n{EnvBox.Text}\r\n\r\n" +
+            $"# ─── Env vars · cmd.exe (set + setx) ───\r\n{EnvCmdBox.Text}\r\n\r\n" +
             $"# ─── cURL ───\r\n{CurlBox.Text}\r\n\r\n" +
             $"# ─── Python (google-generativeai) ───\r\n{PyLegacyBox.Text}\r\n\r\n" +
             $"# ─── Python (google-genai) ───\r\n{PyNewBox.Text}\r\n\r\n" +
