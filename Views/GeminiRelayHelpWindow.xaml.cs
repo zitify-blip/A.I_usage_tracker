@@ -1,8 +1,10 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using Clipboard = System.Windows.Clipboard;
 using Color = System.Windows.Media.Color;
+using MessageBox = System.Windows.MessageBox;
 using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using TextBox = System.Windows.Controls.TextBox;
 
@@ -14,6 +16,28 @@ public partial class GeminiRelayHelpWindow : Window
     private readonly string _trackerKey;
     private readonly DispatcherTimer _statusTimer;
 
+    // Managed env var names (User scope)
+    private static readonly string[] ManagedVars =
+    {
+        "GOOGLE_API_KEY",
+        "GEMINI_API_KEY",
+        "GOOGLE_GENAI_BASE_URL",
+        "GOOGLE_GEMINI_BASE_URL"
+    };
+
+    // Backup prefix for foreign values we overwrite
+    private const string BackupPrefix = "AI_TRACKER_BACKUP_";
+
+    // WM_SETTINGCHANGE broadcast for env var propagation
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    private static extern IntPtr SendMessageTimeout(
+        IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,
+        uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
+
+    private const int HWND_BROADCAST = 0xffff;
+    private const uint WM_SETTINGCHANGE = 0x001A;
+    private const uint SMTO_ABORTIFHUNG = 0x0002;
+
     public GeminiRelayHelpWindow(int port, string alias)
     {
         InitializeComponent();
@@ -21,7 +45,7 @@ public partial class GeminiRelayHelpWindow : Window
         _baseUrl = $"http://127.0.0.1:{port}";
         _trackerKey = $"tracker-{alias}";
 
-        _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+        _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _statusTimer.Tick += (_, _) => { StatusText.Text = ""; _statusTimer.Stop(); };
 
         SubtitleText.Text = $"· Port {port}  ·  Key: {_trackerKey}";
@@ -96,6 +120,170 @@ public partial class GeminiRelayHelpWindow : Window
             "\r\n" +
             "const r = await model.generateContent(\"hi\");\r\n" +
             "console.log(r.response.text());";
+
+        RefreshStatus();
+    }
+
+    private string ExpectedValue(string varName) => varName.EndsWith("_KEY") ? _trackerKey : _baseUrl;
+
+    private enum VarState { Missing, Match, Foreign }
+
+    private VarState GetVarState(string varName)
+    {
+        var current = Environment.GetEnvironmentVariable(varName, EnvironmentVariableTarget.User);
+        if (string.IsNullOrEmpty(current)) return VarState.Missing;
+        return current == ExpectedValue(varName) ? VarState.Match : VarState.Foreign;
+    }
+
+    private void RefreshStatus()
+    {
+        int match = 0, missing = 0, foreign = 0;
+        foreach (var v in ManagedVars)
+        {
+            switch (GetVarState(v))
+            {
+                case VarState.Match: match++; break;
+                case VarState.Missing: missing++; break;
+                case VarState.Foreign: foreign++; break;
+            }
+        }
+
+        if (match == ManagedVars.Length)
+        {
+            StatusBadgeText.Text = "✓ 적용됨 — 환경변수 4개 모두 트래커로 향함";
+            StatusBadgeText.Foreground = B("#4ade80");
+            PrimaryActionBtn.Visibility = Visibility.Collapsed;
+            RevertBtn.Visibility = Visibility.Visible;
+        }
+        else if (missing == ManagedVars.Length)
+        {
+            StatusBadgeText.Text = "⚪ 미적용 — 설정된 환경변수 없음";
+            StatusBadgeText.Foreground = B("#9ca3af");
+            PrimaryActionBtn.Content = "⚡ 자동 설정";
+            PrimaryActionBtn.Visibility = Visibility.Visible;
+            RevertBtn.Visibility = Visibility.Collapsed;
+        }
+        else if (foreign > 0)
+        {
+            StatusBadgeText.Text = $"⚠ 다른 값 감지됨 ({foreign}/{ManagedVars.Length}) — 적용 시 백업 후 교체";
+            StatusBadgeText.Foreground = B("#facc15");
+            PrimaryActionBtn.Content = "⚡ 백업 후 자동 설정";
+            PrimaryActionBtn.Visibility = Visibility.Visible;
+            RevertBtn.Visibility = foreign == 0 ? Visibility.Collapsed : Visibility.Visible;
+        }
+        else
+        {
+            StatusBadgeText.Text = $"⚠ 부분 적용 ({match}/{ManagedVars.Length})";
+            StatusBadgeText.Foreground = B("#facc15");
+            PrimaryActionBtn.Content = "⚡ 마저 적용하기";
+            PrimaryActionBtn.Visibility = Visibility.Visible;
+            RevertBtn.Visibility = Visibility.Visible;
+        }
+    }
+
+    private static SolidColorBrush B(string hex)
+    {
+        var c = (Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+        return new SolidColorBrush(c);
+    }
+
+    private void PrimaryAction_Click(object sender, RoutedEventArgs e)
+    {
+        int foreignCount = 0;
+        foreach (var v in ManagedVars)
+            if (GetVarState(v) == VarState.Foreign) foreignCount++;
+
+        if (foreignCount > 0)
+        {
+            var res = MessageBox.Show(
+                $"현재 환경변수 중 {foreignCount}개가 트래커가 아닌 다른 값으로 설정되어 있습니다.\n\n" +
+                $"기존 값을 백업({BackupPrefix}…)한 뒤 트래커 값으로 교체합니다.\n되돌리기 시 자동 복원됩니다.\n\n진행할까요?",
+                "환경변수 덮어쓰기 확인",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning);
+            if (res != MessageBoxResult.OK) return;
+        }
+
+        try
+        {
+            foreach (var v in ManagedVars)
+            {
+                var current = Environment.GetEnvironmentVariable(v, EnvironmentVariableTarget.User);
+                var expected = ExpectedValue(v);
+
+                if (!string.IsNullOrEmpty(current) && current != expected)
+                {
+                    // back up only if we don't already have a backup (keep oldest non-tracker value)
+                    var backupName = BackupPrefix + v;
+                    var existingBackup = Environment.GetEnvironmentVariable(backupName, EnvironmentVariableTarget.User);
+                    if (string.IsNullOrEmpty(existingBackup))
+                    {
+                        Environment.SetEnvironmentVariable(backupName, current, EnvironmentVariableTarget.User);
+                    }
+                }
+
+                Environment.SetEnvironmentVariable(v, expected, EnvironmentVariableTarget.User);
+            }
+
+            BroadcastEnvironmentChange();
+            RefreshStatus();
+            FlashStatus("✓ 자동 설정 완료 · 새로 여는 프로세스에 자동 반영됩니다", ok: true);
+        }
+        catch (Exception ex)
+        {
+            FlashStatus($"설정 실패: {ex.Message}", ok: false);
+        }
+    }
+
+    private void Revert_Click(object sender, RoutedEventArgs e)
+    {
+        var res = MessageBox.Show(
+            "환경변수를 원래 상태로 되돌립니다.\n\n" +
+            "• 백업된 값이 있으면 복원합니다.\n" +
+            "• 백업이 없으면 변수를 제거합니다.\n\n진행할까요?",
+            "되돌리기 확인",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question);
+        if (res != MessageBoxResult.OK) return;
+
+        try
+        {
+            foreach (var v in ManagedVars)
+            {
+                var backupName = BackupPrefix + v;
+                var backup = Environment.GetEnvironmentVariable(backupName, EnvironmentVariableTarget.User);
+
+                if (!string.IsNullOrEmpty(backup))
+                {
+                    Environment.SetEnvironmentVariable(v, backup, EnvironmentVariableTarget.User);
+                    Environment.SetEnvironmentVariable(backupName, null, EnvironmentVariableTarget.User);
+                }
+                else
+                {
+                    Environment.SetEnvironmentVariable(v, null, EnvironmentVariableTarget.User);
+                }
+            }
+
+            BroadcastEnvironmentChange();
+            RefreshStatus();
+            FlashStatus("✓ 되돌리기 완료 · 새로 여는 프로세스는 원래 상태로 복귀합니다", ok: true);
+        }
+        catch (Exception ex)
+        {
+            FlashStatus($"되돌리기 실패: {ex.Message}", ok: false);
+        }
+    }
+
+    private static void BroadcastEnvironmentChange()
+    {
+        SendMessageTimeout(
+            new IntPtr(HWND_BROADCAST),
+            WM_SETTINGCHANGE,
+            UIntPtr.Zero,
+            "Environment",
+            SMTO_ABORTIFHUNG,
+            5000,
+            out _);
     }
 
     private void Copy(TextBox box, string label)
@@ -128,31 +316,6 @@ public partial class GeminiRelayHelpWindow : Window
     private void CopyPyLegacy_Click(object sender, RoutedEventArgs e) => Copy(PyLegacyBox, "Python (legacy)");
     private void CopyPyNew_Click(object sender, RoutedEventArgs e) => Copy(PyNewBox, "Python (genai)");
     private void CopyNode_Click(object sender, RoutedEventArgs e) => Copy(NodeBox, "Node.js");
-
-    private void CopyAll_Click(object sender, RoutedEventArgs e)
-    {
-        var all =
-            $"# A.I. Usage Tracker — Gemini Local Relay\r\n" +
-            $"# Base URL : {_baseUrl}\r\n" +
-            $"# API Key  : {_trackerKey}\r\n" +
-            $"\r\n" +
-            $"# ─── Env vars · PowerShell (current + persist) ───\r\n{EnvBox.Text}\r\n\r\n" +
-            $"# ─── Env vars · cmd.exe (set + setx) ───\r\n{EnvCmdBox.Text}\r\n\r\n" +
-            $"# ─── cURL ───\r\n{CurlBox.Text}\r\n\r\n" +
-            $"# ─── Python (google-generativeai) ───\r\n{PyLegacyBox.Text}\r\n\r\n" +
-            $"# ─── Python (google-genai) ───\r\n{PyNewBox.Text}\r\n\r\n" +
-            $"// ─── Node.js (@google/generative-ai) ───\r\n{NodeBox.Text}\r\n";
-
-        try
-        {
-            Clipboard.SetText(all);
-            FlashStatus("✓ 전체 사용법이 클립보드에 복사됨", ok: true);
-        }
-        catch (Exception ex)
-        {
-            FlashStatus($"복사 실패: {ex.Message}", ok: false);
-        }
-    }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }
