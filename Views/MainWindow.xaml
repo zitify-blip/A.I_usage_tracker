@@ -124,7 +124,7 @@
                 </Style>
             </TabControl.Resources>
 
-            <TabItem Header="🌐 Global" Style="{StaticResource DarkTabItem}">
+            <TabItem Header="📊 대시보드" Style="{StaticResource DarkTabItem}">
               <Grid Margin="14">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>   <!-- 0 header -->
@@ -142,7 +142,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Global Overview" FontSize="20" FontWeight="Bold"
+                    <TextBlock Grid.Column="0" Text="대시보드" FontSize="20" FontWeight="Bold"
                                Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
 
                     <!-- Update notification button (hidden by default) -->
@@ -436,7 +436,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- 7-day stacked bar -->
+                    <!-- 7-day line chart -->
                     <Border Grid.Column="0" Style="{StaticResource Card}">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -1333,7 +1333,7 @@
                                                 Background="#1a3a1a" BorderBrush="#4ade80"
                                                 Click="GeminiRelayStartBtn_Click" MinWidth="80"/>
                                         <Button Grid.Column="8" x:Name="GeminiRelayCopyBtn"
-                                                Content="📖 사용법 보기" Style="{StaticResource Btn}"
+                                                Content="⚙ 설정" Style="{StaticResource Btn}"
                                                 Click="GeminiRelayCopyBtn_Click" MinWidth="100"/>
                                     </Grid>
 

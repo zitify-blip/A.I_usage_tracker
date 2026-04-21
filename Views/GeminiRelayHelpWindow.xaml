@@ -1,7 +1,7 @@
 <Window x:Class="AIUsageTracker.Views.GeminiRelayHelpWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Gemini Local Relay — 사용법"
+        Title="Gemini Local Relay — 설정"
         Width="780" Height="820" MinWidth="580" MinHeight="560"
         Background="#0f0f0f"
         WindowStartupLocation="CenterOwner">

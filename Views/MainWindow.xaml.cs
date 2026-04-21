@@ -991,44 +991,78 @@ public partial class MainWindow : Window
         var maxTotal = dayTotals.Count > 0 ? dayTotals.Max() : 0;
         if (maxTotal <= 0) maxTotal = 1;
         var slotW = canvasWidth / 7.0;
-        var barW = Math.Max(6, slotW * 0.6);
-        var gap = slotW - barW;
-        var drawableH = canvasHeight - 16;
+        var topPad = 14.0;
+        var bottomPad = 4.0;
+        var drawableH = Math.Max(1, canvasHeight - topPad - bottomPad);
+
+        double X(int i) => i * slotW + slotW / 2.0;
+        double Y(double v) => topPad + (1 - v / maxTotal) * drawableH;
+
+        for (int g = 0; g <= 3; g++)
+        {
+            var y = topPad + drawableH * g / 3.0;
+            TrendCanvas.Children.Add(new System.Windows.Shapes.Line
+            {
+                X1 = 0,
+                X2 = canvasWidth,
+                Y1 = y,
+                Y2 = y,
+                Stroke = B("#222"),
+                StrokeThickness = 1
+            });
+        }
+
+        foreach (var fam in new[] { "Other", "Pro", "Flash" })
+        {
+            if (!grid.Values.Any(x => x[fam] > 0)) continue;
+
+            var poly = new System.Windows.Shapes.Polyline
+            {
+                Stroke = B(FamilyColors[fam]),
+                StrokeThickness = 2,
+                StrokeLineJoin = PenLineJoin.Round,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            };
+            for (int i = 0; i < 7; i++)
+                poly.Points.Add(new Point(X(i), Y(grid[days[i]][fam])));
+            TrendCanvas.Children.Add(poly);
+
+            for (int i = 0; i < 7; i++)
+            {
+                var cost = grid[days[i]][fam];
+                if (cost <= 0) continue;
+                var dot = new System.Windows.Shapes.Ellipse
+                {
+                    Width = 5,
+                    Height = 5,
+                    Fill = B(FamilyColors[fam]),
+                    Stroke = B("#0f0f0f"),
+                    StrokeThickness = 1
+                };
+                Canvas.SetLeft(dot, X(i) - 2.5);
+                Canvas.SetTop(dot, Y(cost) - 2.5);
+                TrendCanvas.Children.Add(dot);
+            }
+        }
 
         for (int i = 0; i < 7; i++)
         {
             var total = dayTotals[i];
-            var stackedBottom = canvasHeight;
-            foreach (var fam in new[] { "Other", "Pro", "Flash" })
+            if (total <= 0) continue;
+            var lbl = new TextBlock
             {
-                var cost = grid[days[i]][fam];
-                if (cost <= 0) continue;
-                var h = cost / maxTotal * drawableH;
-                var rect = new System.Windows.Shapes.Rectangle
-                {
-                    Width = barW,
-                    Height = h,
-                    Fill = B(FamilyColors[fam]),
-                    RadiusX = 2,
-                    RadiusY = 2
-                };
-                Canvas.SetLeft(rect, i * slotW + gap / 2);
-                Canvas.SetTop(rect, stackedBottom - h);
-                TrendCanvas.Children.Add(rect);
-                stackedBottom -= h;
-            }
-            if (total > 0)
-            {
-                var lbl = new TextBlock
-                {
-                    Text = total >= 1 ? $"${total:F2}" : $"${total:F3}",
-                    FontSize = 9,
-                    Foreground = B("#aaa")
-                };
-                Canvas.SetLeft(lbl, i * slotW + gap / 2 - 2);
-                Canvas.SetTop(lbl, Math.Max(0, canvasHeight - total / maxTotal * drawableH - 13));
-                TrendCanvas.Children.Add(lbl);
-            }
+                Text = total >= 1 ? $"${total:F2}" : $"${total:F3}",
+                FontSize = 9,
+                Foreground = B("#aaa")
+            };
+            lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var lx = X(i) - lbl.DesiredSize.Width / 2;
+            var ly = Y(total) - 14;
+            if (ly < 0) ly = Y(total) + 6;
+            Canvas.SetLeft(lbl, Math.Max(0, Math.Min(canvasWidth - lbl.DesiredSize.Width, lx)));
+            Canvas.SetTop(lbl, ly);
+            TrendCanvas.Children.Add(lbl);
         }
     }
 
