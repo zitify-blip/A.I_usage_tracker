@@ -1056,14 +1056,6 @@ public partial class MainWindow : Window
 
     private void RefreshGeminiUi()
     {
-        // Populate model combo once
-        if (GeminiModelCombo.Items.Count == 0)
-        {
-            foreach (var m in GeminiPricing.Models)
-                GeminiModelCombo.Items.Add(new GeminiModelDisplay(m));
-            GeminiModelCombo.SelectedIndex = 1; // Flash default
-        }
-
         var accounts = _geminiAccounts.GetAccounts();
         if (accounts.Count == 0)
         {
@@ -1235,90 +1227,6 @@ public partial class MainWindow : Window
         if (max <= 0) max = 1;
         foreach (var r in rows) r.BarWidth = Math.Max(1, r.Cost / max * 320);
         GeminiCompareList.ItemsSource = rows;
-    }
-
-    private async void GeminiSendBtn_Click(object sender, RoutedEventArgs e) => await SendGeminiPrompt();
-
-    private async void GeminiPromptBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (e.Key == System.Windows.Input.Key.Enter &&
-            (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0)
-        {
-            e.Handled = true;
-            await SendGeminiPrompt();
-        }
-    }
-
-    private async Task SendGeminiPrompt()
-    {
-        var selected = _geminiAccounts.GetSelected();
-        if (selected == null) return;
-
-        var prompt = GeminiPromptBox.Text?.Trim();
-        if (string.IsNullOrEmpty(prompt))
-        {
-            GeminiStatusLabel.Text = "프롬프트가 비어있습니다";
-            GeminiStatusLabel.Foreground = B("#f87171");
-            return;
-        }
-
-        if (GeminiModelCombo.SelectedItem is not GeminiModelDisplay modelDisp)
-        {
-            GeminiStatusLabel.Text = "모델 선택 필요";
-            GeminiStatusLabel.Foreground = B("#f87171");
-            return;
-        }
-
-        var key = _geminiAccounts.GetApiKey(selected.Id);
-        if (string.IsNullOrEmpty(key))
-        {
-            GeminiStatusLabel.Text = "키 복호화 실패";
-            GeminiStatusLabel.Foreground = B("#f87171");
-            return;
-        }
-
-        GeminiSendBtn.IsEnabled = false;
-        GeminiStatusLabel.Text = $"{modelDisp.Price.DisplayName} 호출 중...";
-        GeminiStatusLabel.Foreground = B("#facc15");
-
-        var result = await _geminiProvider.GenerateContentAsync(key, modelDisp.Price.ModelId, prompt);
-
-        if (!result.Ok)
-        {
-            GeminiStatusLabel.Text = $"실패: {result.Error}";
-            GeminiStatusLabel.Foreground = B("#f87171");
-            GeminiSendBtn.IsEnabled = true;
-            return;
-        }
-
-        var effective = _storage.GetEffectivePrice(modelDisp.Price.ModelId);
-        var cost = GeminiPricing.CalculateCost(effective,
-            result.InputTokens, result.OutputTokens, result.CacheTokens);
-
-        var record = new GeminiUsageRecord
-        {
-            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            AccountId = selected.Id,
-            Model = modelDisp.Price.ModelId,
-            InputTokens = result.InputTokens,
-            OutputTokens = result.OutputTokens,
-            CacheTokens = result.CacheTokens,
-            ThinkingTokens = result.ThinkingTokens,
-            ToolTokens = result.ToolTokens,
-            CostUsd = cost,
-            LatencyMs = result.LatencyMs
-        };
-        _storage.SaveGeminiUsage(record);
-
-        selected.LastUsedAtMs = record.Timestamp;
-        _storage.Save();
-
-        GeminiStatusLabel.Text = $"완료 · in {result.InputTokens} / out {result.OutputTokens} tokens · ${cost:F5} · {result.LatencyMs}ms";
-        GeminiStatusLabel.Foreground = B("#4ade80");
-
-        RefreshGeminiStats();
-        CheckGeminiBudget(selected);
-        GeminiSendBtn.IsEnabled = true;
     }
 
     private void CheckGeminiBudget(GeminiAccount account)
@@ -2094,13 +2002,6 @@ internal class GeminiAccountDisplay
         var primary = Account.IsPrimary ? " ★" : "";
         return $"👤 {Account.Alias}  ({Account.KeyPreview}){primary}";
     }
-}
-
-internal class GeminiModelDisplay
-{
-    public GeminiModelPrice Price { get; }
-    public GeminiModelDisplay(GeminiModelPrice p) { Price = p; }
-    public override string ToString() => Price.DisplayName;
 }
 
 internal class GeminiBudgetRow
