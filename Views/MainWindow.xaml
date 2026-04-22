@@ -1441,7 +1441,7 @@
 
                                     <Grid Grid.Row="1" Margin="0,6,0,4">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="70"/>
                                             <ColumnDefinition Width="70"/>
@@ -1466,7 +1466,7 @@
                                                 <DataTemplate>
                                                     <Grid Margin="0,3">
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="70"/>
+                                                            <ColumnDefinition Width="100"/>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="70"/>
                                                             <ColumnDefinition Width="70"/>

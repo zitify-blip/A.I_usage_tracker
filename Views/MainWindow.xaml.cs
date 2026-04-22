@@ -51,8 +51,6 @@ public partial class MainWindow : Window
     private bool _reallyClosing;
     private bool _notified;
     private UpdateInfo? _pendingUpdate;
-    private DateTimeOffset? _firedSessionResetAt;
-    private bool _sessionResetDialogOpen;
 
     private const int SessionTotalMs = 5 * 60 * 60 * 1000;
     private const long WeekTotalMs = 7L * 24 * 60 * 60 * 1000;
@@ -253,54 +251,6 @@ public partial class MainWindow : Window
         SetMarker(SubMarker, SubMarkerLabel, SubMarkerCanvas, l.SubResetAt);
         if (l.HasDesign)
             SetMarker(DesignMarker, DesignMarkerLabel, DesignMarkerCanvas, l.DesignResetAt);
-
-        CheckSessionResetTrigger(l);
-    }
-
-    private void CheckSessionResetTrigger(LatestUsage l)
-    {
-        if (_sessionResetDialogOpen) return;
-        if (l.SessionResetAt == null || !DateTimeOffset.TryParse(l.SessionResetAt, out var rst)) return;
-
-        var now = DateTimeOffset.Now;
-        if (now < rst) return;
-        if (_firedSessionResetAt == rst) return;
-        if ((now - rst) > TimeSpan.FromMinutes(15)) { _firedSessionResetAt = rst; return; }
-
-        _firedSessionResetAt = rst;
-        _ = ShowSessionResetDialogAsync();
-    }
-
-    private async Task ShowSessionResetDialogAsync()
-    {
-        _sessionResetDialogOpen = true;
-        try
-        {
-            App.ShowBalloon("Claude 세션 리셋", "5시간 윈도가 리셋되었습니다. 새 세션을 시작하시겠어요?");
-
-            var dialog = new SessionResetDialog { Owner = this };
-            var ok = dialog.ShowDialog();
-            if (ok != true) return;
-
-            StatusLabel.Text = "메시지 전송 중...";
-            StatusLabel.Foreground = B("#facc15");
-
-            var (success, error) = await _api.SendMessageAsync(dialog.Message);
-            if (success)
-            {
-                StatusLabel.Text = "새 세션 시작됨";
-                StatusLabel.Foreground = B("#4ade80");
-            }
-            else
-            {
-                StatusLabel.Text = $"전송 실패: {error}";
-                StatusLabel.Foreground = B("#f87171");
-            }
-        }
-        finally
-        {
-            _sessionResetDialogOpen = false;
-        }
     }
 
     private void UpdateTimeRing(LatestUsage l)
@@ -2231,7 +2181,7 @@ internal class GeminiHistoryItem
     public GeminiHistoryItem(GeminiUsageRecord r)
     {
         var t = DateTimeOffset.FromUnixTimeMilliseconds(r.Timestamp).ToLocalTime();
-        TimeText = t.ToString("HH:mm:ss");
+        TimeText = t.ToString("MM/dd HH:mm:ss");
         Model = r.Model;
         InputText = r.InputTokens.ToString("N0");
         OutputText = r.OutputTokens.ToString("N0");
