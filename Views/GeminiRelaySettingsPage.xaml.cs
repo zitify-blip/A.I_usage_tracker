@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using UserControl = System.Windows.Controls.UserControl;
 using System.Windows.Threading;
 using Clipboard = System.Windows.Clipboard;
 using Color = System.Windows.Media.Color;
@@ -13,13 +14,14 @@ using TextBox = System.Windows.Controls.TextBox;
 
 namespace AIUsageTracker.Views;
 
-public partial class GeminiRelayHelpWindow : Window
+public partial class GeminiRelaySettingsPage : UserControl
 {
-    private readonly string _baseUrl;
-    private readonly string _trackerKey;
+    private string _baseUrl = "";
+    private string _trackerKey = "";
     private readonly DispatcherTimer _statusTimer;
 
-    // Managed env var names (User scope)
+    public event Action? CloseRequested;
+
     private static readonly string[] ManagedVars =
     {
         "GOOGLE_API_KEY",
@@ -28,10 +30,8 @@ public partial class GeminiRelayHelpWindow : Window
         "GOOGLE_GEMINI_BASE_URL"
     };
 
-    // Backup prefix for foreign values we overwrite
     private const string BackupPrefix = "AI_TRACKER_BACKUP_";
 
-    // WM_SETTINGCHANGE broadcast for env var propagation
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
     private static extern IntPtr SendMessageTimeout(
         IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,
@@ -41,18 +41,19 @@ public partial class GeminiRelayHelpWindow : Window
     private const uint WM_SETTINGCHANGE = 0x001A;
     private const uint SMTO_ABORTIFHUNG = 0x0002;
 
-    public GeminiRelayHelpWindow(int port, string alias)
+    public GeminiRelaySettingsPage()
     {
         InitializeComponent();
+        _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _statusTimer.Tick += (_, _) => { StatusText.Text = ""; _statusTimer.Stop(); };
+    }
 
+    public void Load(int port, string alias)
+    {
         _baseUrl = $"http://127.0.0.1:{port}";
         _trackerKey = $"tracker-{alias}";
 
-        _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-        _statusTimer.Tick += (_, _) => { StatusText.Text = ""; _statusTimer.Stop(); };
-
         SubtitleText.Text = $"· Port {port}  ·  Key: {_trackerKey}";
-
         BaseUrlBox.Text = $"Base URL : {_baseUrl}\r\nAPI Key  : {_trackerKey}";
 
         EnvBox.Text =
@@ -205,7 +206,6 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
 
             if (existing.Contains(RuleMarkerBegin))
             {
-                // Already there (stale state); strip old and re-install for idempotency
                 existing = StripRuleBlock(existing);
             }
 
@@ -246,7 +246,6 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
 
             if (stripped.Trim().Length == 0)
             {
-                // leave an empty file rather than deleting — user may have other tooling watching it
                 File.WriteAllText(path, "", new UTF8Encoding(false));
             }
             else
@@ -264,8 +263,6 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
 
     private static string StripRuleBlock(string content)
     {
-        // Remove from BEGIN marker line through END marker line (inclusive),
-        // including any preceding blank line and surrounding newlines, so re-installs stay clean.
         var pattern = @"\r?\n?\r?\n?" + Regex.Escape(RuleMarkerBegin) + @"[\s\S]*?" + Regex.Escape(RuleMarkerEnd) + @"\r?\n?";
         return Regex.Replace(content, pattern, "");
     }
@@ -359,7 +356,6 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
 
                 if (!string.IsNullOrEmpty(current) && current != expected)
                 {
-                    // back up only if we don't already have a backup (keep oldest non-tracker value)
                     var backupName = BackupPrefix + v;
                     var existingBackup = Environment.GetEnvironmentVariable(backupName, EnvironmentVariableTarget.User);
                     if (string.IsNullOrEmpty(existingBackup))
@@ -463,5 +459,5 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
     private void CopyPyNew_Click(object sender, RoutedEventArgs e) => Copy(PyNewBox, "Python (genai)");
     private void CopyNode_Click(object sender, RoutedEventArgs e) => Copy(NodeBox, "Node.js");
 
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+    private void Back_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke();
 }

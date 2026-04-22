@@ -91,8 +91,17 @@ public partial class App : System.Windows.Application
 
         try
         {
-            var p = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "icon.ico");
-            if (System.IO.File.Exists(p)) _trayIcon.Icon = new Icon(p);
+            var res = GetResourceStream(new Uri("pack://application:,,,/Assets/icon.ico"));
+            if (res != null)
+            {
+                using var stream = res.Stream;
+                _trayIcon.Icon = new Icon(stream);
+            }
+            else
+            {
+                var p = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "icon.ico");
+                if (System.IO.File.Exists(p)) _trayIcon.Icon = new Icon(p);
+            }
         }
         catch (Exception ex) { Logger.Warn("Tray icon load failed", ex); }
 

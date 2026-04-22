@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -673,9 +675,99 @@ public partial class MainWindow : Window
     private void TopMostBtn_Click(object sender, RoutedEventArgs e)
     {
         Topmost = !Topmost;
-        TopMostBtn.Content = Topmost ? "📌 On" : "📌";
-        TopMostBtn.Background = Topmost ? B("#4ade80") : B("#262626");
-        TopMostBtn.Foreground = Topmost ? B("#000000") : B("#e8e8e8");
+        TopMostBtn.Content = Topmost ? "📍" : "📌";
+        TopMostBtn.Foreground = Topmost ? B("#4ade80") : B("#bfbfbf");
+    }
+
+    private void MinBtn_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void MaxBtn_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    private void CloseBtn_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Window_StateChanged(object? sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            MaxBtn.Content = "❐";
+            MaxBtn.ToolTip = "이전 크기로 복원";
+            RootBorder.BorderThickness = new Thickness(0);
+            RootGrid.Margin = new Thickness(7);
+        }
+        else
+        {
+            MaxBtn.Content = "▢";
+            MaxBtn.ToolTip = "최대화";
+            RootBorder.BorderThickness = new Thickness(1);
+            RootGrid.Margin = new Thickness(0);
+        }
+    }
+
+    private void Window_SourceInitialized(object? sender, EventArgs e)
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_GETMINMAXINFO = 0x0024;
+        if (msg == WM_GETMINMAXINFO)
+        {
+            AdjustMaximizedBounds(hwnd, lParam);
+            handled = true;
+        }
+        return IntPtr.Zero;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr handle, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int left, top, right, bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT { public int x, y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MINMAXINFO
+    {
+        public POINT ptReserved;
+        public POINT ptMaxSize;
+        public POINT ptMaxPosition;
+        public POINT ptMinTrackSize;
+        public POINT ptMaxTrackSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    private static void AdjustMaximizedBounds(IntPtr hwnd, IntPtr lParam)
+    {
+        const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+        var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+        var monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        if (monitor == IntPtr.Zero) return;
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        if (!GetMonitorInfo(monitor, ref info)) return;
+
+        var work = info.rcWork;
+        var full = info.rcMonitor;
+        mmi.ptMaxPosition.x = Math.Abs(work.left - full.left);
+        mmi.ptMaxPosition.y = Math.Abs(work.top - full.top);
+        mmi.ptMaxSize.x = Math.Abs(work.right - work.left);
+        mmi.ptMaxSize.y = Math.Abs(work.bottom - work.top);
+        Marshal.StructureToPtr(mmi, lParam, true);
     }
 
     private async void RefreshBtn_Click(object sender, RoutedEventArgs e) => await Fetch();
@@ -1201,8 +1293,15 @@ public partial class MainWindow : Window
         var selected = _geminiAccounts.GetSelected();
         var alias = selected?.Alias ?? "default";
 
-        var win = new GeminiRelayHelpWindow(port, alias) { Owner = this };
-        win.ShowDialog();
+        GeminiRelaySettings.Load(port, alias);
+        GeminiRelaySettings.CloseRequested -= HideSettingsPage;
+        GeminiRelaySettings.CloseRequested += HideSettingsPage;
+        GeminiRelaySettings.Visibility = Visibility.Visible;
+    }
+
+    private void HideSettingsPage()
+    {
+        GeminiRelaySettings.Visibility = Visibility.Collapsed;
     }
 
     private void RefreshGeminiStats()
