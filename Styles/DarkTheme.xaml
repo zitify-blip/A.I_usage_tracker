@@ -24,7 +24,8 @@
     <SolidColorBrush x:Key="BgBaseBrush" Color="{StaticResource BgBaseColor}"/>
     <SolidColorBrush x:Key="BgCardBrush" Color="{StaticResource BgCardColor}"/>
     <SolidColorBrush x:Key="BgInputBrush" Color="{StaticResource BgInputColor}"/>
-    <SolidColorBrush x:Key="BgHoverBrush" Color="{StaticResource BgHoverColor}"/>
+    <SolidColorBrush x:Key="BgHoverBrush"  Color="{StaticResource BgHoverColor}"/>
+    <SolidColorBrush x:Key="BgActiveBrush" Color="{StaticResource BgActiveColor}"/>
     <SolidColorBrush x:Key="BgTitleBarBrush" Color="{StaticResource BgTitleBarColor}"/>
     <SolidColorBrush x:Key="TitleBarTextBrush" Color="{StaticResource TitleBarTextColor}"/>
     <SolidColorBrush x:Key="BorderBrushBase" Color="{StaticResource BorderColor}"/>
@@ -600,7 +601,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="bd" Property="Background" Value="{StaticResource BgActiveColor}"/>
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource BgActiveBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
