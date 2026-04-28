@@ -112,7 +112,7 @@
                             BorderThickness="0" Padding="10,5">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="bd" Background="#1a3a1a" CornerRadius="6" BorderBrush="#4ade80"
+                                <Border x:Name="bd" Background="{StaticResource AccentBgBrush}" CornerRadius="6" BorderBrush="#4ade80"
                                         BorderThickness="1" Padding="{TemplateBinding Padding}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock x:Name="UpdateBtnIcon" Text="⬆" FontSize="12" Foreground="{StaticResource AccentBrush}"
@@ -123,7 +123,7 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="bd" Property="Background" Value="#2a4a2a"/>
+                                        <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentBgHoverBrush}"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -184,8 +184,8 @@
                             <TextBlock Grid.Row="1" x:Name="HeroMonthCost" Text="$0.00"
                                        Style="{StaticResource Big}" FontSize="28" Margin="0,6,0,6"/>
                             <Grid Grid.Row="2" Height="6" Margin="0,0,0,6">
-                                <Border Background="#262626" CornerRadius="3"/>
-                                <Border x:Name="HeroMonthBarFill" Background="#4ade80"
+                                <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
+                                <Border x:Name="HeroMonthBarFill" Background="{StaticResource AccentBrush}"
                                         CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
                             </Grid>
                             <TextBlock Grid.Row="3" x:Name="HeroMonthSub"
@@ -257,12 +257,12 @@
                                             <Canvas Width="200" Height="200">
                                                 <Ellipse Width="172" Height="172"
                                                          Canvas.Left="14" Canvas.Top="14"
-                                                         Stroke="#262626" StrokeThickness="14"
+                                                         Stroke="{StaticResource BorderBrushBase}" StrokeThickness="14"
                                                          Fill="Transparent"/>
                                                 <Path x:Name="GSessionRingPath" StrokeThickness="14"
                                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round">
                                                     <Path.Stroke>
-                                                        <SolidColorBrush x:Name="GSessionRingBrush" Color="#4ade80"/>
+                                                        <SolidColorBrush x:Name="GSessionRingBrush" Color="{StaticResource AccentColor}"/>
                                                     </Path.Stroke>
                                                     <Path.Data>
                                                         <PathGeometry>
@@ -300,12 +300,12 @@
                                             <Canvas Width="200" Height="200">
                                                 <Ellipse Width="172" Height="172"
                                                          Canvas.Left="14" Canvas.Top="14"
-                                                         Stroke="#262626" StrokeThickness="14"
+                                                         Stroke="{StaticResource BorderBrushBase}" StrokeThickness="14"
                                                          Fill="Transparent"/>
                                                 <Path x:Name="GWeekRingPath" StrokeThickness="14"
                                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round">
                                                     <Path.Stroke>
-                                                        <SolidColorBrush x:Name="GWeekRingBrush" Color="#4ade80"/>
+                                                        <SolidColorBrush x:Name="GWeekRingBrush" Color="{StaticResource AccentColor}"/>
                                                     </Path.Stroke>
                                                     <Path.Data>
                                                         <PathGeometry>
@@ -370,7 +370,7 @@
                                                            FontSize="11" Foreground="{StaticResource TxtSub}"/>
                                             </Grid>
                                             <Grid Grid.Row="1" Height="6" Margin="0,4,0,3">
-                                                <Border Background="#262626" CornerRadius="3"/>
+                                                <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
                                                 <Border Background="{Binding BarBrush}"
                                                         CornerRadius="3" HorizontalAlignment="Left"
                                                         Width="{Binding BarWidth}"/>
@@ -488,7 +488,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <Grid Grid.Column="0" Height="4"
                                                       VerticalAlignment="Center" Margin="0,0,6,0">
-                                                    <Border Background="#262626" CornerRadius="2"/>
+                                                    <Border Background="{StaticResource BorderBrushBase}" CornerRadius="2"/>
                                                     <Border Background="{Binding ColorBrush}"
                                                             CornerRadius="2" HorizontalAlignment="Left"
                                                             Width="{Binding BarWidth}"/>
@@ -544,7 +544,7 @@
             <TextBlock Grid.Column="0" Text="Claude CLI Usage" FontSize="20" FontWeight="Bold"
                        Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
 
-            <Border Grid.Column="1" Margin="12,0,0,0" CornerRadius="4" Padding="8,3" Background="#1a1a1a"
+            <Border Grid.Column="1" Margin="12,0,0,0" CornerRadius="4" Padding="8,3" Background="{StaticResource BgInputBrush}"
                     VerticalAlignment="Center">
                 <TextBlock x:Name="StatusLabel" Text="Waiting for session key..." FontSize="11"
                            Foreground="{StaticResource TxtSub}" FontWeight="SemiBold"/>
@@ -614,8 +614,8 @@
                                 </TextBlock>
                             </Grid>
                             <Grid Height="10">
-                                <Border Background="#262626" CornerRadius="5"/>
-                                <Border x:Name="UsageBar" Background="#4ade80" CornerRadius="5"
+                                <Border Background="{StaticResource BorderBrushBase}" CornerRadius="5"/>
+                                <Border x:Name="UsageBar" Background="{StaticResource AccentBrush}" CornerRadius="5"
                                         HorizontalAlignment="Left" Width="0"/>
                             </Grid>
                         </StackPanel>
@@ -639,7 +639,7 @@
                                 </TextBlock>
                             </Grid>
                             <Grid Height="12" x:Name="TimeBarRoot">
-                                <Border Background="#262626" CornerRadius="6" Height="10"
+                                <Border Background="{StaticResource BorderBrushBase}" CornerRadius="6" Height="10"
                                         VerticalAlignment="Center"/>
                                 <Border x:Name="TimeBar" Background="#60a5fa" CornerRadius="6"
                                         Height="10" VerticalAlignment="Center"
@@ -647,7 +647,7 @@
                                 <Canvas x:Name="TimePlayheadCanvas" ClipToBounds="False">
                                     <Grid x:Name="TimePlayhead" Canvas.Left="0" Canvas.Top="-2">
                                         <Ellipse Width="16" Height="16" Fill="#60a5fa"
-                                                 Stroke="#0f0f0f" StrokeThickness="2"
+                                                 Stroke="{StaticResource BgBaseBrush}" StrokeThickness="2"
                                                  Margin="-8,0,0,0"/>
                                     </Grid>
                                 </Canvas>
@@ -687,8 +687,8 @@
                         <TextBlock x:Name="ExtraLimitText" Text="of $0.00" FontSize="11"
                                    Foreground="{StaticResource TxtSub}" Margin="0,2,0,8"/>
                         <Grid Height="6" Margin="0,0,0,6">
-                            <Border Background="#262626" CornerRadius="3"/>
-                            <Border x:Name="ExtraBar" Background="#4ade80" CornerRadius="3"
+                            <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
+                            <Border x:Name="ExtraBar" Background="{StaticResource AccentBrush}" CornerRadius="3"
                                     HorizontalAlignment="Left" Width="0"/>
                         </Grid>
                         <StackPanel Orientation="Horizontal">
@@ -727,8 +727,8 @@
                                Margin="0,0,0,8"/>
                     <Grid Grid.Row="2" Height="18" VerticalAlignment="Center" Margin="0,0,0,6">
                         <Grid Height="6" VerticalAlignment="Center">
-                            <Border Background="#262626" CornerRadius="3"/>
-                            <Border x:Name="WeekAllBar" Background="#4ade80" CornerRadius="3"
+                            <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
+                            <Border x:Name="WeekAllBar" Background="{StaticResource AccentBrush}" CornerRadius="3"
                                     HorizontalAlignment="Left" Width="0"/>
                         </Grid>
                         <Canvas x:Name="WeekAllMarkerCanvas" ClipToBounds="False">
@@ -765,8 +765,8 @@
                                Margin="0,0,0,8"/>
                     <Grid Grid.Row="2" Height="18" VerticalAlignment="Center" Margin="0,0,0,6">
                         <Grid Height="6" VerticalAlignment="Center">
-                            <Border Background="#262626" CornerRadius="3"/>
-                            <Border x:Name="SubBar" Background="#4ade80" CornerRadius="3"
+                            <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
+                            <Border x:Name="SubBar" Background="{StaticResource AccentBrush}" CornerRadius="3"
                                     HorizontalAlignment="Left" Width="0"/>
                         </Grid>
                         <Canvas x:Name="SubMarkerCanvas" ClipToBounds="False">
@@ -803,8 +803,8 @@
                                Margin="0,0,0,8"/>
                     <Grid Grid.Row="2" Height="18" VerticalAlignment="Center" Margin="0,0,0,6">
                         <Grid Height="6" VerticalAlignment="Center">
-                            <Border Background="#262626" CornerRadius="3"/>
-                            <Border x:Name="DesignBar" Background="#4ade80" CornerRadius="3"
+                            <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
+                            <Border x:Name="DesignBar" Background="{StaticResource AccentBrush}" CornerRadius="3"
                                     HorizontalAlignment="Left" Width="0"/>
                         </Grid>
                         <Canvas x:Name="DesignMarkerCanvas" ClipToBounds="False">
@@ -877,8 +877,8 @@
                         <TextBlock Grid.Column="0" Text="Claude API Usage" FontSize="20" FontWeight="Bold"
                                    Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
 
-                        <Border Grid.Column="2" CornerRadius="6" Background="#1a1a1a"
-                                BorderBrush="#2a2a2a" BorderThickness="1" Padding="4"
+                        <Border Grid.Column="2" CornerRadius="6" Background="{StaticResource BgInputBrush}"
+                                BorderBrush="{StaticResource BorderBrushBase}" BorderThickness="1" Padding="4"
                                 HorizontalAlignment="Left" VerticalAlignment="Center" MinWidth="260">
                             <ComboBox x:Name="AnthropicAccountCombo"
                                       Background="Transparent"
@@ -1056,8 +1056,8 @@
                                Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
 
                     <!-- Account switcher -->
-                    <Border Grid.Column="2" CornerRadius="6" Background="#1a1a1a"
-                            BorderBrush="#2a2a2a" BorderThickness="1" Padding="4"
+                    <Border Grid.Column="2" CornerRadius="6" Background="{StaticResource BgInputBrush}"
+                            BorderBrush="{StaticResource BorderBrushBase}" BorderThickness="1" Padding="4"
                             HorizontalAlignment="Left" VerticalAlignment="Center" MinWidth="260">
                         <ComboBox x:Name="GeminiAccountCombo"
                                   Background="Transparent"
@@ -1215,8 +1215,8 @@
                                                                TextTrimming="CharacterEllipsis"/>
                                                     <Grid Grid.Column="1" Height="10" VerticalAlignment="Center"
                                                           Margin="4,0">
-                                                        <Border Background="#262626" CornerRadius="5"/>
-                                                        <Border Background="#4ade80" CornerRadius="5"
+                                                        <Border Background="{StaticResource BorderBrushBase}" CornerRadius="5"/>
+                                                        <Border Background="{StaticResource AccentBrush}" CornerRadius="5"
                                                                 HorizontalAlignment="Left"
                                                                 Width="{Binding BarWidth}"/>
                                                     </Grid>
@@ -1275,8 +1275,8 @@
                                                    VerticalAlignment="Center"/>
                                         <TextBox Grid.Column="2" x:Name="GeminiRelayPortBox"
                                                  Width="70" Padding="6,3" FontSize="12"
-                                                 Background="#1a1a1a" Foreground="{StaticResource TxtHighlight}"
-                                                 BorderBrush="#2a2a2a" CaretBrush="#4ade80"
+                                                 Background="{StaticResource BgInputBrush}" Foreground="{StaticResource TxtHighlight}"
+                                                 BorderBrush="{StaticResource BorderBrushBase}" CaretBrush="{StaticResource AccentBrush}"
                                                  Text="47821"/>
 
                                         <CheckBox Grid.Column="4" x:Name="GeminiRelayAutoStartCheck"
@@ -1288,7 +1288,7 @@
 
                                         <Button Grid.Column="6" x:Name="GeminiRelayStartBtn"
                                                 Content="▶ Start" Style="{StaticResource Btn}"
-                                                Background="#1a3a1a" BorderBrush="#4ade80"
+                                                Background="{StaticResource AccentBgBrush}" BorderBrush="#4ade80"
                                                 Click="GeminiRelayStartBtn_Click" MinWidth="80"/>
                                         <Button Grid.Column="8" x:Name="GeminiRelayCopyBtn"
                                                 Content="⚙ 설정" Style="{StaticResource Btn}"
@@ -1412,8 +1412,8 @@
                         <TextBlock Grid.Column="0" Text="OpenAI API Usage" FontSize="20" FontWeight="Bold"
                                    Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
 
-                        <Border Grid.Column="2" CornerRadius="6" Background="#1a1a1a"
-                                BorderBrush="#2a2a2a" BorderThickness="1" Padding="4"
+                        <Border Grid.Column="2" CornerRadius="6" Background="{StaticResource BgInputBrush}"
+                                BorderBrush="{StaticResource BorderBrushBase}" BorderThickness="1" Padding="4"
                                 HorizontalAlignment="Left" VerticalAlignment="Center" MinWidth="260">
                             <ComboBox x:Name="OpenAiAccountCombo"
                                       Background="Transparent"
@@ -1708,8 +1708,8 @@
                         <TextBlock Grid.Column="0" Text="Grok (xAI) API" FontSize="20" FontWeight="Bold"
                                    Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
 
-                        <Border Grid.Column="2" CornerRadius="6" Background="#1a1a1a"
-                                BorderBrush="#2a2a2a" BorderThickness="1" Padding="4"
+                        <Border Grid.Column="2" CornerRadius="6" Background="{StaticResource BgInputBrush}"
+                                BorderBrush="{StaticResource BorderBrushBase}" BorderThickness="1" Padding="4"
                                 HorizontalAlignment="Left" VerticalAlignment="Center" MinWidth="260">
                             <ComboBox x:Name="GrokAccountCombo"
                                       Background="Transparent"

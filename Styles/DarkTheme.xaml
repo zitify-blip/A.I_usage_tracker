@@ -34,8 +34,10 @@
     <SolidColorBrush x:Key="TxtHighlightBrush" Color="{StaticResource TxtHighlightColor}"/>
     <SolidColorBrush x:Key="TxtSubBrush" Color="{StaticResource TxtSubColor}"/>
     <SolidColorBrush x:Key="TxtHintBrush" Color="{StaticResource TxtHintColor}"/>
-    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
-    <SolidColorBrush x:Key="AccentRedBrush" Color="{StaticResource AccentRedColor}"/>
+    <SolidColorBrush x:Key="AccentBrush"         Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="AccentRedBrush"      Color="{StaticResource AccentRedColor}"/>
+    <SolidColorBrush x:Key="AccentBgBrush"       Color="#FF1A3A1A"/>
+    <SolidColorBrush x:Key="AccentBgHoverBrush"  Color="#FF2A4A2A"/>
     <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource AccentColor}" Opacity="0.35"/>
     <!-- Alias brushes matching legacy names in MainWindow.xaml -->
     <SolidColorBrush x:Key="TxtHighlight" Color="{StaticResource TxtHighlightColor}"/>
