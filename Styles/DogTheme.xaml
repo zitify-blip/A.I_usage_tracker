@@ -21,8 +21,16 @@
     <Color x:Key="AccentYellowColor">#FFC09010</Color>
     <Color x:Key="AccentRedColor">#FFC04030</Color>
 
-    <SolidColorBrush x:Key="BgBaseBrush"       Color="{StaticResource BgBaseColor}"/>
-    <SolidColorBrush x:Key="BgCardBrush"       Color="{StaticResource BgCardColor}"/>
+    <!-- Paper texture gradients -->
+    <LinearGradientBrush x:Key="BgBaseBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFAF4E4" Offset="0"/>
+        <GradientStop Color="#FFF5EBCF" Offset="0.55"/>
+        <GradientStop Color="#FFFBF5E4" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BgCardBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0"/>
+        <GradientStop Color="#FFFFFDF7" Offset="1"/>
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="BgInputBrush"      Color="{StaticResource BgInputColor}"/>
     <SolidColorBrush x:Key="BgHoverBrush"      Color="{StaticResource BgHoverColor}"/>
     <SolidColorBrush x:Key="BgActiveBrush"     Color="{StaticResource BgActiveColor}"/>
@@ -587,9 +595,9 @@
     <Style x:Key="Btn" TargetType="Button">
         <Setter Property="Background"      Value="{StaticResource BgHoverBrush}"/>
         <Setter Property="Foreground"      Value="{StaticResource TxtBrush}"/>
-        <Setter Property="BorderBrush"     Value="{StaticResource BorderBrushBase}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding"         Value="14,6"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderStrongBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="Padding"         Value="16,7"/>
         <Setter Property="FontSize"        Value="12"/>
         <Setter Property="Cursor"          Value="Hand"/>
         <Setter Property="Template">
@@ -598,12 +606,16 @@
                     <Border x:Name="bd" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            CornerRadius="20" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="{StaticResource BgActiveBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentBgBrush}"/>
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -614,9 +626,14 @@
     <Style x:Key="Card" TargetType="Border">
         <Setter Property="Background"      Value="{StaticResource BgCardBrush}"/>
         <Setter Property="BorderBrush"     Value="{StaticResource BorderBrushBase}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius"    Value="12"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="CornerRadius"    Value="10"/>
         <Setter Property="Padding"         Value="14"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#A07848" BlurRadius="12" ShadowDepth="3" Opacity="0.18" Direction="270"/>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="Sec" TargetType="TextBlock">
@@ -678,24 +695,27 @@
     <Style x:Key="DarkTabItem" TargetType="TabItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource TxtSubBrush}"/>
-        <Setter Property="Padding"    Value="16,8"/>
+        <Setter Property="Padding"    Value="14,7"/>
         <Setter Property="FontSize"   Value="12"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
                     <Border x:Name="bd" Background="{TemplateBinding Background}"
-                            BorderThickness="0,0,0,2" BorderBrush="Transparent"
-                            Padding="{TemplateBinding Padding}">
+                            BorderBrush="Transparent" BorderThickness="1"
+                            CornerRadius="20" Padding="{TemplateBinding Padding}"
+                            Margin="2,3">
                         <ContentPresenter ContentSource="Header"
                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-                            <Setter Property="Foreground" Value="{StaticResource TxtHighlightBrush}"/>
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentBgBrush}"/>
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource BorderBrushBase}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource BgHoverBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TxtBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
