@@ -85,6 +85,11 @@
             </Grid>
         </Border>
 
+        <!-- Dog animation overlay — transparent canvas, non-hit-testing, on top of everything -->
+        <Canvas x:Name="DogAnimCanvas" Grid.Row="0" Grid.RowSpan="3"
+                IsHitTestVisible="False" Visibility="Collapsed"
+                Panel.ZIndex="20"/>
+
         <!-- Dog theme sitting-dog watermark (bottom-right, behind tab content) -->
         <Image x:Name="DogWatermark" Grid.Row="1"
                Source="{DynamicResource SittingDogWatermark}"

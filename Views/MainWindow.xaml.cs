@@ -34,6 +34,7 @@ public partial class MainWindow : Window
     private readonly GrokCliService _grokCli;
     private readonly GeminiRelayService _geminiRelay;
     private readonly UpdateService _update = new();
+    private DogAnimationController? _dogAnim;
     private bool _suppressGeminiSelection;
     private bool _suppressAnthropicSelection;
     private bool _suppressOpenAiSelection;
@@ -131,6 +132,23 @@ public partial class MainWindow : Window
         DogTitlePaw.Visibility     = vis;
         NormalTitleIcon.Visibility = inv;
         DogWatermark.Visibility    = vis;
+        DogAnimCanvas.Visibility   = vis;
+
+        if (isDog)
+        {
+            // 레이아웃이 완성된 후 시작해야 카드 위치를 정확히 감지할 수 있음
+            Dispatcher.InvokeAsync(() =>
+            {
+                _dogAnim?.Stop();
+                _dogAnim = new DogAnimationController(DogAnimCanvas, RootGrid);
+                _dogAnim.Start(3);
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+        else
+        {
+            _dogAnim?.Stop();
+            _dogAnim = null;
+        }
     }
 
     private TimeSpan CurrentPollInterval() =>
