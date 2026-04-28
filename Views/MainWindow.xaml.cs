@@ -118,7 +118,19 @@ public partial class MainWindow : Window
 
         VersionLabel.Text = $"v{UpdateService.CurrentVersion}";
 
-        ThemeToggleBtn.Content = (_storage.Settings.Theme ?? "dark") == "dog" ? "🌙" : "🐶";
+        bool isDog = (_storage.Settings.Theme ?? "dark") == "dog";
+        ThemeToggleBtn.Content = isDog ? "🌙" : "🐶";
+        ApplyDogDecorations(isDog);
+    }
+
+    private void ApplyDogDecorations(bool isDog)
+    {
+        var vis = isDog ? Visibility.Visible : Visibility.Collapsed;
+        var inv = isDog ? Visibility.Collapsed : Visibility.Visible;
+        DogTitleIcon.Visibility    = vis;
+        DogTitlePaw.Visibility     = vis;
+        NormalTitleIcon.Visibility = inv;
+        DogWatermark.Visibility    = vis;
     }
 
     private TimeSpan CurrentPollInterval() =>

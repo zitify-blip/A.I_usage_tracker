@@ -46,10 +46,20 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal"
                             Margin="12,0,0,0" VerticalAlignment="Center">
-                    <Image Source="/Assets/Square44x44Logo.png" Width="16" Height="16"
+                    <!-- Normal theme icon -->
+                    <Image x:Name="NormalTitleIcon"
+                           Source="/Assets/Square44x44Logo.png" Width="16" Height="16"
                            Margin="0,0,8,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <!-- Dog theme corgi icon (hidden until dog mode) -->
+                    <Image x:Name="DogTitleIcon"
+                           Source="{StaticResource CorgiPawImage}" Width="26" Height="26"
+                           Margin="0,0,8,0" Visibility="Collapsed"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
                     <TextBlock Text="A.I. Usage Tracker" FontSize="12" FontWeight="SemiBold"
                                Foreground="{StaticResource TitleBarTextBrush}" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="DogTitlePaw" Text=" 🐾" FontSize="11"
+                               Foreground="{StaticResource TitleBarTextBrush}" VerticalAlignment="Center"
+                               Visibility="Collapsed"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
@@ -75,7 +85,17 @@
             </Grid>
         </Border>
 
+        <!-- Dog theme sitting-dog watermark (bottom-right, behind tab content) -->
+        <Image x:Name="DogWatermark" Grid.Row="1"
+               Source="{StaticResource SittingDogWatermark}"
+               Width="170" Height="170"
+               HorizontalAlignment="Right" VerticalAlignment="Bottom"
+               Margin="0,0,16,16"
+               IsHitTestVisible="False" Visibility="Collapsed"
+               Panel.ZIndex="0"/>
+
         <TabControl Grid.Row="1" x:Name="MainTabs" Background="{StaticResource BgBaseBrush}" BorderThickness="0" Padding="0"
+                    Panel.ZIndex="1"
                     SelectedIndex="1"
                     SelectionChanged="MainTabs_SelectionChanged">
             <TabControl.Resources>

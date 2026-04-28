@@ -2,6 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Styles/DogIllustrations.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
     <!-- ═══ Palette — warm leather/notebook ═══ -->
     <Color x:Key="BgBaseColor">#FFFAF4E4</Color>
     <Color x:Key="BgCardColor">#FFFFFDF7</Color>
@@ -21,12 +25,33 @@
     <Color x:Key="AccentYellowColor">#FFC09010</Color>
     <Color x:Key="AccentRedColor">#FFC04030</Color>
 
-    <!-- Paper texture gradients -->
-    <LinearGradientBrush x:Key="BgBaseBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#FFFAF4E4" Offset="0"/>
-        <GradientStop Color="#FFF5EBCF" Offset="0.55"/>
-        <GradientStop Color="#FFFBF5E4" Offset="1"/>
-    </LinearGradientBrush>
+    <!-- Paper + paw-print tile for the window/panel background -->
+    <DrawingBrush x:Key="BgBaseBrush" TileMode="Tile"
+                  Viewport="0,0,160,160" ViewportUnits="Absolute"
+                  Stretch="None">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#FFFAF4E4">
+                    <GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,160,160"/></GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry><EllipseGeometry Center="80,103" RadiusX="20" RadiusY="15"/></GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry><EllipseGeometry Center="52,67" RadiusX="9.5" RadiusY="8"/></GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry><EllipseGeometry Center="68,55" RadiusX="9" RadiusY="8"/></GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry><EllipseGeometry Center="92,55" RadiusX="9" RadiusY="8"/></GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry><EllipseGeometry Center="108,67" RadiusX="9.5" RadiusY="8"/></GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
     <LinearGradientBrush x:Key="BgCardBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#FFFFFFFF" Offset="0"/>
         <GradientStop Color="#FFFFFDF7" Offset="1"/>

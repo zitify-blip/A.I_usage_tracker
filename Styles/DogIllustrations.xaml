@@ -1,0 +1,341 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Drawing coordinate space: 100×100 logical units
+        Order: ears → head → snout → eyes → nose → mouth
+    -->
+    <DrawingImage x:Key="CorgiPawImage">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+
+                <!-- ── Left ear outer ── -->
+                <GeometryDrawing Brush="#FFB07840">
+                    <GeometryDrawing.Pen><Pen Brush="#FF8B5C28" Thickness="1.2" LineJoin="Round"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 6,44 L 23,4 L 42,32 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Right ear outer ── -->
+                <GeometryDrawing Brush="#FFB07840">
+                    <GeometryDrawing.Pen><Pen Brush="#FF8B5C28" Thickness="1.2" LineJoin="Round"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 94,44 L 77,4 L 58,32 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Head ── -->
+                <GeometryDrawing Brush="#FFD4A56A">
+                    <GeometryDrawing.Pen><Pen Brush="#FF8B5C28" Thickness="1.4"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="50,54" RadiusX="42" RadiusY="38"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Left ear inner ── -->
+                <GeometryDrawing Brush="#FFE0956A">
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 13,41 L 24,11 L 38,30 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Right ear inner ── -->
+                <GeometryDrawing Brush="#FFE0956A">
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 87,41 L 76,11 L 62,30 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Snout (cream) ── -->
+                <GeometryDrawing Brush="#FFFAEBD7">
+                    <GeometryDrawing.Pen><Pen Brush="#FFD4B896" Thickness="0.8"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="50,70" RadiusX="25" RadiusY="19"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Left eye white ── -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="34,46" RadiusX="9" RadiusY="8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Right eye white ── -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="66,46" RadiusX="9" RadiusY="8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Left pupil ── -->
+                <GeometryDrawing Brush="#FF2C1A0E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="35,47" RadiusX="6" RadiusY="6"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Right pupil ── -->
+                <GeometryDrawing Brush="#FF2C1A0E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="67,47" RadiusX="6" RadiusY="6"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Left eye shine ── -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="37.5,44" RadiusX="2.5" RadiusY="2"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Right eye shine ── -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="69.5,44" RadiusX="2.5" RadiusY="2"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Nose ── -->
+                <GeometryDrawing Brush="#FF3D2010">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="50,63" RadiusX="9.5" RadiusY="6.5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Nose shine ── -->
+                <GeometryDrawing Brush="#66FFFFFF">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="46.5,61" RadiusX="3" RadiusY="2"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Mouth ── -->
+                <GeometryDrawing Brush="Transparent">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#FF3D2010" Thickness="1.8" StartLineCap="Round" EndLineCap="Round"/>
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 41,71 Q 50,78 59,71"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Tongue (small, cute) ── -->
+                <GeometryDrawing Brush="#FFE8788A">
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 44,75 Q 50,83 56,75 Q 50,73 44,75 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Left cheek blush ── -->
+                <GeometryDrawing Brush="#33E89060">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="22,60" RadiusX="9" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- ── Right cheek blush ── -->
+                <GeometryDrawing Brush="#33E89060">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="78,60" RadiusX="9" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- ══════════════════════════════════════════════
+         Paw print tile brush — applied to BgBaseBrush
+         Tile = 160×160 px, paw at ~60% opacity-reduced
+    ══════════════════════════════════════════════ -->
+    <DrawingBrush x:Key="PawTileBrush" TileMode="Tile"
+                  Viewport="0,0,160,160" ViewportUnits="Absolute"
+                  Stretch="None">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+
+                <!-- Background paper fill (matches BgBaseColor) -->
+                <GeometryDrawing Brush="#FFFAF4E4">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0,0,160,160"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Main pad -->
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="80,103" RadiusX="20" RadiusY="15"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Toe far-left -->
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="52,67" RadiusX="9.5" RadiusY="8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Toe center-left -->
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="68,55" RadiusX="9" RadiusY="8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Toe center-right -->
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="92,55" RadiusX="9" RadiusY="8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Toe far-right -->
+                <GeometryDrawing Brush="#14C4633E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="108,67" RadiusX="9.5" RadiusY="8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <!-- ══════════════════════════════════════════════
+         Sitting dog watermark (bottom-right corner)
+         Simple geometric corgi silhouette, 200×200 units
+    ══════════════════════════════════════════════ -->
+    <DrawingImage x:Key="SittingDogWatermark">
+        <DrawingImage.Drawing>
+            <DrawingGroup Opacity="0.13">
+
+                <!-- Body (haunches, oval) -->
+                <GeometryDrawing Brush="#FFD4734E">
+                    <GeometryDrawing.Pen><Pen Brush="#FFA05828" Thickness="2" LineJoin="Round"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="100,145" RadiusX="60" RadiusY="40"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Chest/torso (upper oval) -->
+                <GeometryDrawing Brush="#FFD4A56A">
+                    <GeometryDrawing.Pen><Pen Brush="#FFA05828" Thickness="2" LineJoin="Round"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="100,100" RadiusX="38" RadiusY="42"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Left front paw -->
+                <GeometryDrawing Brush="#FFD4A56A">
+                    <GeometryDrawing.Pen><Pen Brush="#FFA05828" Thickness="1.5"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="76,172" RadiusX="14" RadiusY="10"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Right front paw -->
+                <GeometryDrawing Brush="#FFD4A56A">
+                    <GeometryDrawing.Pen><Pen Brush="#FFA05828" Thickness="1.5"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="124,172" RadiusX="14" RadiusY="10"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Left ear outer -->
+                <GeometryDrawing Brush="#FFB07840">
+                    <GeometryDrawing.Pen><Pen Brush="#FF8B5C28" Thickness="1.5" LineJoin="Round"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 64,72 L 72,38 L 90,65 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Right ear outer -->
+                <GeometryDrawing Brush="#FFB07840">
+                    <GeometryDrawing.Pen><Pen Brush="#FF8B5C28" Thickness="1.5" LineJoin="Round"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 136,72 L 128,38 L 110,65 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Head -->
+                <GeometryDrawing Brush="#FFD4A56A">
+                    <GeometryDrawing.Pen><Pen Brush="#FFA05828" Thickness="2"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="100,68" RadiusX="34" RadiusY="30"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Ear inners -->
+                <GeometryDrawing Brush="#FFE0956A">
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 68,70 L 74,46 L 86,64 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#FFE0956A">
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 132,70 L 126,46 L 114,64 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Snout -->
+                <GeometryDrawing Brush="#FFFAEBD7">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="100,76" RadiusX="18" RadiusY="14"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Eyes -->
+                <GeometryDrawing Brush="#FF2C1A0E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="88,62" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#FF2C1A0E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="112,62" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Eye shines -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="90,60" RadiusX="1.8" RadiusY="1.8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="114,60" RadiusX="1.8" RadiusY="1.8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Nose -->
+                <GeometryDrawing Brush="#FF3D2010">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="100,72" RadiusX="7" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Mouth smile -->
+                <GeometryDrawing Brush="Transparent">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#FF3D2010" Thickness="1.8" StartLineCap="Round" EndLineCap="Round"/>
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 92,78 Q 100,84 108,78"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Tail (stub — corgi style) -->
+                <GeometryDrawing Brush="#FFD4A56A">
+                    <GeometryDrawing.Pen><Pen Brush="#FFA05828" Thickness="1.5"/></GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 155,130 Q 172,118 168,105 Q 165,96 158,100 Q 152,105 155,130 Z"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+</ResourceDictionary>
