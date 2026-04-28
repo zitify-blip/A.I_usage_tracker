@@ -1,0 +1,1550 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>A.I. Usage Tracker — Full Mockup</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@latest/dist/web/static/pretendard.css">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Pretendard','Segoe UI',sans-serif;
+  width:1200px; height:760px; overflow:hidden;
+  background:#b8814a;
+  background-image:
+    radial-gradient(ellipse at 15% 60%,#9a5e28 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 20%,#cc9f6a 0%,transparent 50%),
+    repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.015) 3px,rgba(0,0,0,.015) 4px);
+}
+
+/* ── TITLEBAR ── */
+.titlebar {
+  height:44px; display:flex; align-items:center;
+  padding:0 18px; gap:10px;
+  background:linear-gradient(to bottom,#3e1a06,#2e1004);
+  border-bottom:2px solid #6b3010; position:relative;
+}
+.titlebar::after {
+  content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,#d4a853 30%,#d4a853 70%,transparent);
+}
+.tb-title { font-family:'Fredoka One',cursive; font-size:16px; color:#f5e6c8; letter-spacing:.04em; }
+.tb-sub   { font-family:'Caveat',cursive; font-size:13px; color:#b89060; }
+.win-btns { display:flex; gap:6px; align-items:center; margin-left:auto; }
+.wb { width:13px; height:13px; border-radius:50%; }
+.wb-r{background:#ff5f56;border:1px solid #c84040}
+.wb-y{background:#ffbd2e;border:1px solid #c89020}
+.wb-g{background:#27c93f;border:1px solid #18a030}
+
+/* ── LAYOUT ── */
+.layout { display:flex; height:716px; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width:192px; flex-shrink:0;
+  background:linear-gradient(160deg,#5c2e0e 0%,#7a4220 60%,#6a3418 100%);
+  border-right:2px solid #3a1806;
+  display:flex; flex-direction:column;
+  position:relative; overflow:hidden;
+}
+.sidebar::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:repeating-linear-gradient(168deg,transparent,transparent 9px,rgba(255,255,255,.018) 9px,rgba(255,255,255,.018) 10px);
+}
+.sidebar::after {
+  content:'🐾'; position:absolute; bottom:110px; right:6px;
+  font-size:38px; opacity:.06; transform:rotate(22deg); pointer-events:none;
+}
+.sb-logo {
+  padding:12px 12px 10px; display:flex; align-items:center; gap:9px;
+  border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:6px;
+  position:relative; z-index:1;
+}
+.sb-box {
+  width:40px; height:40px; background:linear-gradient(135deg,#f5e6c8,#e8d0a0);
+  border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:26px; box-shadow:0 2px 8px rgba(0,0,0,.4),0 0 0 2px #d4a853; flex-shrink:0;
+}
+.sb-name { font-family:'Fredoka One',cursive; font-size:13px; color:#f5e6c8; line-height:1.3; }
+.sb-ver  { font-size:9px; color:#b89060; font-weight:600; }
+.sb-sect {
+  padding:6px 12px 2px; font-size:9px; font-weight:800;
+  color:rgba(245,230,200,.38); text-transform:uppercase; letter-spacing:.12em;
+  position:relative; z-index:1;
+}
+.sb-paw-div {
+  text-align:center; padding:2px 0; font-size:10px;
+  color:rgba(245,230,200,.22); letter-spacing:4px;
+  position:relative; z-index:1;
+}
+.nav {
+  display:flex; align-items:center;
+  padding:7px 10px 7px 12px;
+  margin:1px 8px 1px 0; border-radius:0 22px 22px 0;
+  cursor:pointer; position:relative; z-index:1; transition:background .1s;
+}
+.nav:hover:not(.on) { background:rgba(255,255,255,.08); }
+.nav.on { background:#f5e6c8; box-shadow:2px 2px 8px rgba(0,0,0,.22); }
+.nav-ic {
+  width:26px; height:26px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; margin-right:7px; flex-shrink:0;
+  background:rgba(255,255,255,.1);
+}
+.nav.on .nav-ic { background:rgba(0,0,0,.05); }
+.nav-lbl { font-size:11.5px; font-weight:700; color:rgba(245,230,200,.9); flex:1; }
+.nav.on .nav-lbl { color:#5c3d11; }
+.nav-char { font-size:18px; filter:drop-shadow(1px 1px 2px rgba(0,0,0,.35)); }
+.sb-grow { flex:1; }
+.sb-bottom { border-top:1px solid rgba(255,255,255,.1); padding:4px 0; position:relative; z-index:1; }
+
+/* ── CONTENT ── */
+.content { flex:1; padding:12px 14px 14px; display:flex; flex-direction:column; gap:10px; }
+.topbar { display:flex; align-items:center; }
+.topbar-title {
+  font-family:'Fredoka One',cursive; font-size:20px; color:#f5e6c8;
+  text-shadow:1px 2px 4px rgba(0,0,0,.35); display:flex; align-items:center; gap:8px;
+}
+.btns { display:flex; gap:7px; margin-left:auto; }
+.btn {
+  padding:6px 15px; border-radius:22px; font-size:11px; font-weight:800;
+  font-family:'Pretendard',sans-serif; cursor:pointer; border:none;
+  display:flex; align-items:center; gap:5px;
+}
+.btn-p{background:#d4734e;color:#fff;box-shadow:3px 3px 0 #8b3820}
+.btn-s{background:#f5e6c8;color:#5c3d11;box-shadow:3px 3px 0 #c9a87c}
+.btn-b{background:#5b8fd4;color:#fff;box-shadow:3px 3px 0 #2d5a8b}
+.btn-g{background:#5aab6f;color:#fff;box-shadow:3px 3px 0 #2d7a4a}
+
+/* ── BOOK ── */
+.book {
+  flex:1; display:flex; border-radius:8px; overflow:hidden;
+  box-shadow:0 8px 28px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);
+  background:#d4b896;
+}
+.tp { flex:1; display:flex; }
+.tp.hidden { display:none; }
+
+/* ── PAGE ── */
+.page {
+  flex:1; background:#faf4e4; padding:16px 18px 42px;
+  position:relative; overflow:hidden;
+}
+.page::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:repeating-linear-gradient(transparent,transparent 27px,#ddd0b8 27px,#ddd0b8 28px);
+  opacity:.32;
+}
+.lp::after {
+  content:''; position:absolute; top:0; left:44px; bottom:0; width:1px;
+  background:rgba(255,120,120,.3); pointer-events:none;
+}
+
+/* ── SPINE ── */
+.spine {
+  width:18px; flex-shrink:0;
+  background:linear-gradient(to right,#c9a87c 0%,#e8d5a3 35%,#f5edd8 50%,#e8d5a3 65%,#c9a87c 100%);
+  box-shadow:inset 2px 0 4px rgba(0,0,0,.12),inset -2px 0 4px rgba(0,0,0,.12);
+  display:flex; flex-direction:column; align-items:center; justify-content:space-evenly;
+}
+.sp-dot { width:5px; height:5px; border-radius:50%; background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.35); }
+
+/* ── PAGE HEADER ── */
+.ph { display:flex; align-items:center; gap:8px; margin-bottom:13px; position:relative; z-index:1; }
+.ph-ic { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 2px 5px rgba(0,0,0,.2); }
+.ph-title { font-family:'Fredoka One',cursive; font-size:15px; color:#3d2b1f; }
+.ph-date  { font-family:'Caveat',cursive; font-size:13px; color:#9b7652; margin-left:auto; }
+
+/* ── STICKY NOTES ── */
+.stickies { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-bottom:14px; position:relative; z-index:1; }
+.sticky {
+  padding:10px 10px 14px; border-radius:3px; position:relative;
+  box-shadow:2px 3px 8px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.04);
+}
+.sticky::before {
+  content:''; position:absolute; top:-7px; left:50%; transform:translateX(-50%);
+  width:30px; height:13px; background:rgba(255,255,255,.58); border-radius:2px;
+  box-shadow:0 1px 2px rgba(0,0,0,.1);
+}
+/* Paw stamp on every sticky note */
+.sticky::after {
+  content:'🐾'; position:absolute; bottom:4px; right:6px;
+  font-size:12px; opacity:.2; transform:rotate(18deg);
+}
+.s1{background:#fff9c4;transform:rotate(-1deg)}
+.s2{background:#e3f5ff;transform:rotate(.5deg)}
+.s3{background:#ffecd8;transform:rotate(-.8deg)}
+.s4{background:#f0fff4;transform:rotate(.4deg)}
+.st-em  { font-size:16px; margin-bottom:3px; }
+.st-lbl { font-size:8.5px; font-weight:800; color:#9b7652; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
+.st-val { font-family:'Fredoka One',cursive; font-size:22px; color:#3d2b1f; line-height:1; }
+.st-val-sm { font-family:'Fredoka One',cursive; font-size:17px; color:#3d2b1f; line-height:1; }
+.st-sub { font-size:9px; color:#9b7652; font-weight:600; margin-top:3px; }
+
+/* ── SECTION LABEL ── */
+.sl {
+  font-family:'Caveat',cursive; font-size:14px; color:#8b5e3c; font-weight:700;
+  margin-bottom:8px; position:relative; z-index:1;
+  display:flex; align-items:center; gap:7px;
+}
+.badge {
+  display:inline-flex; align-items:center; gap:3px; color:#fff;
+  font-size:9px; font-weight:800; font-family:'Pretendard',sans-serif;
+  padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:.06em;
+}
+.bd-or{background:#d4734e}.bd-bl{background:#5b8fd4}
+.bd-gd{background:#c9922a}.bd-gr{background:#5aab6f}
+.bd-pu{background:#9b72cb}.bd-gy{background:#7a8490}
+
+/* ── DONUTS ── */
+.donut-row { display:flex; gap:14px; align-items:center; position:relative; z-index:1; }
+.donut-item { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.dw { position:relative; }
+.dw svg { display:block; }
+.d-inner { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.d-pct { font-family:'Fredoka One',cursive; font-size:21px; }
+.d-sub2-small { font-size:8px; color:#9b7652; font-weight:700; margin-top:1px; }
+.d-lbl  { font-family:'Caveat',cursive; font-size:11px; color:#5c3d11; font-weight:700; text-align:center; }
+.d-sub2 { font-size:9px; color:#9b7652; font-weight:600; text-align:center; }
+
+/* ── PROGRESS BARS ── */
+.prog-wrap { position:relative; z-index:1; }
+.prog-row  { margin-bottom:8px; }
+.prog-meta { display:flex; justify-content:space-between; margin-bottom:3px; }
+.prog-name { font-size:10px; font-weight:700; color:#5c3d11; }
+.prog-pct  { font-family:'Fredoka One',cursive; font-size:12px; }
+.prog-track { height:10px; background:#e8d5a3; border-radius:8px; overflow:hidden; border:1px solid #d4b896; }
+.prog-fill  { height:100%; border-radius:8px; }
+.fill-or{background:linear-gradient(90deg,#d4734e,#f0a080)}
+.fill-bl{background:linear-gradient(90deg,#5b8fd4,#93c5fd)}
+.fill-pu{background:linear-gradient(90deg,#9b72cb,#c084fc)}
+.fill-gr{background:linear-gradient(90deg,#5aab6f,#86efac)}
+.fill-gy{background:linear-gradient(90deg,#7a8490,#a0aab4)}
+
+/* ── BUDGET CARD ── */
+.budget-card {
+  display:flex; align-items:center; gap:10px;
+  background:#f0f7ff; border:1.5px solid #c5ddf5; border-radius:12px;
+  padding:9px 12px; margin-bottom:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.06); position:relative; z-index:1;
+}
+.b-ava { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.b-ava-bl{background:linear-gradient(135deg,#60a5fa,#a78bfa)}
+.b-ava-or{background:linear-gradient(135deg,#d4734e,#f0a080)}
+.b-name { font-size:13px; font-weight:800; color:#2d4a6b; }
+.b-sub  { font-size:9px; color:#8fa8c4; font-weight:600; }
+.b-val  { margin-left:auto; font-family:'Fredoka One',cursive; font-size:15px; color:#5b8fd4; }
+
+/* ── SELECT PILL ── */
+.select-pill {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#f5e6c8; border:2px solid #d4a853; border-radius:20px;
+  padding:5px 12px; font-size:12px; font-weight:800; color:#5c3d11;
+  box-shadow:2px 2px 0 #c9a87c; cursor:pointer;
+  position:relative; z-index:1; margin-bottom:10px;
+}
+
+/* ── CHART ── */
+.chart-wrap { position:relative; z-index:1; }
+.bd2 { font-size:8px; color:#9b7652; font-weight:700; text-align:center; }
+
+/* ── COST TABLE ── */
+.ctable { position:relative; z-index:1; }
+.ct-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px dashed #e0d0b0; }
+.ct-row:last-child { border-bottom:none; }
+.ct-row.total { border-top:1.5px solid #c9a87c; margin-top:4px; padding-top:9px; }
+.ct-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.ct-name { font-size:10px; font-weight:700; color:#3d2b1f; flex:1; }
+.ct-tok  { font-size:9px; color:#9b7652; font-weight:600; min-width:66px; text-align:right; }
+.ct-cost { font-family:'Fredoka One',cursive; font-size:12px; color:#5b8fd4; min-width:42px; text-align:right; }
+
+/* ── INFO BOX ── */
+.info-box {
+  background:linear-gradient(135deg,rgba(91,143,212,.1),rgba(154,114,203,.06));
+  border:1.5px solid rgba(91,143,212,.22); border-radius:10px;
+  padding:10px 12px; position:relative; z-index:1; margin-top:8px;
+}
+.info-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; }
+.info-key { font-size:10px; color:#9b7652; font-weight:700; }
+.info-val { font-family:'Fredoka One',cursive; font-size:13px; color:#3d2b1f; }
+
+/* ── NOTE BOX ── */
+.note-box {
+  background:#fff9c4; border:1.5px dashed #d4a853; border-radius:10px;
+  padding:10px 12px; font-family:'Caveat',cursive; font-size:14px; color:#8b5e3c;
+  position:relative; z-index:1; margin-top:8px;
+}
+
+/* ── COMING SOON ── */
+.coming-soon {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; gap:10px; position:relative; z-index:1;
+}
+.cs-title { font-family:'Fredoka One',cursive; font-size:20px; color:#9b7652; }
+.cs-sub   { font-family:'Caveat',cursive; font-size:14px; color:#c9a87c; text-align:center; line-height:1.6; }
+
+/* ── PAGE FOOTER ── */
+.pfooter {
+  position:absolute; bottom:0; left:0; right:0; height:38px;
+  background:rgba(232,213,163,.5); border-top:1px dashed #d4b896;
+  display:flex; align-items:center; padding:0 16px;
+  font-size:10px; font-weight:600; color:#9b7652; z-index:2;
+}
+.pfooter-ver {
+  margin:0 auto; font-family:'Fredoka One',cursive;
+  background:#f5e6c8; border:1.5px solid #d4a853; border-radius:10px;
+  padding:2px 10px; font-size:11px; color:#5c3d11;
+}
+.pfooter-brand { color:#d4734e; font-weight:900; }
+
+/* ── DECO ── */
+.deco { position:absolute; pointer-events:none; }
+
+/* ── MODEL LIST ── */
+.mlist { position:relative; z-index:1; }
+.mitem { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed #e0d0b0; }
+.mitem:last-child { border-bottom:none; }
+.m-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.m-name { font-size:11px; font-weight:700; color:#3d2b1f; flex:1; }
+.m-bar-wrap { width:80px; height:6px; background:#e8d5a3; border-radius:4px; overflow:hidden; }
+.m-bar  { height:100%; border-radius:4px; }
+.m-val  { font-family:'Fredoka One',cursive; font-size:13px; min-width:42px; text-align:right; }
+
+/* ── THEME SWITCHER ── */
+.sb-theme {
+  padding:8px 12px 12px; display:flex; align-items:center; gap:8px;
+  position:relative; z-index:1;
+}
+.sb-theme-lbl {
+  font-size:9px; font-weight:800; color:rgba(245,230,200,.45);
+  text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;
+}
+.theme-btns { display:flex; gap:4px; flex:1; }
+.t-btn {
+  flex:1; padding:4px 6px; border-radius:10px;
+  font-size:10px; font-weight:700; font-family:'Pretendard',sans-serif;
+  text-align:center; cursor:pointer;
+  color:rgba(245,230,200,.5); background:rgba(255,255,255,.06); transition:all .15s;
+}
+.t-btn.on { background:#f5e6c8; color:#5c3d11; box-shadow:2px 2px 0 #c9a87c; }
+
+/* ══ ORIG MODE — 실제 앱 스타일 ══ */
+
+/* orig top-nav */
+.orig-topnav {
+  display:none; flex-shrink:0; height:40px; align-items:stretch;
+  background:#1c1c1c; border-bottom:1px solid #2a2a2a; padding:0 12px; gap:0;
+}
+body.orig-mode .orig-topnav { display:flex; }
+.otn-tab {
+  display:flex; align-items:center; gap:6px; padding:0 14px;
+  font-size:12px; font-weight:600; color:#666;
+  font-family:'Pretendard',sans-serif; cursor:pointer; white-space:nowrap;
+  border-bottom:2px solid transparent; transition:color .15s;
+}
+.otn-tab:hover { color:#bbb; }
+.otn-tab.on    { color:#fff; }
+.otn-tab.on[data-color="orange"]{ border-bottom-color:#f97316; }
+.otn-tab.on[data-color="blue"]  { border-bottom-color:#3b82f6; }
+.otn-tab.on[data-color="green"] { border-bottom-color:#22c55e; }
+.otn-tab.on[data-color="gray"]  { border-bottom-color:#6b7280; }
+.otn-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; opacity:.85; }
+
+body.orig-mode { background:#1c1c1c; background-image:none; }
+
+/* titlebar */
+body.orig-mode .titlebar { background:#1c1c1c; border-bottom:1px solid #2a2a2a; }
+body.orig-mode .titlebar::after { display:none; }
+body.orig-mode .tb-title { font-family:'Pretendard',sans-serif; font-size:13px; font-weight:700; color:#d0d0d0; letter-spacing:.01em; }
+body.orig-mode .tb-sub   { display:none; }
+
+/* sidebar → 숨김, layout 풀 너비 */
+body.orig-mode .sidebar { display:none; }
+body.orig-mode .layout  { height:676px; }
+
+/* topbar */
+body.orig-mode .topbar-title { font-family:'Pretendard',sans-serif; font-size:22px; font-weight:800; color:#f0f0f0; }
+body.orig-mode .btn-p { background:#2c2c2c; color:#d0d0d0; border:1px solid #3a3a3a; box-shadow:none; }
+body.orig-mode .btn-s { background:#2c2c2c; color:#d0d0d0; border:1px solid #3a3a3a; box-shadow:none; }
+body.orig-mode .btn-b { background:#2c2c2c; color:#d0d0d0; border:1px solid #3a3a3a; box-shadow:none; }
+body.orig-mode .btn-g { background:#2c2c2c; color:#d0d0d0; border:1px solid #3a3a3a; box-shadow:none; }
+
+/* book → flat dark */
+body.orig-mode .book { background:#1c1c1c; box-shadow:none; border-radius:0; }
+body.orig-mode .spine { display:none; }
+body.orig-mode .page  { background:#1c1c1c; padding:16px 20px 46px; }
+body.orig-mode .page::before { display:none; }
+body.orig-mode .lp::after    { display:none; }
+
+/* page header */
+body.orig-mode .ph { border-bottom:1px solid #2a2a2a; padding-bottom:9px; margin-bottom:14px; }
+body.orig-mode .ph-ic    { display:none; }
+body.orig-mode .ph-title { font-family:'Pretendard',sans-serif; font-size:11px; font-weight:800; color:#666; text-transform:uppercase; letter-spacing:.1em; }
+body.orig-mode .ph-date  { font-family:'Pretendard',sans-serif; font-size:11px; color:#555; }
+
+/* sticky → dark card */
+body.orig-mode .sticky { background:#252525 !important; transform:none !important; border-radius:12px; border:1px solid #2e2e2e !important; box-shadow:none; padding:12px 14px 16px; }
+body.orig-mode .sticky::before { display:none; }
+body.orig-mode .sticky::after  { display:none; }
+body.orig-mode .st-em  { display:none; }
+body.orig-mode .st-lbl { font-family:'Pretendard',sans-serif; font-size:10px; font-weight:700; color:#666; text-transform:uppercase; letter-spacing:.06em; }
+body.orig-mode .st-val, body.orig-mode .st-val-sm { font-family:'Pretendard',sans-serif; font-size:22px; font-weight:800; color:#f0f0f0; }
+body.orig-mode .st-sub { font-family:'Pretendard',sans-serif; color:#555; font-size:9px; }
+
+/* section label */
+body.orig-mode .sl    { font-family:'Pretendard',sans-serif; font-size:10px; font-weight:800; color:#666; text-transform:uppercase; letter-spacing:.08em; }
+body.orig-mode .badge { display:none; }
+
+/* donut → green accent */
+body.orig-mode .dw circle:last-child { stroke:#22c55e !important; }
+body.orig-mode .d-pct  { color:#22c55e !important; font-family:'Pretendard',sans-serif !important; }
+body.orig-mode .d-lbl  { color:#888 !important; font-family:'Pretendard',sans-serif !important; }
+body.orig-mode .d-sub2 { color:#555 !important; font-family:'Pretendard',sans-serif !important; }
+body.orig-mode .d-sub2-small { color:#666 !important; font-family:'Pretendard',sans-serif !important; }
+body.orig-mode .dw circle:first-child { fill:#252525 !important; stroke:#333 !important; }
+
+/* progress */
+body.orig-mode .prog-track { background:#2a2a2a; border-color:#333; }
+body.orig-mode .prog-name  { font-family:'Pretendard',sans-serif; color:#999; }
+body.orig-mode .fill-or { background:#f97316; }
+body.orig-mode .fill-bl { background:#3b82f6; }
+body.orig-mode .fill-pu { background:#a78bfa; }
+body.orig-mode .fill-gr { background:#22c55e; }
+body.orig-mode .fill-gy { background:#6b7280; }
+body.orig-mode .prog-pct { font-family:'Pretendard',sans-serif; }
+
+/* budget card */
+body.orig-mode .budget-card { background:#252525 !important; border:1px solid #2e2e2e !important; border-radius:12px; }
+body.orig-mode .b-name { font-family:'Pretendard',sans-serif; color:#f0f0f0 !important; }
+body.orig-mode .b-sub  { font-family:'Pretendard',sans-serif; color:#555 !important; }
+body.orig-mode .b-val  { font-family:'Pretendard',sans-serif; }
+
+/* select pill */
+body.orig-mode .select-pill { background:#252525; border-color:#3a3a3a; color:#d0d0d0; box-shadow:none; font-family:'Pretendard',sans-serif; }
+
+/* chart */
+body.orig-mode .bd2 { font-family:'Pretendard',sans-serif; color:#555; }
+
+/* cost table */
+body.orig-mode .ct-name { font-family:'Pretendard',sans-serif; color:#f0f0f0; }
+body.orig-mode .ct-tok  { font-family:'Pretendard',sans-serif; color:#666; }
+body.orig-mode .ct-cost { font-family:'Pretendard',sans-serif; }
+body.orig-mode .ct-row  { border-bottom-color:#2a2a2a; }
+body.orig-mode .ct-row.total { border-top-color:#3a3a3a; }
+
+/* info / note box */
+body.orig-mode .info-box { background:#252525; border:1px solid #2e2e2e; border-radius:12px; }
+body.orig-mode .info-key { font-family:'Pretendard',sans-serif; color:#666; }
+body.orig-mode .info-val { font-family:'Pretendard',sans-serif; color:#f0f0f0; }
+body.orig-mode .note-box { background:#252525; border:1px solid #2e2e2e; border-radius:12px; font-family:'Pretendard',sans-serif; font-size:11px; color:#666; }
+
+/* model list */
+body.orig-mode .m-name     { font-family:'Pretendard',sans-serif; color:#f0f0f0; }
+body.orig-mode .m-val      { font-family:'Pretendard',sans-serif; }
+body.orig-mode .m-bar-wrap { background:#2a2a2a; }
+body.orig-mode .mitem      { border-bottom-color:#2a2a2a; }
+
+/* coming soon */
+body.orig-mode .cs-title { font-family:'Pretendard',sans-serif; color:#555; }
+body.orig-mode .cs-sub   { font-family:'Pretendard',sans-serif; color:#444; }
+
+/* footer */
+body.orig-mode .pfooter      { background:#181818; border-top:1px solid #2a2a2a; color:#555; }
+body.orig-mode .pfooter-ver  { background:#252525; border:1px solid #2e2e2e; color:#999; font-family:'Pretendard',sans-serif; }
+body.orig-mode .pfooter-brand { color:#22c55e; }
+
+/* session bar */
+body.orig-mode .sess-bar-fill { background:linear-gradient(90deg,#22c55e,#4ade80) !important; }
+body.orig-mode .sess-bar-wrap { background:#2a2a2a !important; border-color:#333 !important; }
+
+/* spine, decos hidden */
+body.orig-mode .deco           { display:none !important; }
+body.orig-mode .dog-mascot-area{ display:none !important; }
+body.orig-mode .sb-paw-div     { display:none; }
+/* ── SETTINGS UI ── */
+.set-section { position:relative; z-index:1; margin-bottom:13px; }
+.set-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 12px; background:rgba(255,255,255,.62); border-radius:10px;
+  border:1px solid rgba(212,184,150,.45); margin-bottom:5px;
+  box-shadow:0 1px 3px rgba(0,0,0,.05);
+}
+.set-left  { display:flex; flex-direction:column; gap:1px; }
+.set-label { font-size:11px; font-weight:700; color:#3d2b1f; }
+.set-desc  { font-size:9px; color:#9b7652; }
+.set-val   { font-family:'Fredoka One',cursive; font-size:12px; color:#5b8fd4; }
+.set-pill  {
+  background:#f5e6c8; border:1.5px solid #d4a853; border-radius:12px;
+  padding:3px 10px; font-size:10px; font-weight:800; color:#5c3d11;
+  cursor:pointer; display:flex; align-items:center; gap:3px;
+}
+
+/* Toggle switch */
+.tog { width:36px; height:19px; border-radius:10px; position:relative; cursor:pointer; flex-shrink:0; border:1.5px solid; transition:background .15s; }
+.tog.on  { background:#5aab6f; border-color:#3d8a52; }
+.tog.off { background:#d4b896; border-color:#c9a87c; }
+.tog::after {
+  content:''; position:absolute; width:13px; height:13px; background:#fff;
+  border-radius:50%; top:1px; transition:left .15s;
+  box-shadow:0 1px 3px rgba(0,0,0,.22);
+}
+.tog.on::after  { left:19px; }
+.tog.off::after { left:1px; }
+
+/* Slider track */
+.slider-wrap { display:flex; align-items:center; gap:8px; }
+.slider-track { flex:1; height:8px; background:#e8d5a3; border-radius:6px; overflow:visible; position:relative; border:1px solid #d4b896; }
+.slider-fill  { height:100%; border-radius:6px; }
+.slider-thumb {
+  width:16px; height:16px; border-radius:50%; background:#fff;
+  border:2.5px solid; position:absolute; top:-4px;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+
+/* API key rows */
+.api-row {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 12px; background:rgba(255,255,255,.62); border-radius:10px;
+  border:1px solid rgba(212,184,150,.45); margin-bottom:5px;
+}
+.api-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.api-name { font-size:11px; font-weight:800; color:#3d2b1f; min-width:64px; }
+.api-key  { font-size:10px; color:#9b7652; flex:1; font-family:'Courier New',monospace; letter-spacing:.03em; }
+.api-tag  { font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; flex-shrink:0; }
+.api-ok   { background:#dcfce7; color:#166534; }
+.api-no   { background:#fef2f2; color:#991b1b; }
+
+/* Env row */
+.env-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:6px 12px; background:rgba(255,255,255,.55); border-radius:8px;
+  border:1px dashed rgba(212,184,150,.6); margin-bottom:4px;
+}
+.env-key { font-size:9px; font-weight:800; color:#8b5e3c; font-family:'Courier New',monospace; }
+.env-val { font-size:9px; color:#9b7652; font-family:'Courier New',monospace; }
+
+/* Action button */
+.act-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:6px 14px; border-radius:14px; font-size:10px; font-weight:800;
+  font-family:'Pretendard',sans-serif; cursor:pointer; border:none; margin-top:8px;
+}
+.act-bl { background:#5b8fd4; color:#fff; box-shadow:2px 2px 0 #2d5a8b; }
+.act-or { background:#d4734e; color:#fff; box-shadow:2px 2px 0 #8b3820; }
+.act-gr { background:#5aab6f; color:#fff; box-shadow:2px 2px 0 #2d7a4a; }
+.act-gy { background:#7a8490; color:#fff; box-shadow:2px 2px 0 #4a5460; }
+</style>
+</head>
+<body>
+
+<!-- TITLEBAR -->
+<div class="titlebar">
+  <span style="font-size:22px">🐾</span>
+  <span class="tb-title">A.I. Usage Tracker</span>
+  <span class="tb-sub">&nbsp;— doggo's AI companion log 🐶 ✦</span>
+  <div class="win-btns">
+    <div class="wb wb-r"></div><div class="wb wb-y"></div><div class="wb wb-g"></div>
+  </div>
+</div>
+
+<!-- ORIG-MODE TOP NAV -->
+<div class="orig-topnav">
+  <div class="otn-tab on" id="otn-global" data-tab="global" data-btn="p" data-color="green" onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#888"></span>Global
+  </div>
+  <div class="otn-tab" id="otn-ccli"  data-tab="ccli"  data-btn="s"  data-color="orange" onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#f97316"></span>Claude CLI
+  </div>
+  <div class="otn-tab" id="otn-capi"  data-tab="capi"  data-btn="s"  data-color="orange" onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#f97316"></span>Claude API
+  </div>
+  <div class="otn-tab" id="otn-gem"   data-tab="gem"   data-btn="b"  data-color="blue"   onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#3b82f6"></span>Gemini API
+  </div>
+  <div class="otn-tab" id="otn-oai"   data-tab="oai"   data-btn="g"  data-color="green"  onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#22c55e"></span>OpenAI API
+  </div>
+  <div class="otn-tab" id="otn-ocli"  data-tab="oai"   data-btn="g"  data-color="green"  onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#22c55e"></span>OpenAI CLI
+  </div>
+  <div class="otn-tab" id="otn-grok"  data-tab="grok"  data-btn="gy" data-color="gray"   onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#6b7280"></span>Grok API
+  </div>
+  <div class="otn-tab" id="otn-gcli"  data-tab="grok"  data-btn="gy" data-color="gray"   onclick="otnGo(this)">
+    <span class="otn-dot" style="background:#6b7280"></span>Grok CLI
+  </div>
+  <div style="flex:1"></div>
+  <div style="display:flex;align-items:center;gap:6px;padding:0 8px">
+    <div class="t-btn on" id="otn-tb-dog"  onclick="setTheme('dog')"  style="padding:3px 10px;border-radius:8px">🐶</div>
+    <div class="t-btn"    id="otn-tb-orig" onclick="setTheme('orig')" style="padding:3px 10px;border-radius:8px">💻</div>
+  </div>
+</div>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-box">🐶</div>
+    <div><div class="sb-name">A.I. Tracker</div><div class="sb-ver">🐾 v2.12.2</div></div>
+  </div>
+
+  <div class="sb-sect">Overview</div>
+  <div class="nav on" id="nav-global" onclick="go('global','🐾 대시보드','p','s',this)">
+    <div class="nav-ic">🐾</div><span class="nav-lbl">대시보드</span><span class="nav-char">🦴</span>
+  </div>
+
+  <div class="sb-paw-div">🐾 · · · 🐾</div>
+  <div class="sb-sect">Providers</div>
+  <div class="nav" id="nav-ccli" onclick="go('ccli','🦮 Claude CLI','s','s',this)">
+    <div class="nav-ic">🦮</div><span class="nav-lbl">Claude CLI</span><span class="nav-char" style="font-size:16px">🟠</span>
+  </div>
+  <div class="nav" id="nav-capi" onclick="go('capi','🐕‍🦺 Claude API','s','s',this)">
+    <div class="nav-ic">🐕‍🦺</div><span class="nav-lbl">Claude API</span>
+  </div>
+  <div class="nav" id="nav-gem" onclick="go('gem','🐩 Gemini API','b','s',this)">
+    <div class="nav-ic">🐩</div><span class="nav-lbl">Gemini API</span><span class="nav-char" style="font-size:16px">✨</span>
+  </div>
+  <div class="nav" id="nav-oai" onclick="go('oai','🐕 OpenAI API','g','s',this)">
+    <div class="nav-ic">🐕</div><span class="nav-lbl">OpenAI API</span>
+  </div>
+  <div class="nav" id="nav-ocli" onclick="go('oai','🦴 OpenAI CLI','g','s',this)">
+    <div class="nav-ic">🦴</div><span class="nav-lbl">OpenAI CLI</span>
+  </div>
+  <div class="nav" id="nav-grok" onclick="go('grok','⚡ Grok API','gy','s',this)">
+    <div class="nav-ic">⚡</div><span class="nav-lbl">Grok API</span><span class="nav-char" style="font-size:15px">🌩</span>
+  </div>
+  <div class="nav" id="nav-gcli" onclick="go('grok','🌩 Grok CLI','gy','s',this)">
+    <div class="nav-ic">🌩️</div><span class="nav-lbl">Grok CLI</span>
+  </div>
+
+  <div class="sb-grow"></div>
+  <div class="sb-bottom">
+    <div class="sb-sect">설정</div>
+    <div class="nav" id="nav-set-llm" onclick="go('set-llm','🧠 LLM 설정','sv','s',this)">
+      <div class="nav-ic">🧠</div><span class="nav-lbl">LLM</span>
+    </div>
+    <div class="nav" id="nav-set-api" onclick="go('set-api','🔑 API 설정','sv','s',this)">
+      <div class="nav-ic">🔑</div><span class="nav-lbl">API</span>
+    </div>
+    <div class="nav" id="nav-set-etc" onclick="go('set-etc','⚙️ 기타 설정','sv','s',this)">
+      <div class="nav-ic">⚙️</div><span class="nav-lbl">기타 설정</span>
+    </div>
+    <div class="sb-theme">
+      <span class="sb-theme-lbl">테마</span>
+      <div class="theme-btns">
+        <div class="t-btn on" id="tb-dog" onclick="setTheme('dog')">🐶 강아지</div>
+        <div class="t-btn" id="tb-dark" onclick="setTheme('dark')">💻 오리지널</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <div class="topbar">
+    <div class="topbar-title" id="ttitle">🐾 대시보드</div>
+    <div class="btns">
+      <button class="btn btn-p" id="btn1">⬆ Update</button>
+      <button class="btn btn-s">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="book">
+
+  <!-- ═══ GLOBAL ═══ -->
+  <div class="tp" id="tab-global">
+    <div class="page lp">
+      <!-- Scattered dog decos -->
+      <span class="deco" style="right:18px;top:14px;font-size:20px;opacity:.13;transform:rotate(-20deg)">🐾</span>
+      <span class="deco" style="left:50px;top:88px;font-size:15px;opacity:.1;transform:rotate(15deg)">🐾</span>
+      <span class="deco" style="left:46px;bottom:108px;font-size:14px;opacity:.1;transform:rotate(-28deg)">🦴</span>
+      <span class="deco" style="right:14px;bottom:80px;font-size:82px;opacity:.05;transform:rotate(-12deg)">🐶</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#e8b86d">🐾</div>
+        <div class="ph-title">Today's Overview</div>
+        <div class="ph-date">2026. 04. 28</div>
+      </div>
+      <div class="stickies">
+        <div class="sticky s1">
+          <div class="st-em">☀️</div><div class="st-lbl">Today</div>
+          <div class="st-val">$2.34</div><div class="st-sub">Claude + Gemini</div>
+        </div>
+        <div class="sticky s2">
+          <div class="st-em">📅</div><div class="st-lbl">This Month</div>
+          <div class="st-val">$18.72</div><div class="st-sub">11일 남음 · 74%</div>
+        </div>
+        <div class="sticky s3">
+          <div class="st-em">🔮</div><div class="st-lbl">Projected EOM</div>
+          <div class="st-val">$28.50</div><div class="st-sub">예산 $30 기준</div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-or">🐾 Claude</span>CLI · Quota</div>
+      <div class="donut-row">
+        <div class="donut-item">
+          <div class="dw" style="width:96px;height:96px">
+            <svg viewBox="0 0 36 36" width="96" height="96">
+              <circle cx="18" cy="18" r="15.9" fill="#f5edd8" stroke="#e8d0b0" stroke-width="3"/>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#d4734e" stroke-width="3.2"
+                stroke-dasharray="62 38" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+            </svg>
+            <div class="d-inner">
+              <div class="d-pct" style="color:#d4734e">62%</div>
+              <div class="d-sub2-small">사용됨</div>
+            </div>
+          </div>
+          <div class="d-lbl">5-Hour Session</div>
+          <div class="d-sub2">1h 54m 후 초기화</div>
+        </div>
+        <div class="donut-item">
+          <div class="dw" style="width:96px;height:96px">
+            <svg viewBox="0 0 36 36" width="96" height="96">
+              <circle cx="18" cy="18" r="15.9" fill="#f5edd8" stroke="#e8d0b0" stroke-width="3"/>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#5b8fd4" stroke-width="3.2"
+                stroke-dasharray="24 76" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+            </svg>
+            <div class="d-inner">
+              <div class="d-pct" style="color:#5b8fd4">24%</div>
+              <div class="d-sub2-small">사용됨</div>
+            </div>
+          </div>
+          <div class="d-lbl">Weekly</div>
+          <div class="d-sub2">4d 5h 후 초기화</div>
+        </div>
+        <!-- Dog mascot with speech bubble -->
+        <div class="dog-mascot-area" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin-top:-8px;position:relative;z-index:1">
+          <div style="font-size:72px;filter:drop-shadow(3px 4px 8px rgba(0,0,0,.2));line-height:1">🐕</div>
+          <div style="font-family:'Caveat',cursive;font-size:12px;color:#8b5e3c;background:#fff9c4;border:1px dashed #d4a853;padding:3px 10px;border-radius:10px;transform:rotate(-2deg);font-weight:700;box-shadow:1px 2px 4px rgba(0,0,0,.08)">Woof! AI 중! 🐾</div>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span>
+        <span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <span class="deco" style="right:12px;top:8px;font-size:56px;opacity:.05;transform:rotate(10deg)">✨</span>
+      <span class="deco" style="left:20px;bottom:80px;font-size:19px;opacity:.1;transform:rotate(-10deg)">🐾</span>
+      <span class="deco" style="right:20px;bottom:130px;font-size:15px;opacity:.11;transform:rotate(22deg)">🦴</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#5b8fd4">🐩</div>
+        <div class="ph-title">Gemini · Budgets</div>
+        <div class="ph-date">이번 달</div>
+      </div>
+      <div class="budget-card">
+        <div class="b-ava b-ava-bl">🐩</div>
+        <div><div class="b-name">zitify</div><div class="b-sub">월 예산 $15.00 · 오늘 $1.14</div></div>
+        <div class="b-val">$8.45</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="sl" style="margin-bottom:4px">
+          <span class="badge bd-bl">🐾 Trend</span>7-Day · Gemini Cost
+          <span style="margin-left:auto;font-family:'Fredoka One',cursive;font-size:13px;color:#5b8fd4">$1.14</span>
+        </div>
+        <svg width="100%" height="68" viewBox="0 0 280 58" preserveAspectRatio="none" style="display:block;overflow:visible">
+          <defs>
+            <linearGradient id="gradBl" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5b8fd4" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#5b8fd4" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon points="0,40 46,54 93,34 140,10 186,48 233,38 280,42 280,58 0,58" fill="url(#gradBl)"/>
+          <polyline points="0,40 46,54 93,34 140,10 186,48 233,38 280,42" fill="none" stroke="#5b8fd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="0"   cy="40" r="2.5" fill="#5b8fd4"/><circle cx="46"  cy="54" r="2.5" fill="#5b8fd4"/>
+          <circle cx="93"  cy="34" r="2.5" fill="#5b8fd4"/><circle cx="140" cy="10" r="2.5" fill="#5b8fd4"/>
+          <circle cx="186" cy="48" r="2.5" fill="#5b8fd4"/><circle cx="233" cy="38" r="2.5" fill="#5b8fd4"/>
+          <circle cx="280" cy="42" r="3" fill="#5b8fd4" stroke="#faf4e4" stroke-width="1.5"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;margin-top:2px">
+          <span class="bd2">4/22</span><span class="bd2">4/23</span><span class="bd2">4/24</span>
+          <span class="bd2">4/25</span><span class="bd2">4/26</span><span class="bd2">4/27</span><span class="bd2">4/28</span>
+        </div>
+      </div>
+      <div style="margin-top:14px;position:relative;z-index:1">
+        <div class="sl"><span class="badge bd-gd">🏆 Top</span>Models · This Month</div>
+        <div class="mlist">
+          <div class="mitem">
+            <div class="m-dot" style="background:#5b8fd4"></div>
+            <div class="m-name">gemini-2.5-flash</div>
+            <div class="m-bar-wrap"><div class="m-bar fill-bl" style="width:74%"></div></div>
+            <div class="m-val" style="color:#5b8fd4">$4.97</div>
+          </div>
+          <div class="mitem">
+            <div class="m-dot" style="background:#9b72cb"></div>
+            <div class="m-name">gemini-2.5-pro</div>
+            <div class="m-bar-wrap"><div class="m-bar fill-pu" style="width:52%"></div></div>
+            <div class="m-val" style="color:#9b72cb">$3.48</div>
+          </div>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span>
+        <span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CLAUDE CLI ═══ -->
+  <div class="tp hidden" id="tab-ccli">
+    <div class="page lp">
+      <span class="deco" style="right:8px;bottom:80px;font-size:96px;opacity:.05;transform:rotate(-8deg)">🦮</span>
+      <span class="deco" style="left:50px;top:82px;font-size:17px;opacity:.1;transform:rotate(15deg)">🐾</span>
+      <span class="deco" style="right:22px;top:50px;font-size:13px;opacity:.12;transform:rotate(-20deg)">🦴</span>
+      <span class="deco" style="left:46px;bottom:120px;font-size:15px;opacity:.09;transform:rotate(32deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#d4734e">🦮</div>
+        <div class="ph-title">Claude CLI · Session</div>
+        <div class="ph-date">실시간</div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:8px;position:relative;z-index:1">
+        <div class="dw" style="width:148px;height:148px">
+          <svg viewBox="0 0 36 36" width="148" height="148">
+            <circle cx="18" cy="18" r="15.9" fill="#f5edd8" stroke="#e8d0b0" stroke-width="2.6"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#d4734e" stroke-width="2.8"
+              stroke-dasharray="62 38" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+          </svg>
+          <div class="d-inner">
+            <div class="d-pct" style="color:#d4734e;font-size:36px">62%</div>
+            <div style="font-size:10px;color:#9b7652;font-weight:700;margin-top:2px">5-Hour Session</div>
+          </div>
+        </div>
+      </div>
+      <!-- Inline session bar (v2.12.2 — popup removed) -->
+      <div style="position:relative;z-index:1;margin:8px 0 4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:10px;font-weight:700;color:#5c3d11">⏱️ 세션 시작: 오늘 00:14 AM</span>
+          <span style="font-family:'Fredoka One',cursive;font-size:15px;color:#d4734e">1h 54m 남음</span>
+        </div>
+        <div class="sess-bar-wrap" style="height:22px;background:#e8d5a3;border-radius:11px;overflow:hidden;border:1.5px solid #d4b896;box-shadow:inset 0 2px 4px rgba(0,0,0,.08)">
+          <div class="sess-bar-fill" style="width:62%;height:100%;background:linear-gradient(90deg,#d4734e,#f0a080);border-radius:10px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">
+            <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,.9)">🐾🐾 62%</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:8.5px;color:#9b7652;font-weight:600">0:00 ──</span>
+          <span style="font-size:8.5px;color:#d4734e;font-weight:700">3h 06m 경과</span>
+          <span style="font-size:8.5px;color:#9b7652;font-weight:600">── 5:00</span>
+        </div>
+      </div>
+      <div class="prog-wrap" style="margin-top:10px">
+        <div class="sl" style="margin-bottom:6px"><span class="badge bd-or">🐕‍🦺 Model</span>Utilization · Today</div>
+        <div class="prog-row">
+          <div class="prog-meta"><span class="prog-name">claude-sonnet-4-6</span><span class="prog-pct" style="color:#d4734e">78%</span></div>
+          <div class="prog-track"><div class="prog-fill fill-or" style="width:78%"></div></div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-meta"><span class="prog-name">claude-haiku-4-5</span><span class="prog-pct" style="color:#5b8fd4">12%</span></div>
+          <div class="prog-track"><div class="prog-fill fill-bl" style="width:12%"></div></div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-meta"><span class="prog-name">claude-opus-4-5</span><span class="prog-pct" style="color:#9b72cb">8%</span></div>
+          <div class="prog-track"><div class="prog-fill fill-pu" style="width:8%"></div></div>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <span class="deco" style="right:10px;top:10px;font-size:60px;opacity:.04;transform:rotate(8deg)">📅</span>
+      <span class="deco" style="left:48px;bottom:100px;font-size:17px;opacity:.1;transform:rotate(-15deg)">🐾</span>
+      <span class="deco" style="right:18px;bottom:155px;font-size:13px;opacity:.1;transform:rotate(25deg)">🦴</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#5b8fd4">📅</div>
+        <div class="ph-title">Weekly Quota</div>
+        <div class="ph-date">4d 5h 남음</div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative;z-index:1">
+        <div class="donut-item">
+          <div class="dw" style="width:118px;height:118px">
+            <svg viewBox="0 0 36 36" width="118" height="118">
+              <circle cx="18" cy="18" r="15.9" fill="#f5edd8" stroke="#e8d0b0" stroke-width="2.8"/>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#5b8fd4" stroke-width="3"
+                stroke-dasharray="24 76" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+            </svg>
+            <div class="d-inner">
+              <div class="d-pct" style="color:#5b8fd4;font-size:28px">24%</div>
+              <div style="font-size:9px;color:#9b7652;font-weight:700">주간 사용</div>
+            </div>
+          </div>
+          <div class="d-lbl" style="font-size:13px">7일 한도</div>
+          <div class="d-sub2">월요일 00:00 초기화</div>
+        </div>
+      </div>
+      <div class="sl">🐾 Session Info</div>
+      <div class="info-box">
+        <div class="info-row"><span class="info-key">Extra Credits Used</span><span class="info-val">$0.00</span></div>
+        <div class="info-row"><span class="info-key">Design Availability</span><span class="info-val" style="color:#5aab6f">● Available</span></div>
+        <div class="info-row"><span class="info-key">Poll Interval</span><span class="info-val">5분</span></div>
+        <div class="info-row"><span class="info-key">Last Session Reset</span><span class="info-val" style="font-size:11px">04/28 00:14</span></div>
+      </div>
+      <div class="note-box" style="margin-top:12px">
+        🐶 세션 종료 후 새 대화를 시작하면 자동으로 새 5시간 윈도우가 시작됩니다
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CLAUDE API ═══ -->
+  <div class="tp hidden" id="tab-capi">
+    <div class="page lp">
+      <span class="deco" style="right:8px;bottom:80px;font-size:84px;opacity:.04;transform:rotate(-10deg)">🐕‍🦺</span>
+      <span class="deco" style="left:50px;top:76px;font-size:16px;opacity:.1;transform:rotate(20deg)">🐾</span>
+      <span class="deco" style="left:48px;bottom:110px;font-size:13px;opacity:.1;transform:rotate(-15deg)">🦴</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#d4734e">🐕‍🦺</div>
+        <div class="ph-title">Claude API · Usage</div>
+        <div class="ph-date">This Month</div>
+      </div>
+      <div class="stickies">
+        <div class="sticky s1">
+          <div class="st-em">📥</div><div class="st-lbl">Input Tokens</div>
+          <div class="st-val-sm">1.24M</div><div class="st-sub">이번 달 누적</div>
+        </div>
+        <div class="sticky s2">
+          <div class="st-em">📤</div><div class="st-lbl">Output Tokens</div>
+          <div class="st-val-sm">340K</div><div class="st-sub">이번 달 누적</div>
+        </div>
+        <div class="sticky s3">
+          <div class="st-em">💰</div><div class="st-lbl">API Cost</div>
+          <div class="st-val">$0.82</div><div class="st-sub">이번 달 합계</div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-or">🐾 Model</span>Breakdown</div>
+      <div class="ctable">
+        <div class="ct-row">
+          <div class="ct-dot" style="background:#d4734e"></div>
+          <div class="ct-name">claude-sonnet-4-6</div>
+          <div class="ct-tok">980K / 280K</div>
+          <div class="ct-cost">$0.67</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-dot" style="background:#9b72cb"></div>
+          <div class="ct-name">claude-opus-4-5</div>
+          <div class="ct-tok">260K / 60K</div>
+          <div class="ct-cost" style="color:#9b72cb">$0.15</div>
+        </div>
+        <div class="ct-row total">
+          <div class="ct-dot" style="background:transparent"></div>
+          <div class="ct-name" style="font-weight:800">합계</div>
+          <div class="ct-tok">1.24M tok</div>
+          <div class="ct-cost" style="color:#d4734e;font-size:13px">$0.82</div>
+        </div>
+      </div>
+      <div class="sl" style="margin-top:12px">🦴 API Account</div>
+      <div class="budget-card" style="background:#fff8f0;border-color:#f5dcc0">
+        <div class="b-ava b-ava-or">🐕‍🦺</div>
+        <div><div class="b-name" style="color:#5c3d11">zitify · Anthropic</div><div class="b-sub" style="color:#c9a87c">sk-ant-****3f2a · 활성</div></div>
+        <div class="b-val" style="color:#5aab6f">활성 ✓</div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <span class="deco" style="right:10px;top:10px;font-size:60px;opacity:.04;transform:rotate(8deg)">📈</span>
+      <span class="deco" style="left:48px;bottom:110px;font-size:16px;opacity:.1;transform:rotate(-10deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#d4734e">📈</div>
+        <div class="ph-title">API Cost · 7-Day</div>
+        <div class="ph-date">$0.82 total</div>
+      </div>
+      <div class="chart-wrap">
+        <svg width="100%" height="90" viewBox="0 0 280 80" preserveAspectRatio="none" style="display:block;overflow:visible">
+          <defs>
+            <linearGradient id="gradOr" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#d4734e" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#d4734e" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon points="0,54 46,40 93,64 140,22 186,47 233,33 280,43 280,75 0,75" fill="url(#gradOr)"/>
+          <polyline points="0,54 46,40 93,64 140,22 186,47 233,33 280,43" fill="none" stroke="#d4734e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="0"   cy="54" r="3" fill="#d4734e"/><circle cx="46"  cy="40" r="3" fill="#d4734e"/>
+          <circle cx="93"  cy="64" r="3" fill="#d4734e"/><circle cx="140" cy="22" r="3" fill="#d4734e"/>
+          <circle cx="186" cy="47" r="3" fill="#d4734e"/><circle cx="233" cy="33" r="3" fill="#d4734e"/>
+          <circle cx="280" cy="43" r="3.5" fill="#d4734e" stroke="#faf4e4" stroke-width="1.5"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;margin-top:2px">
+          <span class="bd2">4/22</span><span class="bd2">4/23</span><span class="bd2">4/24</span>
+          <span class="bd2">4/25</span><span class="bd2">4/26</span><span class="bd2">4/27</span><span class="bd2">4/28</span>
+        </div>
+      </div>
+      <div class="sl" style="margin-top:14px"><span class="badge bd-or">🐾 Cache</span>Token Efficiency</div>
+      <div class="info-box">
+        <div class="info-row"><span class="info-key">Cache Read Tokens</span><span class="info-val">312K</span></div>
+        <div class="info-row"><span class="info-key">Cache Hit Rate</span><span class="info-val" style="color:#5aab6f">71.2%</span></div>
+        <div class="info-row"><span class="info-key">Saved Cost (Est.)</span><span class="info-val" style="color:#5aab6f">~$0.23</span></div>
+        <div class="info-row"><span class="info-key">Thinking Tokens</span><span class="info-val">48K</span></div>
+      </div>
+      <div class="sl" style="margin-top:12px"><span class="badge bd-gr">🦴 Rate</span>Limits</div>
+      <div class="info-box" style="background:linear-gradient(135deg,rgba(90,171,111,.1),rgba(91,143,212,.06));border-color:rgba(90,171,111,.22)">
+        <div class="info-row"><span class="info-key">Tier</span><span class="info-val">Build (Tier 2)</span></div>
+        <div class="info-row"><span class="info-key">RPM (Sonnet)</span><span class="info-val">1,000</span></div>
+        <div class="info-row"><span class="info-key">TPM (Sonnet)</span><span class="info-val">80,000</span></div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ GEMINI ═══ -->
+  <div class="tp hidden" id="tab-gem">
+    <div class="page lp">
+      <span class="deco" style="right:10px;bottom:80px;font-size:94px;opacity:.05;transform:rotate(-10deg)">🐩</span>
+      <span class="deco" style="left:50px;top:80px;font-size:17px;opacity:.1;transform:rotate(15deg)">🐾</span>
+      <span class="deco" style="right:22px;top:58px;font-size:13px;opacity:.11;transform:rotate(-15deg)">🦴</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#5b8fd4">🐩</div>
+        <div class="ph-title">Gemini API · 계정</div>
+        <div class="ph-date">이번 달</div>
+      </div>
+      <div class="select-pill">🐩 zitify &nbsp;▾</div>
+      <div class="stickies">
+        <div class="sticky s1">
+          <div class="st-em">☀️</div><div class="st-lbl">Today</div>
+          <div class="st-val">$1.14</div><div class="st-sub">5건 호출</div>
+        </div>
+        <div class="sticky s2">
+          <div class="st-em">📅</div><div class="st-lbl">This Month</div>
+          <div class="st-val">$8.45</div><div class="st-sub">예산 $15 · 56%</div>
+        </div>
+        <div class="sticky s3">
+          <div class="st-em">🔢</div><div class="st-lbl">Total Tokens</div>
+          <div class="st-val-sm">632K</div><div class="st-sub">In+Out+Cache</div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-bl">🐾 Cost</span>Model Breakdown</div>
+      <div class="ctable">
+        <div class="ct-row">
+          <div class="ct-dot" style="background:#5b8fd4"></div>
+          <div class="ct-name">gemini-2.5-flash</div>
+          <div class="ct-tok">450K / 180K</div>
+          <div class="ct-cost">$4.97</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-dot" style="background:#9b72cb"></div>
+          <div class="ct-name">gemini-2.5-pro</div>
+          <div class="ct-tok">82K / 45K</div>
+          <div class="ct-cost" style="color:#9b72cb">$3.48</div>
+        </div>
+        <div class="ct-row total">
+          <div class="ct-dot" style="background:transparent"></div>
+          <div class="ct-name" style="font-weight:800">합계</div>
+          <div class="ct-tok">759K tok</div>
+          <div class="ct-cost" style="color:#d4734e;font-size:13px">$8.45</div>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <span class="deco" style="right:12px;top:8px;font-size:56px;opacity:.05;transform:rotate(10deg)">✨</span>
+      <span class="deco" style="left:48px;bottom:110px;font-size:16px;opacity:.1;transform:rotate(-10deg)">🐾</span>
+      <span class="deco" style="right:18px;bottom:152px;font-size:13px;opacity:.1;transform:rotate(20deg)">🦴</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#5b8fd4">📈</div>
+        <div class="ph-title">7-Day Cost Trend</div>
+        <div class="ph-date">Gemini · 7d</div>
+      </div>
+      <div class="chart-wrap">
+        <svg width="100%" height="82" viewBox="0 0 280 72" preserveAspectRatio="none" style="display:block;overflow:visible">
+          <polygon points="0,53 46,69 93,48 140,38 186,66 233,58 280,55 280,70 0,70" fill="url(#gradBl)"/>
+          <polyline points="0,53 46,69 93,48 140,38 186,66 233,58 280,55" fill="none" stroke="#5b8fd4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="0"   cy="53" r="3" fill="#5b8fd4"/><circle cx="46"  cy="69" r="3" fill="#5b8fd4"/>
+          <circle cx="93"  cy="48" r="3" fill="#5b8fd4"/><circle cx="140" cy="38" r="3" fill="#5b8fd4"/>
+          <circle cx="186" cy="66" r="3" fill="#5b8fd4"/><circle cx="233" cy="58" r="3" fill="#5b8fd4"/>
+          <circle cx="280" cy="55" r="3.5" fill="#5b8fd4" stroke="#faf4e4" stroke-width="1.5"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;margin-top:2px">
+          <span class="bd2">4/22<br><span style="font-size:7px;color:#9b72cb">$0.18</span></span>
+          <span class="bd2">4/23<br><span style="font-size:7px;color:#9b72cb">$0.05</span></span>
+          <span class="bd2">4/24<br><span style="font-size:7px;color:#9b72cb">$0.22</span></span>
+          <span class="bd2">4/25<br><span style="font-size:7px;color:#9b72cb">$0.31</span></span>
+          <span class="bd2">4/26<br><span style="font-size:7px;color:#9b72cb">$0.08</span></span>
+          <span class="bd2">4/27<br><span style="font-size:7px;color:#9b72cb">$0.14</span></span>
+          <span class="bd2">4/28<br><span style="font-size:7px;color:#9b72cb">$0.16</span></span>
+        </div>
+      </div>
+      <div class="sl" style="margin-top:12px"><span class="badge bd-gd">🦴 Pricing</span>Current Rates (per 1M tok)</div>
+      <div class="ctable">
+        <div class="ct-row">
+          <div class="ct-dot" style="background:#5b8fd4"></div>
+          <div class="ct-name">gemini-2.5-flash</div>
+          <div class="ct-tok">$0.30 / $2.50</div>
+          <div class="ct-cost" style="color:#5aab6f;font-size:10px">기본가</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-dot" style="background:#9b72cb"></div>
+          <div class="ct-name">gemini-2.5-pro</div>
+          <div class="ct-tok">$1.25 / $10.00</div>
+          <div class="ct-cost" style="color:#5aab6f;font-size:10px">기본가</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-dot" style="background:#7a8490"></div>
+          <div class="ct-name">gemini-2.5-flash-lite</div>
+          <div class="ct-tok">$0.10 / $0.40</div>
+          <div class="ct-cost" style="color:#5aab6f;font-size:10px">기본가</div>
+        </div>
+      </div>
+      <div class="sl" style="margin-top:8px"><span class="badge bd-gr">🔌 Relay</span>Local Proxy · 설정</div>
+      <div class="info-box" style="background:linear-gradient(135deg,rgba(90,171,111,.1),rgba(91,143,212,.06));border-color:rgba(90,171,111,.28)">
+        <div class="info-row"><span class="info-key">프록시 상태</span><span class="info-val" style="color:#5aab6f;font-size:12px">● 실행 중 · :3000</span></div>
+        <div class="info-row"><span class="info-key">GOOGLE_GENAI_BASE_URL</span><span class="info-val" style="font-size:10px;color:#5aab6f">적용됨 ✓</span></div>
+        <div style="display:flex;gap:5px;margin-top:7px">
+          <button style="flex:1;padding:5px 0;border-radius:14px;font-size:9px;font-weight:800;font-family:'Pretendard',sans-serif;background:#5aab6f;color:#fff;border:none;box-shadow:2px 2px 0 #2d7a4a;cursor:pointer">🔧 환경변수 복원</button>
+          <button style="flex:1;padding:5px 0;border-radius:14px;font-size:9px;font-weight:800;font-family:'Pretendard',sans-serif;background:#f5e6c8;color:#5c3d11;border:none;box-shadow:2px 2px 0 #c9a87c;cursor:pointer">🐾 Claude 규칙 설치</button>
+        </div>
+      </div>
+      <div class="sl" style="margin-top:7px"><span class="badge bd-bl">📋 최근 캡처</span>요청 내역 (날짜 포함)</div>
+      <div style="position:relative;z-index:1">
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px dashed #e0d0b0">
+          <div style="width:6px;height:6px;border-radius:50%;background:#5b8fd4;flex-shrink:0"></div>
+          <div style="font-size:9.5px;font-weight:700;color:#3d2b1f;flex:1">gemini-2.5-flash</div>
+          <div style="font-size:8px;color:#9b7652;font-weight:600">2026-04-28</div>
+          <div style="font-family:'Fredoka One',cursive;font-size:11px;color:#5b8fd4;min-width:34px;text-align:right">$0.08</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px dashed #e0d0b0">
+          <div style="width:6px;height:6px;border-radius:50%;background:#9b72cb;flex-shrink:0"></div>
+          <div style="font-size:9.5px;font-weight:700;color:#3d2b1f;flex:1">gemini-2.5-pro</div>
+          <div style="font-size:8px;color:#9b7652;font-weight:600">2026-04-27</div>
+          <div style="font-family:'Fredoka One',cursive;font-size:11px;color:#9b72cb;min-width:34px;text-align:right">$0.24</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 0">
+          <div style="width:6px;height:6px;border-radius:50%;background:#5b8fd4;flex-shrink:0"></div>
+          <div style="font-size:9.5px;font-weight:700;color:#3d2b1f;flex:1">gemini-2.5-flash</div>
+          <div style="font-size:8px;color:#9b7652;font-weight:600">2026-04-27</div>
+          <div style="font-family:'Fredoka One',cursive;font-size:11px;color:#5b8fd4;min-width:34px;text-align:right">$0.12</div>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ OPENAI ═══ -->
+  <div class="tp hidden" id="tab-oai">
+    <div class="page lp">
+      <span class="deco" style="left:50px;top:80px;font-size:18px;opacity:.1;transform:rotate(12deg)">🐾</span>
+      <span class="deco" style="right:20px;bottom:140px;font-size:15px;opacity:.1;transform:rotate(-18deg)">🦴</span>
+      <div class="coming-soon">
+        <div class="dog-mascot-area" style="font-size:72px;filter:drop-shadow(3px 4px 8px rgba(0,0,0,.18));line-height:1">🐕</div>
+        <div class="cs-title">OpenAI</div>
+        <div class="cs-sub">계정을 추가하면<br>사용 기록이 표시됩니다</div>
+        <button class="btn btn-g" style="margin-top:6px">+ 계정 추가</button>
+        <div style="font-family:'Caveat',cursive;font-size:13px;color:#c9a87c;margin-top:2px">Woof! 기다리고 있어요 🐾</div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <div class="coming-soon">
+        <div style="font-size:80px;opacity:.15">📊</div>
+        <div class="cs-sub">계정 추가 후<br>사용량이 여기에 표시돼요 🐕</div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ GROK ═══ -->
+  <div class="tp hidden" id="tab-grok">
+    <div class="page lp">
+      <span class="deco" style="left:50px;top:80px;font-size:18px;opacity:.1;transform:rotate(12deg)">🐾</span>
+      <span class="deco" style="right:20px;bottom:140px;font-size:15px;opacity:.1;transform:rotate(-18deg)">🦴</span>
+      <div class="coming-soon">
+        <div class="dog-mascot-area" style="font-size:72px;filter:drop-shadow(3px 4px 8px rgba(0,0,0,.18));line-height:1">⚡</div>
+        <div class="cs-title">Grok</div>
+        <div class="cs-sub">계정을 추가하면<br>사용 기록이 표시됩니다</div>
+        <button class="btn" style="margin-top:6px;background:#7a8490;color:#fff;box-shadow:3px 3px 0 #4a5460">+ 계정 추가</button>
+        <div style="font-family:'Caveat',cursive;font-size:13px;color:#c9a87c;margin-top:2px">Woof! 기다리고 있어요 🐾</div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <div class="coming-soon">
+        <div style="font-size:80px;opacity:.15">📊</div>
+        <div class="cs-sub">계정 추가 후<br>사용량이 여기에 표시돼요 ⚡</div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ LLM 설정 ═══ -->
+  <div class="tp hidden" id="tab-set-llm">
+    <div class="page lp">
+      <span class="deco" style="right:10px;bottom:80px;font-size:80px;opacity:.04;transform:rotate(-8deg)">🧠</span>
+      <span class="deco" style="left:50px;top:82px;font-size:16px;opacity:.1;transform:rotate(15deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#9b72cb">🧠</div>
+        <div class="ph-title">LLM 설정 · 기본 모델</div>
+        <div class="ph-date">Provider별</div>
+      </div>
+      <div class="sl"><span class="badge bd-or">🦮 Claude</span>기본 모델 선택</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">Claude CLI</div><div class="set-desc">기본 사용 모델</div></div>
+          <div class="set-pill">claude-sonnet-4-6 ▾</div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">Claude API</div><div class="set-desc">API 호출 기본 모델</div></div>
+          <div class="set-pill">claude-sonnet-4-6 ▾</div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-bl">🐩 Gemini</span>기본 모델 선택</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">Gemini API</div><div class="set-desc">기본 사용 모델</div></div>
+          <div class="set-pill">gemini-2.5-flash ▾</div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-gr">🐕 OpenAI</span>기본 모델 선택</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">OpenAI API</div><div class="set-desc">기본 사용 모델</div></div>
+          <div class="set-pill">gpt-4o ▾</div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-gy">⚡ Grok</span>기본 모델 선택</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">Grok API</div><div class="set-desc">기본 사용 모델</div></div>
+          <div class="set-pill">grok-3 ▾</div>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <span class="deco" style="right:12px;top:8px;font-size:56px;opacity:.04;transform:rotate(10deg)">⚙️</span>
+      <span class="deco" style="left:48px;bottom:110px;font-size:16px;opacity:.1;transform:rotate(-10deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#9b72cb">⚙️</div>
+        <div class="ph-title">생성 파라미터</div>
+        <div class="ph-date">Generation</div>
+      </div>
+      <div class="sl"><span class="badge bd-pu">🎛 Generation</span>파라미터</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">Temperature</div><div class="set-desc">창의성 조절 (0.0 ~ 1.0)</div></div>
+          <div class="set-val">0.7</div>
+        </div>
+        <div style="padding:4px 12px 8px;position:relative;z-index:1">
+          <div class="slider-wrap">
+            <span style="font-size:9px;font-weight:700;color:#9b7652">0.0</span>
+            <div class="slider-track" style="flex:1">
+              <div class="slider-fill fill-pu" style="width:70%"></div>
+              <div class="slider-thumb" style="left:calc(70% - 8px);border-color:#9b72cb"></div>
+            </div>
+            <span style="font-size:9px;font-weight:700;color:#9b7652">1.0</span>
+          </div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">스트리밍 출력</div><div class="set-desc">실시간 응답 표시</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">Extended Thinking</div><div class="set-desc">Claude 심층 추론 활성화</div></div>
+          <div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+      </div>
+      <div class="sl" style="margin-top:4px"><span class="badge bd-or">💬 세션</span>초기화 메시지</div>
+      <div class="set-section">
+        <div style="padding:8px 12px;background:rgba(255,255,255,.62);border-radius:10px;border:1px solid rgba(212,184,150,.45);position:relative;z-index:1">
+          <div style="font-size:9px;font-weight:700;color:#9b7652;margin-bottom:4px">세션 리셋 후 첫 메시지</div>
+          <div style="font-size:10px;color:#3d2b1f;font-family:'Caveat',cursive;background:#fff9c4;border:1px dashed #d4a853;border-radius:6px;padding:5px 8px;line-height:1.5">안녕! 새 세션 시작 🐾 준비됐어요!</div>
+          <button class="act-btn act-or" style="margin-top:5px;font-size:9px">✏️ 편집</button>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ API 설정 ═══ -->
+  <div class="tp hidden" id="tab-set-api">
+    <div class="page lp">
+      <span class="deco" style="right:10px;bottom:80px;font-size:80px;opacity:.04;transform:rotate(-8deg)">🔑</span>
+      <span class="deco" style="left:50px;top:82px;font-size:16px;opacity:.1;transform:rotate(15deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#d4a853">🔑</div>
+        <div class="ph-title">API 키 관리</div>
+        <div class="ph-date">Providers</div>
+      </div>
+      <div class="sl"><span class="badge bd-or">🔑 API Keys</span>등록 현황</div>
+      <div class="set-section">
+        <div class="api-row">
+          <div class="api-dot" style="background:#d4734e"></div>
+          <div class="api-name">Anthropic</div>
+          <div class="api-key">sk-ant-****3f2a</div>
+          <div class="api-tag api-ok">✓ 활성</div>
+        </div>
+        <div class="api-row">
+          <div class="api-dot" style="background:#5b8fd4"></div>
+          <div class="api-name">Google</div>
+          <div class="api-key">AIza****8kQp</div>
+          <div class="api-tag api-ok">✓ 활성</div>
+        </div>
+        <div class="api-row">
+          <div class="api-dot" style="background:#5aab6f"></div>
+          <div class="api-name">OpenAI</div>
+          <div class="api-key">미등록</div>
+          <div class="api-tag api-no">✗ 없음</div>
+        </div>
+        <div class="api-row">
+          <div class="api-dot" style="background:#7a8490"></div>
+          <div class="api-name">xAI (Grok)</div>
+          <div class="api-key">미등록</div>
+          <div class="api-tag api-no">✗ 없음</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;position:relative;z-index:1;margin-top:4px">
+        <button class="act-btn act-bl">🔑 키 추가</button>
+        <button class="act-btn act-gy">🗑 삭제</button>
+      </div>
+      <div class="sl" style="margin-top:12px"><span class="badge bd-bl">🌐 WebView2</span>Claude CLI 세션</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">WebView2 세션 상태</div><div class="set-desc">claude.ai 로그인 세션</div></div>
+          <div class="set-val" style="color:#5aab6f">● 유효</div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">마지막 스크랩</div><div class="set-desc">사용량 데이터 수집</div></div>
+          <div class="set-val" style="font-size:10px">02:26 AM</div>
+        </div>
+      </div>
+      <button class="act-btn act-or" style="position:relative;z-index:1">🔄 세션 갱신</button>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <span class="deco" style="right:12px;top:8px;font-size:56px;opacity:.04;transform:rotate(10deg)">🔌</span>
+      <span class="deco" style="left:48px;bottom:110px;font-size:16px;opacity:.1;transform:rotate(-10deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#5aab6f">🔌</div>
+        <div class="ph-title">Gemini Local Relay</div>
+        <div class="ph-date">Proxy 설정</div>
+      </div>
+      <div class="sl"><span class="badge bd-gr">🔌 Relay</span>환경변수 현황</div>
+      <div class="set-section">
+        <div class="env-row">
+          <div class="env-key">GOOGLE_GENAI_BASE_URL</div>
+          <div class="env-val" style="color:#5aab6f">http://localhost:3000 ✓</div>
+        </div>
+        <div class="env-row">
+          <div class="env-key">GOOGLE_API_KEY</div>
+          <div class="env-val" style="color:#5aab6f">AIza****8kQp ✓</div>
+        </div>
+        <div class="env-row">
+          <div class="env-key">프록시 포트</div>
+          <div class="env-val">3000</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;position:relative;z-index:1;flex-wrap:wrap">
+        <button class="act-btn act-gr">🚀 환경변수 적용</button>
+        <button class="act-btn act-gy">↩ 복원</button>
+      </div>
+      <div class="sl" style="margin-top:12px"><span class="badge bd-or">🐾 Claude</span>CLI 규칙 설치</div>
+      <div class="set-section">
+        <div style="padding:8px 12px;background:rgba(255,255,255,.62);border-radius:10px;border:1px solid rgba(212,184,150,.45);position:relative;z-index:1">
+          <div style="font-size:10px;font-weight:700;color:#3d2b1f;margin-bottom:3px">Gemini 위임 규칙</div>
+          <div style="font-size:9px;color:#9b7652;margin-bottom:6px;line-height:1.5">Claude Code가 Gemini로 요청을 자동 위임하는<br>CLAUDE.md 규칙을 설치합니다</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="api-tag api-ok">✓ 설치됨</div>
+            <button class="act-btn act-or" style="margin-top:0">🔄 재설치</button>
+            <button class="act-btn act-gy" style="margin-top:0">🗑 제거</button>
+          </div>
+        </div>
+      </div>
+      <div class="note-box" style="margin-top:8px">
+        🐶 Relay를 켜면 claude code에서도 Gemini를 바로 쓸 수 있어요!
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 기타 설정 ═══ -->
+  <div class="tp hidden" id="tab-set-etc">
+    <div class="page lp">
+      <span class="deco" style="right:10px;bottom:80px;font-size:80px;opacity:.04;transform:rotate(-8deg)">⚙️</span>
+      <span class="deco" style="left:50px;top:82px;font-size:16px;opacity:.1;transform:rotate(15deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#7a8490">⚙️</div>
+        <div class="ph-title">기타 설정</div>
+        <div class="ph-date">앱 동작</div>
+      </div>
+      <div class="sl"><span class="badge bd-gy">⏱ 폴링</span>데이터 수집</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">폴링 간격</div><div class="set-desc">사용량 갱신 주기</div></div>
+          <div class="set-pill">5분 ▾</div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">백그라운드 수집</div><div class="set-desc">앱 최소화 시에도 수집</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-bl">🔔 알림</span>Notification</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">세션 만료 알림</div><div class="set-desc">5시간 세션 종료 10분 전</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">예산 초과 알림</div><div class="set-desc">월 예산 80% / 100% 도달 시</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">업데이트 알림</div><div class="set-desc">새 버전 감지 시 알림</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-gr">🔄 업데이트</span>자동 업데이트</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">자동 업데이트 확인</div><div class="set-desc">GitHub Releases 모니터</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+      </div>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+    <div class="spine"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+    <div class="page">
+      <span class="deco" style="right:12px;top:8px;font-size:56px;opacity:.04;transform:rotate(10deg)">🐾</span>
+      <span class="deco" style="left:48px;bottom:110px;font-size:16px;opacity:.1;transform:rotate(-10deg)">🐾</span>
+      <div class="ph">
+        <div class="ph-ic" style="background:#7a8490">🖥️</div>
+        <div class="ph-title">앱 동작 설정</div>
+        <div class="ph-date">UI / 시스템</div>
+      </div>
+      <div class="sl"><span class="badge bd-gy">🖥 앱 동작</span>시스템 트레이</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">최소화 시 트레이로</div><div class="set-desc">작업표시줄 대신 트레이 아이콘</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">X 버튼 동작</div><div class="set-desc">닫기 또는 트레이 최소화</div></div>
+          <div class="set-pill">트레이로 ▾</div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">시작 시 최소화</div><div class="set-desc">부팅 시 트레이로 시작</div></div>
+          <div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">단일 인스턴스</div><div class="set-desc">중복 실행 방지</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+      </div>
+      <div class="sl"><span class="badge bd-or">🗄 데이터</span>보관 설정</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">Gemini 사용 기록 보관</div><div class="set-desc">최근 N일 데이터 유지</div></div>
+          <div class="set-pill">90일 ▾</div>
+        </div>
+        <div class="set-row">
+          <div class="set-left"><div class="set-label">로그 파일 자동 정리</div><div class="set-desc">오래된 로그 삭제</div></div>
+          <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+        </div>
+      </div>
+      <button class="act-btn act-or" style="position:relative;z-index:1;margin-top:2px">💾 설정 저장</button>
+      <button class="act-btn act-gy" style="position:relative;z-index:1;margin-top:2px;margin-left:5px">↩ 기본값 복원</button>
+      <div class="pfooter">
+        <span>🐾 Last woof: 02:26:42</span><span class="pfooter-ver">v2.12.2</span>
+        <span>made by <span class="pfooter-brand">zitify</span></span>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /book -->
+</div><!-- /content -->
+</div><!-- /layout -->
+
+<script>
+var btnLabels={p:'⬆ Update',s:'↻ 새로고침',b:'+ 계정 추가',g:'+ 계정 추가',gy:'↻ 새로고침',sv:'💾 저장'};
+var btnClasses={p:'btn-p',s:'btn-s',b:'btn-b',g:'btn-g',gy:'btn-s',sv:'btn-p'};
+function go(tabId,title,btnType,btn2Type,el){
+  document.querySelectorAll('.tp').forEach(function(t){t.classList.add('hidden');});
+  document.getElementById('tab-'+tabId).classList.remove('hidden');
+  document.getElementById('ttitle').textContent=title;
+  var b1=document.getElementById('btn1');
+  b1.textContent=btnLabels[btnType]||'⬆ Update';
+  b1.className='btn '+(btnClasses[btnType]||'btn-p');
+  document.querySelectorAll('.nav').forEach(function(n){n.classList.remove('on');});
+  el.classList.add('on');
+}
+var origTitles={
+  'global':'Global Overview','ccli':'Claude CLI','capi':'Claude API',
+  'gem':'Gemini API','oai':'OpenAI','ocli':'OpenAI CLI','grok':'Grok','gcli':'Grok CLI'
+};
+function otnGo(el){
+  var tabId=el.dataset.tab, btnType=el.dataset.btn;
+  document.querySelectorAll('.tp').forEach(function(t){t.classList.add('hidden');});
+  document.getElementById('tab-'+tabId).classList.remove('hidden');
+  document.getElementById('ttitle').textContent=origTitles[el.id.replace('otn-','')]||tabId;
+  var b1=document.getElementById('btn1');
+  b1.textContent=btnLabels[btnType]||'Update';
+  b1.className='btn '+(btnClasses[btnType]||'btn-p');
+  document.querySelectorAll('.otn-tab').forEach(function(t){t.classList.remove('on');});
+  el.classList.add('on');
+}
+function setTheme(t){
+  document.body.classList.toggle('orig-mode', t==='orig');
+  // sidebar theme buttons
+  document.getElementById('tb-dog').classList.toggle('on', t==='dog');
+  document.getElementById('tb-dark').classList.toggle('on', t==='orig');
+  // top-nav theme buttons
+  var otnDog=document.getElementById('otn-tb-dog');
+  var otnOrig=document.getElementById('otn-tb-orig');
+  if(otnDog)  otnDog.classList.toggle('on',  t==='dog');
+  if(otnOrig) otnOrig.classList.toggle('on', t==='orig');
+}
+window.addEventListener('load',function(){
+  var h=location.hash.replace('#','');
+  if(h){var n=document.getElementById('nav-'+h);if(n)n.click();}
+});
+</script>
+</body>
+</html>
