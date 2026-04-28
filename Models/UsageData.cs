@@ -173,6 +173,8 @@ public class AppSettings
     public int GeminiRelayPort { get; set; } = 47821;
     public bool GeminiRelayAutoStart { get; set; } = false;
 
+    public string Theme { get; set; } = "dark"; // "dark" | "dog"
+
     public int ClampedPollIntervalSeconds() => Math.Clamp(PollIntervalSeconds, 30, 3600);
     public int ClampedNotifyThreshold() => Math.Clamp(NotifyThreshold, 1, 100);
     public int ClampedGeminiRelayPort() => Math.Clamp(GeminiRelayPort, 1024, 65535);

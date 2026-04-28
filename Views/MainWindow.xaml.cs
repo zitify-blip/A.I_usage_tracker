@@ -117,6 +117,8 @@ public partial class MainWindow : Window
         SizeChanged += (_, _) => { if (MainTabs?.SelectedIndex == 0) RefreshGlobalUi(); };
 
         VersionLabel.Text = $"v{UpdateService.CurrentVersion}";
+
+        ThemeToggleBtn.Content = (_storage.Settings.Theme ?? "dark") == "dog" ? "🌙" : "🐶";
     }
 
     private TimeSpan CurrentPollInterval() =>
@@ -620,6 +622,17 @@ public partial class MainWindow : Window
             CheckUpdateBtn.Content = "🔄 Update";
         }
         CheckUpdateBtn.IsEnabled = true;
+    }
+
+    private void ThemeToggleBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var cur = _storage.Settings.Theme ?? "dark";
+        var next = cur == "dog" ? "dark" : "dog";
+        _storage.Settings.Theme = next;
+        _storage.SaveSettings(_storage.Settings);
+        ThemeToggleBtn.Content = next == "dog" ? "🌙" : "🐶";
+        System.Windows.MessageBox.Show("테마가 변경되었습니다.\n다음 실행 시 적용됩니다.",
+                        "테마 변경", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void TopMostBtn_Click(object sender, RoutedEventArgs e)

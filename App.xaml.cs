@@ -47,6 +47,16 @@ public partial class App : System.Windows.Application
         }
 
         var storage = new StorageService();
+
+        if (storage.Settings.Theme == "dog")
+        {
+            var dogDict = new ResourceDictionary
+            {
+                Source = new Uri("pack://application:,,,/Styles/DogTheme.xaml")
+            };
+            Resources.MergedDictionaries.Add(dogDict);
+        }
+
         var api = new ClaudeApiService();
         var usage = new UsageService(storage, api);
         var geminiProvider = new GeminiProvider();
