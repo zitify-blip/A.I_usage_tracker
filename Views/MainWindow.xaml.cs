@@ -807,6 +807,8 @@ public partial class MainWindow : Window
 
     public void RealClose()
     {
+        _dogAnim?.Stop();
+        _dogAnim = null;
         _reallyClosing = true;
         _pollTimer.Stop();
         _tickTimer.Stop();
