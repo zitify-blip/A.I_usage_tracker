@@ -24,6 +24,11 @@ public partial class App : System.Windows.Application
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsIconic(IntPtr hWnd);
 
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    private const int SW_SHOW    = 5;
     private const int SW_RESTORE = 9;
 
     private System.Threading.Mutex? _instanceMutex;
@@ -165,7 +170,10 @@ public partial class App : System.Windows.Application
             {
                 var hWnd = p.MainWindowHandle;
                 if (hWnd == IntPtr.Zero) continue;
-                if (IsIconic(hWnd)) ShowWindow(hWnd, SW_RESTORE);
+                if (IsIconic(hWnd))
+                    ShowWindow(hWnd, SW_RESTORE);
+                else if (!IsWindowVisible(hWnd))
+                    ShowWindow(hWnd, SW_SHOW);
                 SetForegroundWindow(hWnd);
                 return;
             }
