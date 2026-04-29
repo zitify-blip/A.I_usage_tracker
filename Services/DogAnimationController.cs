@@ -402,7 +402,7 @@ internal sealed class DogActor
     }
 
     // ════════════════════════════════════════════════════════════
-    //  스프라이트 생성 — 64×44 캔버스에 코기 옆면 그리기
+    //  스프라이트 생성 — 64×44 캔버스에 시바이누 옆면 그리기
     //  Z-순서: 꼬리 → 뒷다리 → 몸통 → 배 → 목줄 → 앞다리 → 귀 → 머리
     // ════════════════════════════════════════════════════════════
     Canvas BuildSprite()
@@ -411,123 +411,143 @@ internal sealed class DogActor
         c.RenderTransformOrigin = new WpfPoint(0.5, 0.5);
         c.RenderTransform = _flip;
 
-        var colBody   = Col(0xD4, 0xA5, 0x6A);
-        var colAccent = Col(0xB0, 0x78, 0x40);
-        var colCream  = Col(0xFA, 0xEB, 0xD7);
-        var colDark   = Col(0x2C, 0x1A, 0x0E);
-        var colBlush  = ColA(0x55, 0xE8, 0x80, 0x60);
-        var colPink   = Col(0xE8, 0x78, 0x8A);
-        var colCollar = Col(0x3B, 0x82, 0xF6);
+        var colBody   = Col(0xD4, 0xA0, 0x58);   // 따뜻한 황금빛 갈색
+        var colDark   = Col(0x5C, 0x35, 0x18);   // 짙은 갈색 (윤곽·눈썹)
+        var colCream  = Col(0xFA, 0xEB, 0xD7);   // 크림 아이보리 (주둥이·배)
+        var colBlack  = Col(0x18, 0x0A, 0x00);   // 거의 검정 (눈동자·코)
+        var colPink   = Col(0xE8, 0x78, 0x8A);   // 혀·귀 안쪽
+        var colCollar = Col(0x3B, 0x82, 0xF6);   // 목줄 파랑
+        var colTag    = Col(0xEF, 0xC2, 0x78);   // 금색 인식표
+        var colBlush  = ColA(0x55, 0xE8, 0x80, 0x80);
 
-        // ── 꼬리 (코기 스텁 — 잎사귀 모양 곡선) ─────────────────
-        var tail = new Path
-        {
-            Data = Geometry.Parse("M 5,26 Q 0,19 4,14 Q 9,9 13,15 Q 11,22 5,26 Z"),
-            Fill = colAccent,
-            RenderTransformOrigin = new WpfPoint(0.8, 0.85),
-            RenderTransform = _tailWag
-        };
+        // ── 꼬리 (시바이누 말린 꼬리 — 몸 왼쪽 위에 동그랗게) ────
+        // 큰 타원 + 안쪽 크림 패치로 컬된 꼬리 표현
+        var tailCv = new Canvas { Width = 17, Height = 16, IsHitTestVisible = false };
+        tailCv.RenderTransformOrigin = new WpfPoint(0.9, 0.9);
+        tailCv.RenderTransform = _tailWag;
+        var tailOut = new Ellipse { Width = 15, Height = 13, Fill = colBody };
+        var tailIn  = new Ellipse { Width = 9,  Height = 7,  Fill = colCream };
+        Canvas.SetLeft(tailOut, 0); Canvas.SetTop(tailOut, 1);
+        Canvas.SetLeft(tailIn,  3); Canvas.SetTop(tailIn,  3);
+        tailCv.Children.Add(tailOut);
+        tailCv.Children.Add(tailIn);
+        SetPos(tailCv, 1, 4);
 
-        // ── 뒷다리 (발바닥 포함) ──────────────────────────────────
-        var bLeg1 = LegWithPaw(colAccent, _legBL); SetPos(bLeg1,  8, 25);
-        var bLeg2 = LegWithPaw(colAccent, _legBR); SetPos(bLeg2, 16, 25);
+        // ── 뒷다리 ───────────────────────────────────────────────
+        var bLeg1 = LegWithPaw(colBody, _legBL); SetPos(bLeg1,  8, 27);
+        var bLeg2 = LegWithPaw(colBody, _legBR); SetPos(bLeg2, 16, 27);
 
         // ── 몸통 ─────────────────────────────────────────────────
         var body = new Ellipse
         {
-            Width = 40, Height = 22, Fill = colBody,
+            Width = 40, Height = 20, Fill = colBody,
+            Stroke = colDark, StrokeThickness = 0.6,
             RenderTransformOrigin = new WpfPoint(0.5, 0.5),
             RenderTransform = _bodyBob
         };
-        SetPos(body, 5, 13);
+        SetPos(body, 5, 10);
 
         // ── 배/가슴 크림 패치 ─────────────────────────────────────
-        var belly = Oval(16, 10, 20, 18, colCream);
+        var belly = Oval(18, 10, 12, 18, colCream);
 
-        // ── 목줄 ─────────────────────────────────────────────────
-        var collar = Oval(10, 5.5, 34, 17, colCollar);
+        // ── 목줄 + 인식표 ─────────────────────────────────────────
+        var collar = new System.Windows.Shapes.Rectangle
+        {
+            Width = 6, Height = 5, Fill = colCollar, RadiusX = 2, RadiusY = 2
+        };
+        SetPos(collar, 37, 17);
+        var tag = Oval(4, 4, 38, 21, colTag);
 
-        // ── 앞다리 (발바닥 포함) ──────────────────────────────────
-        var fLeg1 = LegWithPaw(colAccent, _legFL); SetPos(fLeg1, 37, 25);
-        var fLeg2 = LegWithPaw(colAccent, _legFR); SetPos(fLeg2, 45, 25);
+        // ── 앞다리 ───────────────────────────────────────────────
+        var fLeg1 = LegWithPaw(colBody, _legFL); SetPos(fLeg1, 35, 27);
+        var fLeg2 = LegWithPaw(colBody, _legFR); SetPos(fLeg2, 43, 27);
 
-        // ── 귀 캔버스 (큰 쫑긋 코기 귀, 귀 펄럭 변환 포함) ────────
-        var earCv = new Canvas { Width = 22, Height = 20, IsHitTestVisible = false };
+        // ── 귀 캔버스 (쫑긋한 삼각 귀, RenderTransformOrigin = 귀 밑동) ──
+        var earCv = new Canvas { Width = 18, Height = 17, IsHitTestVisible = false };
         earCv.RenderTransformOrigin = new WpfPoint(0.5, 1.0);
         earCv.RenderTransform = _earFlop;
-        var earOuter = new Path { Data = Geometry.Parse("M 1,18 L 10,-2 L 20,14 Z"), Fill = colAccent };
-        var earInner = new Path { Data = Geometry.Parse("M 4,16 L 10,2  L 17,13 Z"), Fill = Col(0xE8, 0xA0, 0x72) };
+        var earOuter = new Path { Data = Geometry.Parse("M 1,15 L 9,0 L 17,14 Z"), Fill = colDark };
+        var earInner = new Path { Data = Geometry.Parse("M 3,14 L 9,3  L 15,13 Z"), Fill = Col(0xE8, 0xA0, 0x72) };
         earCv.Children.Add(earOuter);
         earCv.Children.Add(earInner);
-        SetPos(earCv, 40, 1);
+        SetPos(earCv, 46, 0);   // 머리 오른쪽(앞쪽) 상단
 
-        // ── 머리 캔버스 (얼굴 전체가 함께 갸웃) ──────────────────
-        var headCv = new Canvas { Width = 26, Height = 30, IsHitTestVisible = false };
-        headCv.RenderTransformOrigin = new WpfPoint(0.15, 0.65);
+        // ── 머리 캔버스 ───────────────────────────────────────────
+        // headCv 원점(0,0) = 캔버스 (42, 4)
+        // 머리 타원 : (42,4)~(62,20)   주둥이 타원 : (51,12)~(63,20)
+        var headCv = new Canvas { Width = 22, Height = 22, IsHitTestVisible = false };
+        headCv.RenderTransformOrigin = new WpfPoint(0.1, 0.65);  // 목 연결부 기준 갸웃
         headCv.RenderTransform = _headTilt;
 
-        // 머리
-        var head = new Ellipse { Width = 24, Height = 20, Fill = colBody };
+        // 머리 (타원)
+        var head = new Ellipse
+        {
+            Width = 20, Height = 16, Fill = colBody,
+            Stroke = colDark, StrokeThickness = 0.6
+        };
         SetPos(head, 0, 0);
 
-        // 주둥이
-        var snout = new Ellipse { Width = 14, Height = 10, Fill = colCream };
-        SetPos(snout, 9, 11);
+        // 주둥이 — 오른쪽(앞쪽)으로 튀어나온 크림색 타원
+        // headCv(9,8) ~ headCv(21,16) → 머리 앞부분에 딱 붙음
+        var snout = new Ellipse
+        {
+            Width = 12, Height = 8, Fill = colCream,
+            Stroke = colDark, StrokeThickness = 0.5
+        };
+        SetPos(snout, 9, 8);
 
-        // 볼 블러시
-        var blush = Oval(9, 5, 1, 12, colBlush);
+        // 볼 블러시 — 눈 아래 주둥이 위쪽
+        var blush = Oval(8, 4, 8, 10, colBlush);
 
-        // 눈 흰자
-        var eyeW = new Ellipse { Width = 6.5, Height = 6, Fill = WpfBrushes.White };
-        SetPos(eyeW, 2.5, 3.5);
+        // 눈 — 주둥이 쪽(오른쪽 앞부분)에 배치
+        // headCv(9,3) → 캔버스 (51,7) : 머리 앞절반, 상단
+        var eyeW  = new Ellipse { Width = 6, Height = 5.5, Fill = WpfBrushes.White };
+        SetPos(eyeW, 9, 3);
 
-        // 눈동자
-        var pupil = new Ellipse { Width = 4.5, Height = 4.5, Fill = colDark };
-        SetPos(pupil, 3.5, 4.5);
+        var pupil = new Ellipse { Width = 4, Height = 4.5, Fill = colBlack };
+        SetPos(pupil, 10.5, 3.5);
 
-        // 눈 빛 반사
         var shine = new Ellipse { Width = 1.8, Height = 1.8, Fill = WpfBrushes.White };
-        SetPos(shine, 5.5, 4.5);
+        SetPos(shine, 13.0, 3.8);
 
         // 눈썹 (표정 변화)
         var eyebrow = new Path
         {
-            Data = Geometry.Parse("M 2,1.5 Q 6,0 10,1.5"),
+            Data = Geometry.Parse("M 1,1.5 Q 5,0 10,1.5"),
             Stroke = new SolidColorBrush(WpfColor.FromRgb(0x5C, 0x35, 0x18)),
             StrokeThickness = 1.4,
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
             RenderTransformOrigin = new WpfPoint(0.5, 1.0),
             RenderTransform = _eyebrow
         };
-        SetPos(eyebrow, 3, 2);
+        SetPos(eyebrow, 8, 1);
 
-        // 수염 점 (whisker dots)
-        var wDot1 = Oval(1.5, 1.5,  9.5, 16.0, Col(0x8B, 0x5C, 0x28));
-        var wDot2 = Oval(1.5, 1.5,  9.5, 18.0, Col(0x8B, 0x5C, 0x28));
-        var wDot3 = Oval(1.5, 1.5, 13.0, 15.0, Col(0x8B, 0x5C, 0x28));
-        var wDot4 = Oval(1.5, 1.5, 13.0, 17.5, Col(0x8B, 0x5C, 0x28));
+        // 수염 점 — 주둥이 안쪽에만 배치 (snout: headCv 9~21, 8~16)
+        var wDot1 = Oval(1.5, 1.5, 11.0, 12.0, Col(0x8B, 0x5C, 0x28));
+        var wDot2 = Oval(1.5, 1.5, 11.0, 14.0, Col(0x8B, 0x5C, 0x28));
+        var wDot3 = Oval(1.5, 1.5, 14.5, 11.0, Col(0x8B, 0x5C, 0x28));
+        var wDot4 = Oval(1.5, 1.5, 14.5, 13.5, Col(0x8B, 0x5C, 0x28));
 
-        // 코
-        var nose = new Ellipse { Width = 5.5, Height = 4.5, Fill = colDark };
+        // 코 — 주둥이 오른쪽 끝
+        var nose = new Ellipse { Width = 5, Height = 3.5, Fill = colBlack };
         nose.RenderTransform = _noseSniff;
-        SetPos(nose, 16.5, 14.5);
+        SetPos(nose, 16, 9);
 
-        // 코 빛 반사
-        var noseShine = new Ellipse { Width = 2, Height = 1.5, Fill = ColA(0x88, 0xFF, 0xFF, 0xFF) };
-        SetPos(noseShine, 16.5, 14.5);
+        var noseShine = new Ellipse { Width = 2, Height = 1.5, Fill = ColA(0x99, 0xFF, 0xFF, 0xFF) };
+        SetPos(noseShine, 17.5, 9.5);
 
-        // 미소
+        // 미소 — 주둥이 안에서 (snout 바닥 y=16 이내)
         var smile = new Path
         {
-            Data = Geometry.Parse("M 8,19 Q 14,24 20,19"),
-            Stroke = colDark, StrokeThickness = 1.3,
+            Data = Geometry.Parse("M 10,14 Q 15,17 20,14"),
+            Stroke = colDark, StrokeThickness = 1.2,
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
         };
 
-        // 혀 (달릴 때 보임)
+        // 혀 — 미소 아래로 조금 내밀기 (주둥이 밑 최대 5px)
         var tongue = new Path
         {
-            Data = Geometry.Parse("M 9,20 Q 14,27 19,20 Q 14,18 9,20 Z"),
+            Data = Geometry.Parse("M 10,14 C 10,21 20,21 20,14 Q 15,12 10,14 Z"),
             Fill = colPink,
             Visibility = Visibility.Collapsed,
             RenderTransformOrigin = new WpfPoint(0.5, 0),
@@ -540,11 +560,11 @@ internal sealed class DogActor
               wDot1, wDot2, wDot3, wDot4, nose, noseShine, smile, tongue })
             headCv.Children.Add(el);
 
-        SetPos(headCv, 36, 3);
+        SetPos(headCv, 42, 4);
 
         // ── Z-순서대로 조립 ──────────────────────────────────────
         foreach (UIElement el in new UIElement[]
-            { tail, bLeg1, bLeg2, body, belly, collar, fLeg1, fLeg2, earCv, headCv })
+            { tailCv, bLeg1, bLeg2, body, belly, collar, tag, fLeg1, fLeg2, earCv, headCv })
             c.Children.Add(el);
 
         return c;
