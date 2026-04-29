@@ -79,6 +79,8 @@ public class GeminiRelayService : IDisposable
         if (!IsRunning) return;
         IsRunning = false;
         try { _cts?.Cancel(); } catch { }
+        try { _cts?.Dispose(); } catch { }
+        _cts = null;
         try { _listener?.Stop(); } catch { }
         try { _listener?.Close(); } catch { }
         _listener = null;
@@ -87,7 +89,11 @@ public class GeminiRelayService : IDisposable
         StatusChanged?.Invoke();
     }
 
-    public void Dispose() => Stop();
+    public void Dispose()
+    {
+        Stop();
+        _upstream.Dispose();
+    }
 
     private async Task AcceptLoop(CancellationToken ct)
     {
@@ -106,11 +112,12 @@ public class GeminiRelayService : IDisposable
                 break;
             }
 
-            _ = Task.Run(() => HandleAsync(ctx));
+            var token = _cts?.Token ?? CancellationToken.None;
+            _ = Task.Run(() => HandleAsync(ctx, token));
         }
     }
 
-    private async Task HandleAsync(HttpListenerContext ctx)
+    private async Task HandleAsync(HttpListenerContext ctx, CancellationToken ct)
     {
         var req = ctx.Request;
         var res = ctx.Response;
@@ -201,7 +208,7 @@ public class GeminiRelayService : IDisposable
                 ? HttpCompletionOption.ResponseHeadersRead
                 : HttpCompletionOption.ResponseContentRead;
 
-            using var upRes = await _upstream.SendAsync(upReq, completionOption).ConfigureAwait(false);
+            using var upRes = await _upstream.SendAsync(upReq, completionOption, ct).ConfigureAwait(false);
 
             res.StatusCode = (int)upRes.StatusCode;
             foreach (var h in upRes.Headers)

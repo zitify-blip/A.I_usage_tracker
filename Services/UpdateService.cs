@@ -174,7 +174,7 @@ public class UpdateService
                 }
             }
 
-            Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true })?.Dispose();
             return true;
         }
         catch (Exception ex)

@@ -48,6 +48,12 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _updateCheckTimer;
     private readonly Action _onStatusChanged;
     private readonly Action _onUsageUpdated;
+    private Action? _onGrokChanged;
+    private Action? _onGeminiChanged;
+    private Action? _onGeminiRelayStatus;
+    private Action<GeminiUsageRecord>? _onGeminiRelayUsage;
+    private Action? _onAnthropicChanged;
+    private Action? _onOpenAiChanged;
     private Task? _updateCheckTask;
     private bool _reallyClosing;
     private bool _notified;
@@ -79,24 +85,30 @@ public partial class MainWindow : Window
 
         InitializeComponent();
 
-        _grokAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGrokUi);
-        _grokAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGrokUi);
+        _onGrokChanged = () => Dispatcher.Invoke(RefreshGrokUi);
+        _grokAccounts.AccountsChanged += _onGrokChanged;
+        _grokAccounts.SelectedAccountChanged += _onGrokChanged;
 
-        _geminiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
-        _geminiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshGeminiUi);
+        _onGeminiChanged = () => Dispatcher.Invoke(RefreshGeminiUi);
+        _geminiAccounts.AccountsChanged += _onGeminiChanged;
+        _geminiAccounts.SelectedAccountChanged += _onGeminiChanged;
 
-        _geminiRelay.StatusChanged += () => Dispatcher.Invoke(RefreshGeminiRelayUi);
-        _geminiRelay.UsageRecorded += _ => Dispatcher.Invoke(() =>
+        _onGeminiRelayStatus = () => Dispatcher.Invoke(RefreshGeminiRelayUi);
+        _geminiRelay.StatusChanged += _onGeminiRelayStatus;
+        _onGeminiRelayUsage = _ => Dispatcher.Invoke(() =>
         {
             RefreshGeminiStats();
             RefreshGeminiRelayUi();
         });
+        _geminiRelay.UsageRecorded += _onGeminiRelayUsage;
 
-        _anthropicAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
-        _anthropicAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshAnthropicUi);
+        _onAnthropicChanged = () => Dispatcher.Invoke(RefreshAnthropicUi);
+        _anthropicAccounts.AccountsChanged += _onAnthropicChanged;
+        _anthropicAccounts.SelectedAccountChanged += _onAnthropicChanged;
 
-        _openAiAccounts.AccountsChanged += () => Dispatcher.Invoke(RefreshOpenAiUi);
-        _openAiAccounts.SelectedAccountChanged += () => Dispatcher.Invoke(RefreshOpenAiUi);
+        _onOpenAiChanged = () => Dispatcher.Invoke(RefreshOpenAiUi);
+        _openAiAccounts.AccountsChanged += _onOpenAiChanged;
+        _openAiAccounts.SelectedAccountChanged += _onOpenAiChanged;
 
         _onStatusChanged = () => Dispatcher.Invoke(UpdateStatus);
         _onUsageUpdated = () => Dispatcher.Invoke(UpdateUI);
@@ -812,8 +824,19 @@ public partial class MainWindow : Window
         _reallyClosing = true;
         _pollTimer.Stop();
         _tickTimer.Stop();
+        _updateCheckTimer.Stop();
         _usage.StatusChanged -= _onStatusChanged;
         _usage.UsageUpdated -= _onUsageUpdated;
+        _grokAccounts.AccountsChanged -= _onGrokChanged;
+        _grokAccounts.SelectedAccountChanged -= _onGrokChanged;
+        _geminiAccounts.AccountsChanged -= _onGeminiChanged;
+        _geminiAccounts.SelectedAccountChanged -= _onGeminiChanged;
+        _geminiRelay.StatusChanged -= _onGeminiRelayStatus;
+        _geminiRelay.UsageRecorded -= _onGeminiRelayUsage;
+        _anthropicAccounts.AccountsChanged -= _onAnthropicChanged;
+        _anthropicAccounts.SelectedAccountChanged -= _onAnthropicChanged;
+        _openAiAccounts.AccountsChanged -= _onOpenAiChanged;
+        _openAiAccounts.SelectedAccountChanged -= _onOpenAiChanged;
         Close();
     }
 
