@@ -51,9 +51,9 @@
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
-                <Button Content="Cancel" Click="CancelBtn_Click"
+                <Button Content="취소" Click="CancelBtn_Click"
                         HorizontalAlignment="Left" Cursor="Hand"
-                        FontSize="12" Foreground="#888" Padding="16,8"
+                        FontSize="12" Foreground="#bbb" Padding="16,8"
                         Background="#262626" BorderBrush="#333" BorderThickness="1">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">

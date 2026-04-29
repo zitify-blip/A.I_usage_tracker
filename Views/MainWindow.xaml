@@ -155,10 +155,10 @@
                         </Button.Template>
                     </Button>
 
-                    <Button Grid.Column="2" x:Name="CheckUpdateBtn" Content="🔄 Update"
+                    <Button Grid.Column="2" x:Name="CheckUpdateBtn" Content="🔄 업데이트"
                             Style="{StaticResource Btn}" Click="CheckUpdateBtn_Click" Margin="0,0,8,0"/>
 
-                    <Button Grid.Column="3" x:Name="GlobalRefreshBtn" Content="↻ Refresh"
+                    <Button Grid.Column="3" x:Name="GlobalRefreshBtn" Content="↻ 새로고침"
                             Style="{StaticResource Btn}" Click="GlobalRefreshBtn_Click"/>
                 </Grid>
 
@@ -585,10 +585,10 @@
                 </StackPanel>
             </Button>
 
-            <Button Grid.Column="4" x:Name="RefreshBtn" Content="↻ Refresh"
+            <Button Grid.Column="4" x:Name="RefreshBtn" Content="↻ 새로고침"
                     Style="{StaticResource Btn}" Click="RefreshBtn_Click" Margin="0,0,8,0"/>
 
-            <Button Grid.Column="5" x:Name="LoginBtn" Content="Login"
+            <Button Grid.Column="5" x:Name="LoginBtn" Content="로그인"
                     Style="{StaticResource Btn}" Click="LoginBtn_Click"/>
         </Grid>
 
@@ -1093,7 +1093,7 @@
                     <Button Grid.Column="3" x:Name="GeminiAddAccountBtn" Content="+ 계정 추가"
                             Style="{StaticResource Btn}" Click="GeminiAddAccountBtn_Click"
                             Margin="8,0,6,0"/>
-                    <Button Grid.Column="4" x:Name="GeminiExportBtn" Content="⭳ Export"
+                    <Button Grid.Column="4" x:Name="GeminiExportBtn" Content="⭳ 내보내기"
                             Style="{StaticResource Btn}" Click="GeminiExportBtn_Click"
                             Margin="0,0,6,0"/>
                     <Button Grid.Column="5" x:Name="GeminiPricingBtn" Content="$ 단가"
@@ -1158,7 +1158,7 @@
                                 <Button Grid.Column="2" x:Name="GeminiTestBtn" Content="🔌 연결 테스트"
                                         Style="{StaticResource Btn}" Click="GeminiTestBtn_Click"
                                         Margin="0,0,8,0"/>
-                                <Button Grid.Column="3" x:Name="GeminiRefreshBtn" Content="↻ Refresh"
+                                <Button Grid.Column="3" x:Name="GeminiRefreshBtn" Content="↻ 새로고침"
                                         Style="{StaticResource Btn}" Click="GeminiRefreshBtn_Click"/>
                             </Grid>
                         </Border>
@@ -1312,7 +1312,7 @@
                                                   Unchecked="GeminiRelayAutoStart_Changed"/>
 
                                         <Button Grid.Column="6" x:Name="GeminiRelayStartBtn"
-                                                Content="▶ Start" Style="{StaticResource Btn}"
+                                                Content="▶ 시작" Style="{StaticResource Btn}"
                                                 Background="{StaticResource AccentBgBrush}" BorderBrush="#4ade80"
                                                 Click="GeminiRelayStartBtn_Click" MinWidth="80"/>
                                         <Button Grid.Column="8" x:Name="GeminiRelayCopyBtn"
