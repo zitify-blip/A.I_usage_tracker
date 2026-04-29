@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using AIUsageTracker.Services;
@@ -12,29 +10,13 @@ namespace AIUsageTracker;
 public partial class App : System.Windows.Application
 {
     private const string SingleInstanceMutexName = "Global\\AIUsageTracker_SingleInstance";
+    private const string ShowEventName            = "Global\\AIUsageTracker_Show";
 
-    [DllImport("user32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsIconic(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsWindowVisible(IntPtr hWnd);
-
-    private const int SW_SHOW    = 5;
-    private const int SW_RESTORE = 9;
-
-    private System.Threading.Mutex? _instanceMutex;
+    private System.Threading.Mutex?          _instanceMutex;
+    private System.Threading.EventWaitHandle? _showEvent;
     private System.Windows.Forms.NotifyIcon? _trayIcon;
-    private MainWindow? _mainWindow;
-    private GeminiRelayService? _geminiRelay;
+    private MainWindow?                       _mainWindow;
+    private GeminiRelayService?               _geminiRelay;
     private readonly DispatcherTimer _tooltipTimer = new() { Interval = TimeSpan.FromSeconds(5) };
 
     protected override void OnStartup(StartupEventArgs e)
@@ -44,12 +26,28 @@ public partial class App : System.Windows.Application
         _instanceMutex = new System.Threading.Mutex(true, SingleInstanceMutexName, out var createdNew);
         if (!createdNew)
         {
-            ActivateExistingInstance();
+            // Signal the running instance to show its window, then exit.
+            try
+            {
+                using var ev = System.Threading.EventWaitHandle.OpenExisting(ShowEventName);
+                ev.Set();
+            }
+            catch { }
             _instanceMutex.Dispose();
             _instanceMutex = null;
             Shutdown();
             return;
         }
+
+        // Listen for show-signals from future second-instance attempts.
+        _showEvent = new System.Threading.EventWaitHandle(
+            false, System.Threading.EventResetMode.AutoReset, ShowEventName);
+        var t = new System.Threading.Thread(() =>
+        {
+            while (_showEvent != null && _showEvent.WaitOne())
+                Dispatcher.Invoke(ShowWin);
+        }) { IsBackground = true };
+        t.Start();
 
         var storage = new StorageService();
 
@@ -159,32 +157,19 @@ public partial class App : System.Windows.Application
             app._trayIcon.ShowBalloonTip(3000, title, text, System.Windows.Forms.ToolTipIcon.Warning);
     }
 
-    private static void ActivateExistingInstance()
-    {
-        try
-        {
-            var current = Process.GetCurrentProcess();
-            var others = Process.GetProcessesByName(current.ProcessName)
-                .Where(p => p.Id != current.Id);
-            foreach (var p in others)
-            {
-                var hWnd = p.MainWindowHandle;
-                if (hWnd == IntPtr.Zero) continue;
-                if (IsIconic(hWnd))
-                    ShowWindow(hWnd, SW_RESTORE);
-                else if (!IsWindowVisible(hWnd))
-                    ShowWindow(hWnd, SW_SHOW);
-                SetForegroundWindow(hWnd);
-                return;
-            }
-        }
-        catch (Exception ex) { Logger.Warn("ActivateExistingInstance failed", ex); }
-    }
-
     protected override void OnExit(ExitEventArgs e)
     {
         try { _geminiRelay?.Stop(); } catch { }
         _geminiRelay = null;
+
+        // Unblock the show-listener thread so it exits cleanly.
+        if (_showEvent != null)
+        {
+            var ev = _showEvent;
+            _showEvent = null;
+            try { ev.Set(); } catch { }
+            try { ev.Dispose(); } catch { }
+        }
 
         if (_trayIcon != null)
         {
