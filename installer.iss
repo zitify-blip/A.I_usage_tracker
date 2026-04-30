@@ -16,6 +16,9 @@ PrivilegesRequired=lowest
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayName=A.I. Usage Tracker
 SetupLogging=yes
+CloseApplications=yes
+CloseApplicationsFilter=*AI_usage_tracker*
+RestartApplications=yes
 
 [Languages]
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
@@ -27,7 +30,15 @@ Name: "taskbarpin"; Description: "작업 표시줄에 고정"; GroupDescription:
 Name: "startupicon"; Description: "Windows 시작 시 자동 실행"; GroupDescription: "추가 옵션:"
 
 [Files]
+; 메인 실행파일
 Source: "publish\AI_usage_tracker.exe"; DestDir: "{app}"; Flags: ignoreversion
+; WPF 네이티브 DLL — 반드시 exe 옆에 있어야 함 (없으면 DllNotFoundException)
+Source: "publish\wpfgfx_cor3.dll";           DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\PresentationNative_cor3.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\D3DCompiler_47_cor3.dll";   DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\vcruntime140_cor3.dll";     DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\PenImc_cor3.dll";           DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\WebView2Loader.dll";        DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\A.I. Usage Tracker"; Filename: "{app}\AI_usage_tracker.exe"
