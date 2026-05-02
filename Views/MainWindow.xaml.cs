@@ -58,9 +58,11 @@ public partial class MainWindow : Window
     private bool _reallyClosing;
     private bool _notified;
     private UpdateInfo? _pendingUpdate;
+    private DateTimeOffset _lastForcedResetRefresh = DateTimeOffset.MinValue;
 
     private const int SessionTotalMs = 5 * 60 * 60 * 1000;
     private const long WeekTotalMs = 7L * 24 * 60 * 60 * 1000;
+    private const int ForcedRefreshDebounceSeconds = 30;
 
     public MainWindow(UsageService usage, ClaudeApiService api, StorageService storage,
                        GeminiAccountService geminiAccounts, GeminiProvider geminiProvider,
@@ -216,12 +218,15 @@ public partial class MainWindow : Window
         if (!_storage.Settings.NotifyEnabled) return;
         var threshold = _storage.Settings.ClampedNotifyThreshold();
         var l = _usage.Latest;
-        if ((l.SessionPct >= threshold || l.WeekPct >= threshold) && !_notified)
+        // 리셋 지난 stale % 기준으로 알림 발송 안 함
+        var sPct = EffectivePct(l.SessionPct, l.SessionResetAt);
+        var wPct = EffectivePct(l.WeekPct, l.WeekResetAt);
+        if ((sPct >= threshold || wPct >= threshold) && !_notified)
         {
             _notified = true;
-            App.ShowBalloon("Claude CLI Usage Alert", $"Session: {l.SessionPct:F0}% · Week: {l.WeekPct:F0}%");
+            App.ShowBalloon("Claude CLI Usage Alert", $"Session: {sPct:F0}% · Week: {wPct:F0}%");
         }
-        else if (l.SessionPct < threshold && l.WeekPct < threshold)
+        else if (sPct < threshold && wPct < threshold)
             _notified = false;
     }
 
@@ -256,22 +261,27 @@ public partial class MainWindow : Window
     {
         var l = _usage.Latest;
 
-        SetBar(UsageBar, l.SessionPct);
-        UsagePctText.Text = $"{l.SessionPct:F0}%";
-        UsagePctText.Foreground = UsageColor(l.SessionPct);
+        // 리셋 지났으면 stale 옛 % 대신 0% 표시 — 다음 fetch에서 진짜 % 갱신
+        var sessionPct = EffectivePct(l.SessionPct, l.SessionResetAt);
+        var weekPct = EffectivePct(l.WeekPct, l.WeekResetAt);
+        var subPct = EffectivePct(l.SubPct, l.SubResetAt);
+
+        SetBar(UsageBar, sessionPct);
+        UsagePctText.Text = $"{sessionPct:F0}%";
+        UsagePctText.Foreground = UsageColor(sessionPct);
 
         UpdateTimeRing(l);
 
-        WeekAllPctText.Text = $"{l.WeekPct:F0}%";
-        WeekAllPctText.Foreground = UsageColor(l.WeekPct);
-        SetBar(WeekAllBar, l.WeekPct);
+        WeekAllPctText.Text = $"{weekPct:F0}%";
+        WeekAllPctText.Foreground = UsageColor(weekPct);
+        SetBar(WeekAllBar, weekPct);
         SetMarker(WeekAllMarker, WeekAllMarkerLabel, WeekAllMarkerCanvas, l.WeekResetAt);
         WeekAllResetText.Text = FmtResetIn(l.WeekResetAt);
 
         SubModelTitle.Text = $"WEEKLY · {l.SubModelName.ToUpper()}";
-        SubPctText.Text = $"{l.SubPct:F0}%";
-        SubPctText.Foreground = UsageColor(l.SubPct);
-        SetBar(SubBar, l.SubPct);
+        SubPctText.Text = $"{subPct:F0}%";
+        SubPctText.Foreground = UsageColor(subPct);
+        SetBar(SubBar, subPct);
         SetMarker(SubMarker, SubMarkerLabel, SubMarkerCanvas, l.SubResetAt);
         SubResetText.Text = FmtResetIn(l.SubResetAt);
 
@@ -290,6 +300,15 @@ public partial class MainWindow : Window
     {
         var l = _usage.Latest;
         if (l.SessionResetAt == null) return;
+
+        // 세션/주간 리셋 시각 지나면 강제 fetch — 폴링 간격을 안 기다리고 즉시 새로고침
+        if (_usage.IsLoggedIn && AnyResetPassed(l)
+            && (DateTimeOffset.Now - _lastForcedResetRefresh).TotalSeconds >= ForcedRefreshDebounceSeconds)
+        {
+            _lastForcedResetRefresh = DateTimeOffset.Now;
+            _ = Fetch();
+        }
+
         UpdateTimeRing(l);
         SetMarker(WeekAllMarker, WeekAllMarkerLabel, WeekAllMarkerCanvas, l.WeekResetAt);
         SetMarker(SubMarker, SubMarkerLabel, SubMarkerCanvas, l.SubResetAt);
@@ -297,10 +316,35 @@ public partial class MainWindow : Window
             SetMarker(DesignMarker, DesignMarkerLabel, DesignMarkerCanvas, l.DesignResetAt);
     }
 
+    private static bool IsResetPassed(string? iso) =>
+        !string.IsNullOrEmpty(iso)
+        && DateTimeOffset.TryParse(iso, out var dt)
+        && dt <= DateTimeOffset.Now;
+
+    private static bool AnyResetPassed(LatestUsage l) =>
+        IsResetPassed(l.SessionResetAt) || IsResetPassed(l.WeekResetAt)
+        || IsResetPassed(l.SubResetAt) || (l.HasDesign && IsResetPassed(l.DesignResetAt));
+
+    /// <summary>리셋 시각이 지났으면 0% 반환 — 다음 fetch까지 stale 옛 % 가리는 용도</summary>
+    private static double EffectivePct(double pct, string? resetAt) =>
+        IsResetPassed(resetAt) ? 0 : pct;
+
     private void UpdateTimeRing(LatestUsage l)
     {
         if (l.SessionResetAt == null || !DateTimeOffset.TryParse(l.SessionResetAt, out var rst)) return;
-        var rem = Math.Max(0, (rst - DateTimeOffset.Now).TotalMilliseconds);
+
+        // 리셋 시각이 지났으면 — 새 세션 시작됨, 다음 fetch까지 "Resetting..." 표시
+        if (rst <= DateTimeOffset.Now)
+        {
+            UpdateTimeBar(0, 100);
+            TimeLeftText.Text = "5h 00m";
+            TimeLeftPctText.Text = " · 새 세션 시작 (새로고침 중)";
+            SessionResetAtLabel.Text = "Resetting...";
+            TimeLeftText.Foreground = B("#60a5fa");
+            return;
+        }
+
+        var rem = (rst - DateTimeOffset.Now).TotalMilliseconds;
         var elapsedPct = Math.Clamp((SessionTotalMs - rem) / SessionTotalMs * 100, 0, 100);
         var remPct = 100 - elapsedPct;
 
@@ -386,9 +430,10 @@ public partial class MainWindow : Window
             return;
         }
         DesignCard.Opacity = 1;
-        DesignPctText.Text = $"{l.DesignPct:F0}%";
-        DesignPctText.Foreground = UsageColor(l.DesignPct);
-        SetBar(DesignBar, l.DesignPct);
+        var dPct = EffectivePct(l.DesignPct, l.DesignResetAt);
+        DesignPctText.Text = $"{dPct:F0}%";
+        DesignPctText.Foreground = UsageColor(dPct);
+        SetBar(DesignBar, dPct);
         SetMarker(DesignMarker, DesignMarkerLabel, DesignMarkerCanvas, l.DesignResetAt);
         DesignResetText.Text = FmtResetIn(l.DesignResetAt);
     }
@@ -845,7 +890,9 @@ public partial class MainWindow : Window
     public string GetTrayTooltip()
     {
         var l = _usage.Latest;
-        return $"A.I. Usage Tracker\nClaude CLI · Session: {l.SessionPct:F0}% · Week: {l.WeekPct:F0}%";
+        var sPct = EffectivePct(l.SessionPct, l.SessionResetAt);
+        var wPct = EffectivePct(l.WeekPct, l.WeekResetAt);
+        return $"A.I. Usage Tracker\nClaude CLI · Session: {sPct:F0}% · Week: {wPct:F0}%";
     }
 
     // ────────── Helpers ──────────
@@ -869,7 +916,7 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrEmpty(iso) || !DateTimeOffset.TryParse(iso, out var dt)) return "Resets in --";
         var r = dt - DateTimeOffset.Now;
-        if (r.TotalMilliseconds <= 0) return "Reset imminent";
+        if (r.TotalMilliseconds <= 0) return "Resetting...";
         if (r.TotalDays >= 1) return $"Resets in {(int)r.TotalDays}d {r.Hours}h";
         if (r.TotalHours >= 1) return $"Resets in {(int)r.TotalHours}h {r.Minutes}m";
         return $"Resets in {r.Minutes}m";
@@ -970,14 +1017,17 @@ public partial class MainWindow : Window
 
         // ─── Row 2: Claude quota (rings) ───
         var l = _usage.Latest;
-        SetRing(GSessionRingFigure, GSessionRingArc, GSessionRingPath, l.SessionPct, GSessionRingBrush, true);
-        ClaudeSessionText.Text = $"{l.SessionPct:F0}%";
-        ClaudeSessionText.Foreground = UsageColor(l.SessionPct);
+        var gSessionPct = EffectivePct(l.SessionPct, l.SessionResetAt);
+        var gWeekPct = EffectivePct(l.WeekPct, l.WeekResetAt);
+
+        SetRing(GSessionRingFigure, GSessionRingArc, GSessionRingPath, gSessionPct, GSessionRingBrush, true);
+        ClaudeSessionText.Text = $"{gSessionPct:F0}%";
+        ClaudeSessionText.Foreground = UsageColor(gSessionPct);
         ClaudeSessionReset.Text = FmtResetIn(l.SessionResetAt);
 
-        SetRing(GWeekRingFigure, GWeekRingArc, GWeekRingPath, l.WeekPct, GWeekRingBrush, true);
-        ClaudeWeekText.Text = $"{l.WeekPct:F0}%";
-        ClaudeWeekText.Foreground = UsageColor(l.WeekPct);
+        SetRing(GWeekRingFigure, GWeekRingArc, GWeekRingPath, gWeekPct, GWeekRingBrush, true);
+        ClaudeWeekText.Text = $"{gWeekPct:F0}%";
+        ClaudeWeekText.Foreground = UsageColor(gWeekPct);
         ClaudeWeekReset.Text = FmtResetIn(l.WeekResetAt);
 
         // ─── Row 2: Gemini budgets ───
