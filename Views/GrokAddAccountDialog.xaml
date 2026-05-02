@@ -61,11 +61,11 @@
         <TextBox Grid.Row="4" x:Name="AliasBox" Text="" ToolTip="예: work, personal"/>
 
         <TextBlock Grid.Row="6" FontSize="11" Foreground="#888">
-            xAI API Key  <Run Foreground="#666" FontSize="10">(xai-* — console.x.ai → API Keys)</Run>
+            xAI API Key  <Run Foreground="#aaa" FontSize="10">(xai-* — console.x.ai → API Keys)</Run>
         </TextBlock>
         <PasswordBox Grid.Row="8" x:Name="ApiKeyBox"/>
 
-        <TextBlock Grid.Row="10" FontSize="10" Foreground="#d97706" TextWrapping="Wrap">
+        <TextBlock Grid.Row="10" FontSize="10" Foreground="#fbbf24" TextWrapping="Wrap">
             ⚠ xAI는 조직 사용량 조회 엔드포인트를 제공하지 않으므로 키 정보(허용 모델, 활성 상태)만 표시됩니다. 사용량은 console.x.ai에서 확인하세요.
         </TextBlock>
 

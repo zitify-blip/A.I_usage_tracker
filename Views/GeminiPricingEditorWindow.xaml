@@ -124,7 +124,7 @@
 
         <TextBlock Grid.Row="2"
                    Text="💡 빈 칸이면 프리셋 단가 사용. 값을 비워두고 저장하면 오버라이드가 제거됩니다."
-                   FontSize="10" Foreground="#666" Margin="0,10,0,0"/>
+                   FontSize="10" Foreground="#aaa" Margin="0,10,0,0"/>
 
         <Grid Grid.Row="3" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>

@@ -241,7 +241,7 @@
                         </StackPanel>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                                   FontSize="10" Foreground="#71717a" TextWrapping="Wrap"
+                                   FontSize="10" Foreground="#9ca3af" TextWrapping="Wrap"
                                    Margin="0,10,0,0">
                             <Run>ⓘ 이미 열려 있는 터미널/IDE는 재시작해야 새 값을 인식합니다. 기존 사용자 값이 있으면 자동으로 백업되고, 되돌리기 시 복원됩니다.</Run>
                         </TextBlock>
@@ -294,7 +294,7 @@
                         </StackPanel>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                                   FontSize="10" Foreground="#71717a" TextWrapping="Wrap"
+                                   FontSize="10" Foreground="#9ca3af" TextWrapping="Wrap"
                                    Margin="0,10,0,0">
                             <Run>ⓘ 이미 실행 중인 Claude CLI 세션은 변경을 인식하지 않습니다. 세션 종료 후 새로 시작한 claude 부터 규칙이 적용됩니다. 사용자가 수동 편집한 다른 부분은 건드리지 않습니다.</Run>
                         </TextBlock>

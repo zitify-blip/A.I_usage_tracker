@@ -15,7 +15,7 @@
     <Color x:Key="TxtColor">#FFE8E8E8</Color>
     <Color x:Key="TxtHighlightColor">#FFF5F5F5</Color>
     <Color x:Key="TxtSubColor">#FF888888</Color>
-    <Color x:Key="TxtHintColor">#FF666666</Color>
+    <Color x:Key="TxtHintColor">#FF9A9A9A</Color>
     <Color x:Key="AccentColor">#FF4ADE80</Color>
     <Color x:Key="AccentBlueColor">#FF60A5FA</Color>
     <Color x:Key="AccentYellowColor">#FFFACC15</Color>
@@ -35,6 +35,8 @@
     <SolidColorBrush x:Key="TxtSubBrush" Color="{StaticResource TxtSubColor}"/>
     <SolidColorBrush x:Key="TxtHintBrush" Color="{StaticResource TxtHintColor}"/>
     <SolidColorBrush x:Key="AccentBrush"         Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="AccentBlueBrush"     Color="{StaticResource AccentBlueColor}"/>
+    <SolidColorBrush x:Key="AccentYellowBrush"   Color="{StaticResource AccentYellowColor}"/>
     <SolidColorBrush x:Key="AccentRedBrush"      Color="{StaticResource AccentRedColor}"/>
     <SolidColorBrush x:Key="AccentBgBrush"       Color="#FF1A3A1A"/>
     <SolidColorBrush x:Key="AccentBgHoverBrush"  Color="#FF2A4A2A"/>

@@ -19,8 +19,8 @@
     <Color x:Key="TxtColor">#FF3D2B1F</Color>
     <Color x:Key="TxtHighlightColor">#FF2C1F14</Color>
     <Color x:Key="TxtSubColor">#FF7A5A40</Color>
-    <Color x:Key="TxtHintColor">#FF9E7A58</Color>
-    <Color x:Key="AccentColor">#FFD4734E</Color>
+    <Color x:Key="TxtHintColor">#FF6B4F38</Color>
+    <Color x:Key="AccentColor">#FFB85220</Color>
     <Color x:Key="AccentBlueColor">#FF2060A0</Color>
     <Color x:Key="AccentYellowColor">#FFC09010</Color>
     <Color x:Key="AccentRedColor">#FFC04030</Color>
@@ -68,6 +68,8 @@
     <SolidColorBrush x:Key="TxtSubBrush"       Color="{StaticResource TxtSubColor}"/>
     <SolidColorBrush x:Key="TxtHintBrush"      Color="{StaticResource TxtHintColor}"/>
     <SolidColorBrush x:Key="AccentBrush"       Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="AccentBlueBrush"   Color="{StaticResource AccentBlueColor}"/>
+    <SolidColorBrush x:Key="AccentYellowBrush" Color="{StaticResource AccentYellowColor}"/>
     <SolidColorBrush x:Key="AccentRedBrush"    Color="{StaticResource AccentRedColor}"/>
     <SolidColorBrush x:Key="SelectionBrush"    Color="{StaticResource AccentColor}" Opacity="0.35"/>
     <SolidColorBrush x:Key="AccentBgBrush"      Color="#FFF8EEE8"/>
@@ -736,8 +738,8 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentBgBrush}"/>
-                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource BorderBrushBase}"/>
-                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TxtHighlightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="{StaticResource BgHoverBrush}"/>

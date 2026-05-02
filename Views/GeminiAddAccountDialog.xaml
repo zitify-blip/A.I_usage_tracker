@@ -60,7 +60,7 @@
         <TextBox Grid.Row="4" x:Name="AliasBox" Text="" ToolTip="예: work-main, personal-dev"/>
 
         <TextBlock Grid.Row="6" FontSize="11" Foreground="#888">
-            API Key  <Run Foreground="#666" FontSize="10">(Google AI Studio에서 발급)</Run>
+            API Key  <Run Foreground="#aaa" FontSize="10">(Google AI Studio에서 발급)</Run>
         </TextBlock>
         <PasswordBox Grid.Row="8" x:Name="ApiKeyBox"/>
 

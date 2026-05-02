@@ -658,7 +658,7 @@
                                            VerticalAlignment="Bottom"/>
                                 <TextBlock Grid.Column="2" VerticalAlignment="Bottom">
                                     <Run x:Name="TimeLeftText" Text="--" FontSize="22"
-                                         FontWeight="Bold" Foreground="#60a5fa"/>
+                                         FontWeight="Bold" Foreground="{DynamicResource AccentBlueBrush}"/>
                                     <Run x:Name="TimeLeftPctText" Text=" left" FontSize="10"
                                          Foreground="{StaticResource TxtHintBrush}"/>
                                 </TextBlock>
@@ -722,7 +722,7 @@
                             <TextBlock Text="  Monthly" FontSize="10" Foreground="{StaticResource TxtSub}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock x:Name="ExtraDisabledText" Text="Disabled" FontSize="11"
-                                   Foreground="#f87171" Visibility="Collapsed" Margin="0,4,0,0"/>
+                                   Foreground="{DynamicResource AccentRedBrush}" Visibility="Collapsed" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -1409,6 +1409,208 @@
               </Grid>
             </TabItem>
 
+            <!-- ═══ OPENAI CLI (CODEX) TAB (v2.7.0) ═══ -->
+            <TabItem Style="{StaticResource DarkTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="◯" Foreground="#10a37f" FontSize="13" FontWeight="Bold"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="OpenAI CLI" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Codex CLI Sessions" FontSize="20" FontWeight="Bold"
+                                   Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" x:Name="CodexRangeCombo" Width="120"
+                                  SelectionChanged="CodexRangeCombo_SelectionChanged" Margin="0,0,8,0">
+                            <ComboBoxItem Content="오늘" Tag="1"/>
+                            <ComboBoxItem Content="7일" Tag="7" IsSelected="True"/>
+                            <ComboBoxItem Content="30일" Tag="30"/>
+                        </ComboBox>
+                        <Button Grid.Column="3" x:Name="CodexRefreshBtn" Content="↻ 새로고침"
+                                Style="{StaticResource Btn}" Click="CodexRefreshBtn_Click"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <StackPanel x:Name="CodexEmptyState" VerticalAlignment="Center"
+                                    HorizontalAlignment="Center" MaxWidth="440">
+                            <TextBlock Text="◯" Foreground="#10a37f" FontSize="48" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                            <TextBlock Text="OpenAI Codex CLI 사용량 추적"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TxtHighlight}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <TextBlock Text="Codex CLI를 설치 후 사용하면 세션 토큰·모델·비용이 자동으로 집계됩니다"
+                                       FontSize="11" Foreground="{StaticResource TxtSub}"
+                                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                                       TextAlignment="Center" Margin="0,0,0,20"/>
+
+                            <Border Background="{StaticResource BgInputBrush}" CornerRadius="8"
+                                    Padding="20,14" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Text="Codex CLI 설치 및 사용 방법" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TxtHighlight}" Margin="0,0,0,10"/>
+
+                                    <Grid Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                                VerticalAlignment="Top" Margin="0,1,0,0">
+                                            <TextBlock Text="1" FontSize="10" FontWeight="Bold" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
+                                            <Run>설치:</Run>
+                                            <Run FontFamily="Consolas" FontWeight="SemiBold">npm i -g @openai/codex</Run>
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                                VerticalAlignment="Top" Margin="0,1,0,0">
+                                            <TextBlock Text="2" FontSize="10" FontWeight="Bold" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
+                                            <Run>로그인:</Run>
+                                            <Run FontFamily="Consolas" FontWeight="SemiBold">codex login</Run>
+                                            <Run Foreground="{StaticResource TxtSub}">(브라우저에서 OpenAI 계정 인증)</Run>
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                                VerticalAlignment="Top" Margin="0,1,0,0">
+                                            <TextBlock Text="3" FontSize="10" FontWeight="Bold" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
+                                            <Run>실행:</Run>
+                                            <Run FontFamily="Consolas" FontWeight="SemiBold">codex</Run>
+                                            <Run>으로 세션 시작 → 작업 → 종료</Run>
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                                VerticalAlignment="Top" Margin="0,1,0,0">
+                                            <TextBlock Text="4" FontSize="10" FontWeight="Bold" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
+                                            <Run>이 화면에 자동으로 토큰/비용 집계 →</Run>
+                                            <Run FontWeight="SemiBold">↻ 새로고침</Run>
+                                            <Run>으로 갱신</Run>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock x:Name="CodexLogPathHint"
+                                       Text="📁 로그 경로: ~/.codex/sessions/rollout-*.jsonl"
+                                       FontSize="10" Foreground="{StaticResource TxtSub}"
+                                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+
+                        <Grid x:Name="CodexDashboard" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="SESSIONS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexSessionsCount" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="INPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexInputTokens" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="OUTPUT TOKENS" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexOutputTokens" Text="0"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3">
+                                        <TextBlock Text="EST. COST" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="CodexEstCost" Text="$0.00"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TxtHighlight}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="MODEL BREAKDOWN" Style="{StaticResource Sec}"
+                                               Margin="0,0,0,8"/>
+                                    <DataGrid Grid.Row="1" x:Name="CodexModelGrid"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True" HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              Background="Transparent" BorderThickness="0" RowBackground="Transparent"
+                                              CanUserAddRows="False" CanUserDeleteRows="False"
+                                              CanUserResizeRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="*"/>
+                                            <DataGridTextColumn Header="Sessions" Binding="{Binding Sessions}" Width="80"/>
+                                            <DataGridTextColumn Header="Input" Binding="{Binding InputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Output" Binding="{Binding OutputDisplay}" Width="100"/>
+                                            <DataGridTextColumn Header="Cost" Binding="{Binding CostDisplay}" Width="100"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
             <!-- ═══ OPENAI API TAB (v2.7.0) ═══ -->
             <TabItem Style="{StaticResource DarkTabItem}">
                 <TabItem.Header>
@@ -1486,7 +1688,7 @@
                                             <TextBlock Text="1" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
-                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtMain}" TextWrapping="Wrap">
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
                                             <Run FontWeight="SemiBold">platform.openai.com</Run>
                                             <Run>에 로그인</Run>
                                         </TextBlock>
@@ -1502,7 +1704,7 @@
                                             <TextBlock Text="2" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
-                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtMain}" TextWrapping="Wrap">
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
                                             <Run>왼쪽 메뉴 →</Run>
                                             <Run FontWeight="SemiBold">Settings → API Keys</Run>
                                             <Run>→</Run>
@@ -1521,7 +1723,7 @@
                                             <TextBlock Text="3" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
-                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtMain}" TextWrapping="Wrap">
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
                                             <Run FontWeight="SemiBold">Create new Admin key</Run>
                                             <Run>클릭 → 키 복사</Run>
                                             <Run Foreground="{StaticResource TxtSub}">(sk-admin-... 형식)</Run>
@@ -1538,7 +1740,7 @@
                                             <TextBlock Text="4" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
-                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtMain}" TextWrapping="Wrap">
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="{StaticResource TxtBrush}" TextWrapping="Wrap">
                                             <Run>아래 버튼 클릭 →</Run>
                                             <Run FontWeight="SemiBold">계정 추가</Run>
                                             <Run>대화상자에 키 붙여넣기</Run>
@@ -1669,13 +1871,14 @@
                 </Grid>
             </TabItem>
 
-            <!-- ═══ OPENAI CLI (CODEX) TAB (v2.7.0) ═══ -->
+            <!-- ═══ GROK CLI TAB (v2.8.0) ═══ -->
             <TabItem Style="{StaticResource DarkTabItem}">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="◯" Foreground="#10a37f" FontSize="13" FontWeight="Bold"
+                        <TextBlock Text="X" Foreground="#000000" FontSize="11" FontWeight="Bold"
+                                   Background="#ffffff" Padding="3,0,3,0"
                                    VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="OpenAI CLI" VerticalAlignment="Center"/>
+                        <TextBlock Text="Grok CLI" VerticalAlignment="Center"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Margin="14">
@@ -1691,34 +1894,35 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Codex CLI Sessions" FontSize="20" FontWeight="Bold"
+                        <TextBlock Grid.Column="0" Text="Grok CLI Sessions (베스트-에포트)"
+                                   FontSize="20" FontWeight="Bold"
                                    Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="2" x:Name="CodexRangeCombo" Width="120"
-                                  SelectionChanged="CodexRangeCombo_SelectionChanged" Margin="0,0,8,0">
+                        <ComboBox Grid.Column="2" x:Name="GrokCliRangeCombo" Width="120"
+                                  SelectionChanged="GrokCliRangeCombo_SelectionChanged" Margin="0,0,8,0">
                             <ComboBoxItem Content="오늘" Tag="1"/>
                             <ComboBoxItem Content="7일" Tag="7" IsSelected="True"/>
                             <ComboBoxItem Content="30일" Tag="30"/>
                         </ComboBox>
-                        <Button Grid.Column="3" x:Name="CodexRefreshBtn" Content="↻ 새로고침"
-                                Style="{StaticResource Btn}" Click="CodexRefreshBtn_Click"/>
+                        <Button Grid.Column="3" x:Name="GrokCliRefreshBtn" Content="↻ 새로고침"
+                                Style="{StaticResource Btn}" Click="GrokCliRefreshBtn_Click"/>
                     </Grid>
 
                     <Grid Grid.Row="1">
-                        <StackPanel x:Name="CodexEmptyState" VerticalAlignment="Center"
+                        <StackPanel x:Name="GrokCliEmptyState" VerticalAlignment="Center"
                                     HorizontalAlignment="Center">
-                            <TextBlock Text="◯" Foreground="#10a37f" FontSize="56" FontWeight="Bold"
+                            <TextBlock Text="𝕏" Foreground="#ffffff" FontSize="56" FontWeight="Bold"
                                        HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                            <TextBlock Text="Codex CLI 세션 로그가 없습니다"
+                            <TextBlock Text="Grok CLI 세션 로그를 찾을 수 없습니다"
                                        FontSize="16" FontWeight="SemiBold"
                                        Foreground="{StaticResource TxtHighlight}"
                                        HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                            <TextBlock x:Name="CodexLogPathHint"
-                                       Text="~/.codex/sessions/rollout-*.jsonl 경로를 확인하세요"
+                            <TextBlock x:Name="GrokCliPathHint"
+                                       Text="~/.grok 또는 ~/.grok-cli 경로를 검사합니다 (커뮤니티 CLI 호환)"
                                        FontSize="11" Foreground="{StaticResource TxtSub}"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <Grid x:Name="CodexDashboard" Visibility="Collapsed">
+                        <Grid x:Name="GrokCliDashboard" Visibility="Collapsed">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="8"/>
@@ -1735,25 +1939,25 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="SESSIONS" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="CodexSessionsCount" Text="0"
+                                        <TextBlock x:Name="GrokCliSessionsCount" Text="0"
                                                    FontSize="20" FontWeight="Bold"
                                                    Foreground="{StaticResource TxtHighlight}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="INPUT TOKENS" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="CodexInputTokens" Text="0"
+                                        <TextBlock x:Name="GrokCliInputTokens" Text="0"
                                                    FontSize="20" FontWeight="Bold"
                                                    Foreground="{StaticResource TxtHighlight}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="OUTPUT TOKENS" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="CodexOutputTokens" Text="0"
+                                        <TextBlock x:Name="GrokCliOutputTokens" Text="0"
                                                    FontSize="20" FontWeight="Bold"
                                                    Foreground="{StaticResource TxtHighlight}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="3">
                                         <TextBlock Text="EST. COST" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="CodexEstCost" Text="$0.00"
+                                        <TextBlock x:Name="GrokCliEstCost" Text="$0.00"
                                                    FontSize="20" FontWeight="Bold"
                                                    Foreground="{StaticResource TxtHighlight}"/>
                                     </StackPanel>
@@ -1768,7 +1972,7 @@
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Text="MODEL BREAKDOWN" Style="{StaticResource Sec}"
                                                Margin="0,0,0,8"/>
-                                    <DataGrid Grid.Row="1" x:Name="CodexModelGrid"
+                                    <DataGrid Grid.Row="1" x:Name="GrokCliModelGrid"
                                               AutoGenerateColumns="False"
                                               IsReadOnly="True" HeadersVisibility="Column"
                                               GridLinesVisibility="Horizontal"
@@ -1927,129 +2131,6 @@
                             <TextBlock x:Name="GrokStatusLabel" Grid.Row="4"
                                        VerticalAlignment="Bottom" HorizontalAlignment="Right"
                                        Margin="0,0,8,8" FontSize="10" Foreground="{StaticResource TxtSub}"/>
-                        </Grid>
-                    </Grid>
-                </Grid>
-            </TabItem>
-
-            <!-- ═══ GROK CLI TAB (v2.8.0) ═══ -->
-            <TabItem Style="{StaticResource DarkTabItem}">
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="X" Foreground="#000000" FontSize="11" FontWeight="Bold"
-                                   Background="#ffffff" Padding="3,0,3,0"
-                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="Grok CLI" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <Grid Margin="14">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <Grid Grid.Row="0" Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Grok CLI Sessions (베스트-에포트)"
-                                   FontSize="20" FontWeight="Bold"
-                                   Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="2" x:Name="GrokCliRangeCombo" Width="120"
-                                  SelectionChanged="GrokCliRangeCombo_SelectionChanged" Margin="0,0,8,0">
-                            <ComboBoxItem Content="오늘" Tag="1"/>
-                            <ComboBoxItem Content="7일" Tag="7" IsSelected="True"/>
-                            <ComboBoxItem Content="30일" Tag="30"/>
-                        </ComboBox>
-                        <Button Grid.Column="3" x:Name="GrokCliRefreshBtn" Content="↻ 새로고침"
-                                Style="{StaticResource Btn}" Click="GrokCliRefreshBtn_Click"/>
-                    </Grid>
-
-                    <Grid Grid.Row="1">
-                        <StackPanel x:Name="GrokCliEmptyState" VerticalAlignment="Center"
-                                    HorizontalAlignment="Center">
-                            <TextBlock Text="𝕏" Foreground="#ffffff" FontSize="56" FontWeight="Bold"
-                                       HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                            <TextBlock Text="Grok CLI 세션 로그를 찾을 수 없습니다"
-                                       FontSize="16" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TxtHighlight}"
-                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                            <TextBlock x:Name="GrokCliPathHint"
-                                       Text="~/.grok 또는 ~/.grok-cli 경로를 검사합니다 (커뮤니티 CLI 호환)"
-                                       FontSize="11" Foreground="{StaticResource TxtSub}"
-                                       HorizontalAlignment="Center"/>
-                        </StackPanel>
-
-                        <Grid x:Name="GrokCliDashboard" Visibility="Collapsed">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="8"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Border Grid.Row="0" Style="{StaticResource Card}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="SESSIONS" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="GrokCliSessionsCount" Text="0"
-                                                   FontSize="20" FontWeight="Bold"
-                                                   Foreground="{StaticResource TxtHighlight}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="INPUT TOKENS" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="GrokCliInputTokens" Text="0"
-                                                   FontSize="20" FontWeight="Bold"
-                                                   Foreground="{StaticResource TxtHighlight}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="OUTPUT TOKENS" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="GrokCliOutputTokens" Text="0"
-                                                   FontSize="20" FontWeight="Bold"
-                                                   Foreground="{StaticResource TxtHighlight}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="3">
-                                        <TextBlock Text="EST. COST" Style="{StaticResource Sec}"/>
-                                        <TextBlock x:Name="GrokCliEstCost" Text="$0.00"
-                                                   FontSize="20" FontWeight="Bold"
-                                                   Foreground="{StaticResource TxtHighlight}"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-
-                            <Border Grid.Row="2" Style="{StaticResource Card}">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="MODEL BREAKDOWN" Style="{StaticResource Sec}"
-                                               Margin="0,0,0,8"/>
-                                    <DataGrid Grid.Row="1" x:Name="GrokCliModelGrid"
-                                              AutoGenerateColumns="False"
-                                              IsReadOnly="True" HeadersVisibility="Column"
-                                              GridLinesVisibility="Horizontal"
-                                              Background="Transparent" BorderThickness="0" RowBackground="Transparent"
-                                              CanUserAddRows="False" CanUserDeleteRows="False"
-                                              CanUserResizeRows="False">
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="*"/>
-                                            <DataGridTextColumn Header="Sessions" Binding="{Binding Sessions}" Width="80"/>
-                                            <DataGridTextColumn Header="Input" Binding="{Binding InputDisplay}" Width="100"/>
-                                            <DataGridTextColumn Header="Output" Binding="{Binding OutputDisplay}" Width="100"/>
-                                            <DataGridTextColumn Header="Cost" Binding="{Binding CostDisplay}" Width="100"/>
-                                        </DataGrid.Columns>
-                                    </DataGrid>
-                                </Grid>
-                            </Border>
                         </Grid>
                     </Grid>
                 </Grid>

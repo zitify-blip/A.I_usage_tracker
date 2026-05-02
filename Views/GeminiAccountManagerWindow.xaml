@@ -183,11 +183,11 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="일간 예산($)"
-                                   FontSize="10" Foreground="#666" Margin="0,4,0,2"/>
+                                   FontSize="10" Foreground="#aaa" Margin="0,4,0,2"/>
                         <TextBlock Grid.Row="0" Grid.Column="2" Text="월간 예산($)"
-                                   FontSize="10" Foreground="#666" Margin="0,4,0,2"/>
+                                   FontSize="10" Foreground="#aaa" Margin="0,4,0,2"/>
                         <TextBlock Grid.Row="0" Grid.Column="4" Text="알림 임계치(%)"
-                                   FontSize="10" Foreground="#666" Margin="0,4,0,2"/>
+                                   FontSize="10" Foreground="#aaa" Margin="0,4,0,2"/>
                         <TextBox Grid.Row="1" Grid.Column="0" x:Name="DailyBudgetBox"/>
                         <TextBox Grid.Row="1" Grid.Column="2" x:Name="MonthlyBudgetBox"/>
                         <TextBox Grid.Row="1" Grid.Column="4" x:Name="AlertThresholdBox"/>
@@ -224,6 +224,6 @@
 
         <TextBlock Grid.Row="2" Grid.ColumnSpan="3"
                    Text="💡 계정 삭제 시 해당 계정의 사용 기록도 함께 삭제됩니다."
-                   FontSize="10" Foreground="#666" Margin="0,10,0,0"/>
+                   FontSize="10" Foreground="#aaa" Margin="0,10,0,0"/>
     </Grid>
 </Window>
