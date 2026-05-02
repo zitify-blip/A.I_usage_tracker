@@ -100,7 +100,7 @@ public class CodexCliService
     {
         string model = "";
         long input = 0, output = 0, cached = 0;
-        bool touched = false;
+        bool hasTotalUsage = false;  // true = new format found; don't accumulate legacy lines
 
         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         using var sr = new StreamReader(fs);
@@ -114,25 +114,58 @@ public class CodexCliService
                 var root = doc.RootElement;
                 if (root.ValueKind != JsonValueKind.Object) continue;
 
+                // Model: check payload.model first (turn_context, response_item, etc.),
+                // then fall back to root-level model field
                 if (string.IsNullOrEmpty(model))
                 {
-                    var m = FindString(root, "model");
-                    if (!string.IsNullOrEmpty(m)) model = m;
+                    if (root.TryGetProperty("payload", out var pModel))
+                    {
+                        var m = FindString(pModel, "model");
+                        if (!string.IsNullOrEmpty(m)) model = m;
+                    }
+                    if (string.IsNullOrEmpty(model))
+                    {
+                        var rootModel = FindString(root, "model");
+                        if (!string.IsNullOrEmpty(rootModel)) model = rootModel;
+                    }
                 }
 
-                var usage = FindObject(root, "usage")
-                         ?? FindObject(root, "token_usage")
-                         ?? FindObject(root, "tokens");
-                if (usage is { } u)
+                // New Codex CLI format (v0.128+):
+                //   { "type": "event_msg", "payload": { "type": "token_count",
+                //     "info": { "total_token_usage": { "input_tokens": N, ... } } } }
+                // total_token_usage is already cumulative for the session, so we overwrite.
+                if (root.TryGetProperty("payload", out var payload) &&
+                    FindString(payload, "type") == "token_count" &&
+                    payload.TryGetProperty("info", out var info) &&
+                    info.ValueKind == JsonValueKind.Object &&
+                    info.TryGetProperty("total_token_usage", out var ttu) &&
+                    ttu.ValueKind == JsonValueKind.Object)
                 {
-                    input += FindLong(u, "input_tokens", "prompt_tokens", "total_input_tokens");
-                    output += FindLong(u, "output_tokens", "completion_tokens", "total_output_tokens");
-                    cached += FindLong(u, "input_cached_tokens", "cached_tokens", "cache_read_input_tokens");
-                    touched = true;
+                    input  = FindLong(ttu, "input_tokens", "prompt_tokens");
+                    output = FindLong(ttu, "output_tokens", "completion_tokens");
+                    // cached_input_tokens is Codex v0.128+; older names kept for safety
+                    cached = FindLong(ttu, "cached_input_tokens", "input_cached_tokens", "cached_tokens");
+                    hasTotalUsage = true;
+                    continue;
+                }
+
+                // Legacy format: usage/token_usage/tokens at root level
+                if (!hasTotalUsage)
+                {
+                    var usage = FindObject(root, "usage")
+                             ?? FindObject(root, "token_usage")
+                             ?? FindObject(root, "tokens");
+                    if (usage is { } u)
+                    {
+                        input  += FindLong(u, "input_tokens", "prompt_tokens", "total_input_tokens");
+                        output += FindLong(u, "output_tokens", "completion_tokens", "total_output_tokens");
+                        cached += FindLong(u, "input_cached_tokens", "cached_tokens", "cache_read_input_tokens");
+                    }
                 }
             }
             catch (JsonException) { /* skip malformed line */ }
         }
+        bool touched = hasTotalUsage || input > 0 || output > 0;
         return (touched, model, input, output, cached);
     }
 

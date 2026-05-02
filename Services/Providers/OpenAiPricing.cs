@@ -11,6 +11,7 @@ public static class OpenAiPricing
 {
     public static readonly IReadOnlyList<OpenAiModelPrice> Models = new List<OpenAiModelPrice>
     {
+        new("gpt-5.5",       "GPT-5.5",        5.00, 15.00, 0.50),
         new("gpt-5",         "GPT-5",          5.00, 15.00, 0.50),
         new("gpt-5-mini",    "GPT-5 mini",     0.15,  0.60, 0.015),
         new("gpt-5-nano",    "GPT-5 nano",     0.05,  0.40, 0.005),
