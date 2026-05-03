@@ -24,6 +24,7 @@
     <Color x:Key="AccentBlueColor">#FF2060A0</Color>
     <Color x:Key="AccentYellowColor">#FFC09010</Color>
     <Color x:Key="AccentRedColor">#FFC04030</Color>
+    <Color x:Key="OpenAiBrandColor">#FF0A7659</Color>
 
     <!-- Paper + paw-print tile for the window/panel background -->
     <DrawingBrush x:Key="BgBaseBrush" TileMode="Tile"
@@ -71,6 +72,11 @@
     <SolidColorBrush x:Key="AccentBlueBrush"   Color="{StaticResource AccentBlueColor}"/>
     <SolidColorBrush x:Key="AccentYellowBrush" Color="{StaticResource AccentYellowColor}"/>
     <SolidColorBrush x:Key="AccentRedBrush"    Color="{StaticResource AccentRedColor}"/>
+    <SolidColorBrush x:Key="OpenAiBrandBrush"  Color="{StaticResource OpenAiBrandColor}"/>
+    <SolidColorBrush x:Key="StatusGoodBrush"   Color="#FF15803D"/>
+    <SolidColorBrush x:Key="StatusWarnBrush"   Color="#FFA16207"/>
+    <SolidColorBrush x:Key="StatusHighBrush"   Color="#FFC2410C"/>
+    <SolidColorBrush x:Key="StatusBadBrush"    Color="#FFB91C1C"/>
     <SolidColorBrush x:Key="SelectionBrush"    Color="{StaticResource AccentColor}" Opacity="0.35"/>
     <SolidColorBrush x:Key="AccentBgBrush"      Color="#FFF8EEE8"/>
     <SolidColorBrush x:Key="AccentBgHoverBrush" Color="#FFF0DDD0"/>

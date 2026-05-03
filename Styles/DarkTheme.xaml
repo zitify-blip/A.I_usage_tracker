@@ -20,6 +20,7 @@
     <Color x:Key="AccentBlueColor">#FF60A5FA</Color>
     <Color x:Key="AccentYellowColor">#FFFACC15</Color>
     <Color x:Key="AccentRedColor">#FFF87171</Color>
+    <Color x:Key="OpenAiBrandColor">#FF10A37F</Color>
 
     <SolidColorBrush x:Key="BgBaseBrush" Color="{StaticResource BgBaseColor}"/>
     <SolidColorBrush x:Key="BgCardBrush" Color="{StaticResource BgCardColor}"/>
@@ -38,6 +39,11 @@
     <SolidColorBrush x:Key="AccentBlueBrush"     Color="{StaticResource AccentBlueColor}"/>
     <SolidColorBrush x:Key="AccentYellowBrush"   Color="{StaticResource AccentYellowColor}"/>
     <SolidColorBrush x:Key="AccentRedBrush"      Color="{StaticResource AccentRedColor}"/>
+    <SolidColorBrush x:Key="OpenAiBrandBrush"    Color="{StaticResource OpenAiBrandColor}"/>
+    <SolidColorBrush x:Key="StatusGoodBrush"     Color="#FF4ADE80"/>
+    <SolidColorBrush x:Key="StatusWarnBrush"     Color="#FFFACC15"/>
+    <SolidColorBrush x:Key="StatusHighBrush"     Color="#FFFB923C"/>
+    <SolidColorBrush x:Key="StatusBadBrush"      Color="#FFF87171"/>
     <SolidColorBrush x:Key="AccentBgBrush"       Color="#FF1A3A1A"/>
     <SolidColorBrush x:Key="AccentBgHoverBrush"  Color="#FF2A4A2A"/>
     <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource AccentColor}" Opacity="0.35"/>

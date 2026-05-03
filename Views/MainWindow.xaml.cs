@@ -237,9 +237,9 @@ public partial class MainWindow : Window
         StatusLabel.Text = _usage.StatusText;
         StatusLabel.Foreground = _usage.StatusKind switch
         {
-            "connected" => B("#4ade80"),
-            "loading" => B("#facc15"),
-            "error" => B("#f87171"),
+            "connected" => BR("StatusGoodBrush"),
+            "loading" => BR("StatusWarnBrush"),
+            "error" => BR("StatusBadBrush"),
             _ => B("#888888")
         };
 
@@ -251,7 +251,7 @@ public partial class MainWindow : Window
         else
         {
             LoginBtn.Content = "Login";
-            LoginBtn.Background = _usage.StatusKind == "error" ? B("#f87171") : B("#262626");
+            LoginBtn.Background = _usage.StatusKind == "error" ? BR("StatusBadBrush") : B("#262626");
         }
     }
 
@@ -340,7 +340,7 @@ public partial class MainWindow : Window
             TimeLeftText.Text = "5h 00m";
             TimeLeftPctText.Text = " · 새 세션 시작 (새로고침 중)";
             SessionResetAtLabel.Text = "Resetting...";
-            TimeLeftText.Foreground = B("#60a5fa");
+            TimeLeftText.Foreground = BR("AccentBlueBrush");
             return;
         }
 
@@ -352,7 +352,7 @@ public partial class MainWindow : Window
         TimeLeftText.Text = FmtRemain((long)rem);
         TimeLeftPctText.Text = $" left · {elapsedPct:F0}% elapsed";
         SessionResetAtLabel.Text = $"Resets at {rst.ToLocalTime():ddd HH:mm}";
-        TimeLeftText.Foreground = remPct > 30 ? B("#60a5fa") : remPct > 10 ? B("#facc15") : B("#f87171");
+        TimeLeftText.Foreground = remPct > 30 ? BR("AccentBlueBrush") : remPct > 10 ? BR("StatusWarnBrush") : BR("StatusBadBrush");
     }
 
     private void UpdateTimeBar(double elapsedPct, double remPct)
@@ -362,7 +362,7 @@ public partial class MainWindow : Window
         var fill = width * Math.Clamp(elapsedPct, 0, 100) / 100.0;
         TimeBar.Width = fill;
 
-        var color = remPct > 30 ? C("#60a5fa") : remPct > 10 ? C("#facc15") : C("#f87171");
+        var color = remPct > 30 ? CR("AccentBlueBrush") : remPct > 10 ? CR("StatusWarnBrush") : CR("StatusBadBrush");
         TimeBar.Background = new SolidColorBrush(color);
         if (TimePlayhead.Children.Count > 0 && TimePlayhead.Children[0] is Ellipse e)
             e.Fill = new SolidColorBrush(color);
@@ -389,7 +389,7 @@ public partial class MainWindow : Window
         arc.IsLargeArc = angle > 180;
 
         if (isUsage)
-            brush.Color = pct >= 90 ? C("#f87171") : pct >= 70 ? C("#facc15") : C("#4ade80");
+            brush.Color = pct >= 90 ? CR("StatusBadBrush") : pct >= 70 ? CR("StatusWarnBrush") : CR("StatusGoodBrush");
     }
 
     // ────────── Bar / Marker ──────────
@@ -568,7 +568,7 @@ public partial class MainWindow : Window
         var polyline = new Polyline
         {
             Points = linePoints,
-            Stroke = B("#4ade80"),
+            Stroke = BR("StatusGoodBrush"),
             StrokeThickness = 2,
             StrokeLineJoin = PenLineJoin.Round
         };
@@ -648,7 +648,7 @@ public partial class MainWindow : Window
         void SetBtnText(string text)
         {
             StatusLabel.Text = text;
-            StatusLabel.Foreground = B("#facc15");
+            StatusLabel.Foreground = BR("StatusWarnBrush");
         }
 
         SetBtnText("최신 버전 확인 중...");
@@ -726,7 +726,7 @@ public partial class MainWindow : Window
     {
         Topmost = !Topmost;
         TopMostBtn.Content = Topmost ? "📍" : "📌";
-        TopMostBtn.Foreground = Topmost ? B("#4ade80") : B("#bfbfbf");
+        TopMostBtn.Foreground = Topmost ? BR("StatusGoodBrush") : B("#bfbfbf");
     }
 
     private void MinBtn_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
@@ -902,8 +902,19 @@ public partial class MainWindow : Window
 
     private static SolidColorBrush B(string hex) => new(C(hex));
 
-    private static SolidColorBrush UsageColor(double pct) =>
-        pct >= 90 ? B("#f87171") : pct >= 70 ? B("#facc15") : B("#4ade80");
+    /// <summary>Theme-aware brush lookup — uses current theme's resource so dog mode gets darker tones.</summary>
+    private static SolidColorBrush BR(string key) =>
+        System.Windows.Application.Current.Resources[key] as SolidColorBrush ?? B("#888");
+
+    /// <summary>Theme-aware color lookup — same as BR but returns Color for ColorAnimation/SolidColorBrush.Color.</summary>
+    private static Color CR(string key) =>
+        (System.Windows.Application.Current.Resources[key] as SolidColorBrush)?.Color ?? C("#888");
+
+    private static SolidColorBrush UsageColor(double pct)
+    {
+        var key = pct >= 90 ? "StatusBadBrush" : pct >= 70 ? "StatusWarnBrush" : "StatusGoodBrush";
+        return System.Windows.Application.Current.Resources[key] as SolidColorBrush ?? BR("StatusGoodBrush");
+    }
 
     private static string FmtRemain(long ms)
     {
@@ -976,12 +987,12 @@ public partial class MainWindow : Window
             var delta = todayCost - yesterdayCost;
             var sign = delta >= 0 ? "+" : "−";
             HeroTodayDelta.Text = $"yesterday ${yesterdayCost:F2} · {sign}${Math.Abs(delta):F2}";
-            HeroTodayDelta.Foreground = delta > 0 ? B("#f87171") : delta < 0 ? B("#4ade80") : B("#888");
+            HeroTodayDelta.Foreground = delta > 0 ? BR("StatusBadBrush") : delta < 0 ? BR("StatusGoodBrush") : BR("TxtSubBrush");
         }
         else
         {
             HeroTodayDelta.Text = "no usage yet";
-            HeroTodayDelta.Foreground = B("#888");
+            HeroTodayDelta.Foreground = BR("TxtSubBrush");
         }
 
         HeroMonthCost.Text = $"${monthCost:F2}";
@@ -1011,7 +1022,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            HeroProjectedCost.Foreground = B("#e8e8e8");
+            HeroProjectedCost.Foreground = BR("TxtHighlightBrush");
             HeroProjectedSub.Text = avgPerDay > 0 ? $"based on ${avgPerDay:F2}/day avg" : "no usage yet";
         }
 
@@ -1092,10 +1103,10 @@ public partial class MainWindow : Window
 
     private static SolidColorBrush BudgetColor(double pct)
     {
-        if (pct >= 1.0) return B("#f87171");
-        if (pct >= 0.8) return B("#fb923c");
-        if (pct >= 0.6) return B("#facc15");
-        return B("#4ade80");
+        if (pct >= 1.0) return BR("StatusBadBrush");
+        if (pct >= 0.8) return BR("StatusHighBrush");
+        if (pct >= 0.6) return BR("StatusWarnBrush");
+        return BR("StatusGoodBrush");
     }
 
     private static string ModelFamily(string? model)
@@ -1295,10 +1306,10 @@ public partial class MainWindow : Window
         if (_geminiRelay.IsRunning)
         {
             GeminiRelayStatusText.Text = $"● Running on 127.0.0.1:{_geminiRelay.Port}";
-            GeminiRelayStatusText.Foreground = B("#4ade80");
+            GeminiRelayStatusText.Foreground = BR("StatusGoodBrush");
             GeminiRelayStartBtn.Content = "⏹ Stop";
             GeminiRelayStartBtn.Background = B("#3a1a1a");
-            GeminiRelayStartBtn.BorderBrush = B("#f87171");
+            GeminiRelayStartBtn.BorderBrush = BR("StatusBadBrush");
             GeminiRelayPortBox.IsEnabled = false;
 
             var stats = $"served: {_geminiRelay.RequestsServed}";
@@ -1316,7 +1327,7 @@ public partial class MainWindow : Window
             GeminiRelayStatusText.Foreground = B(string.IsNullOrEmpty(err) ? "#888" : "#f87171");
             GeminiRelayStartBtn.Content = "▶ Start";
             GeminiRelayStartBtn.Background = B("#1a3a1a");
-            GeminiRelayStartBtn.BorderBrush = B("#4ade80");
+            GeminiRelayStartBtn.BorderBrush = BR("StatusGoodBrush");
             GeminiRelayPortBox.IsEnabled = true;
             GeminiRelayStatsText.Text = "";
         }
@@ -1333,7 +1344,7 @@ public partial class MainWindow : Window
         if (!int.TryParse(GeminiRelayPortBox.Text?.Trim(), out var port) || port < 1024 || port > 65535)
         {
             GeminiRelayStatusText.Text = "Invalid port (1024-65535)";
-            GeminiRelayStatusText.Foreground = B("#f87171");
+            GeminiRelayStatusText.Foreground = BR("StatusBadBrush");
             return;
         }
 
@@ -1343,7 +1354,7 @@ public partial class MainWindow : Window
         if (!_geminiRelay.Start(port, out var err))
         {
             GeminiRelayStatusText.Text = $"● Start failed: {err}";
-            GeminiRelayStatusText.Foreground = B("#f87171");
+            GeminiRelayStatusText.Foreground = BR("StatusBadBrush");
         }
     }
 
@@ -1503,20 +1514,20 @@ public partial class MainWindow : Window
         if (dlg.ShowDialog() != true) return;
 
         GeminiStatusLabel.Text = "키 검증 중...";
-        GeminiStatusLabel.Foreground = B("#facc15");
+        GeminiStatusLabel.Foreground = BR("StatusWarnBrush");
 
         var (ok, err, acc) = await _geminiAccounts.AddAccountAsync(dlg.Alias, dlg.ApiKey);
         if (!ok)
         {
             GeminiStatusLabel.Text = $"실패: {err}";
-            GeminiStatusLabel.Foreground = B("#f87171");
+            GeminiStatusLabel.Foreground = BR("StatusBadBrush");
             System.Windows.MessageBox.Show(this, $"계정 추가 실패: {err}",
                 "Gemini", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
         GeminiStatusLabel.Text = $"'{acc?.Alias}' 추가됨";
-        GeminiStatusLabel.Foreground = B("#4ade80");
+        GeminiStatusLabel.Foreground = BR("StatusGoodBrush");
     }
 
     private void GeminiManageBtn_Click(object sender, RoutedEventArgs e)
@@ -1540,13 +1551,13 @@ public partial class MainWindow : Window
 
         GeminiTestBtn.IsEnabled = false;
         GeminiStatusLabel.Text = "연결 테스트 중...";
-        GeminiStatusLabel.Foreground = B("#facc15");
+        GeminiStatusLabel.Foreground = BR("StatusWarnBrush");
 
         var key = _geminiAccounts.GetApiKey(selected.Id);
         if (string.IsNullOrEmpty(key))
         {
             GeminiStatusLabel.Text = "키 복호화 실패";
-            GeminiStatusLabel.Foreground = B("#f87171");
+            GeminiStatusLabel.Foreground = BR("StatusBadBrush");
             GeminiTestBtn.IsEnabled = true;
             return;
         }
@@ -1555,7 +1566,7 @@ public partial class MainWindow : Window
         if (ok)
         {
             GeminiStatusLabel.Text = $"연결 성공 · 사용 가능 모델 {count}개";
-            GeminiStatusLabel.Foreground = B("#4ade80");
+            GeminiStatusLabel.Foreground = BR("StatusGoodBrush");
 
             selected.LastUsedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             _storage.Save();
@@ -1564,7 +1575,7 @@ public partial class MainWindow : Window
         else
         {
             GeminiStatusLabel.Text = $"연결 실패: {err}";
-            GeminiStatusLabel.Foreground = B("#f87171");
+            GeminiStatusLabel.Foreground = BR("StatusBadBrush");
         }
         GeminiTestBtn.IsEnabled = true;
     }
@@ -1578,7 +1589,7 @@ public partial class MainWindow : Window
         if (allAccounts.Count == 0)
         {
             GeminiStatusLabel.Text = "내보낼 계정이 없습니다";
-            GeminiStatusLabel.Foreground = B("#f87171");
+            GeminiStatusLabel.Foreground = BR("StatusBadBrush");
             return;
         }
 
@@ -1648,12 +1659,12 @@ public partial class MainWindow : Window
             }
 
             GeminiStatusLabel.Text = $"내보냄 · {records.Count}건 → {IOPath.GetFileName(dlg.FileName)}";
-            GeminiStatusLabel.Foreground = B("#4ade80");
+            GeminiStatusLabel.Foreground = BR("StatusGoodBrush");
         }
         catch (Exception ex)
         {
             GeminiStatusLabel.Text = $"내보내기 실패: {ex.Message}";
-            GeminiStatusLabel.Foreground = B("#f87171");
+            GeminiStatusLabel.Foreground = BR("StatusBadBrush");
         }
     }
 

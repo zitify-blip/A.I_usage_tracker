@@ -1413,7 +1413,7 @@
             <TabItem Style="{StaticResource DarkTabItem}">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="◯" Foreground="#10a37f" FontSize="13" FontWeight="Bold"
+                        <TextBlock Text="◯" Foreground="{DynamicResource OpenAiBrandBrush}" FontSize="13" FontWeight="Bold"
                                    VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="OpenAI CLI" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -1468,7 +1468,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="1" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1484,7 +1484,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="2" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1501,7 +1501,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="3" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1518,7 +1518,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="4" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1615,7 +1615,7 @@
             <TabItem Style="{StaticResource DarkTabItem}">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="◯" Foreground="#10a37f" FontSize="13" FontWeight="Bold"
+                        <TextBlock Text="◯" Foreground="{DynamicResource OpenAiBrandBrush}" FontSize="13" FontWeight="Bold"
                                    VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="OpenAI API" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -1683,7 +1683,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="1" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1699,7 +1699,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="2" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1718,7 +1718,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="3" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1735,7 +1735,7 @@
                                             <ColumnDefinition Width="22"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#10a37f" CornerRadius="10" Width="18" Height="18"
+                                        <Border Background="{DynamicResource OpenAiBrandBrush}" CornerRadius="10" Width="18" Height="18"
                                                 VerticalAlignment="Top" Margin="0,1,0,0">
                                             <TextBlock Text="4" FontSize="10" FontWeight="Bold" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1871,8 +1871,8 @@
                 </Grid>
             </TabItem>
 
-            <!-- ═══ GROK CLI TAB (v2.8.0) ═══ -->
-            <TabItem Style="{StaticResource DarkTabItem}">
+            <!-- ═══ GROK CLI TAB (v2.8.0) — hidden until verified ═══ -->
+            <TabItem Style="{StaticResource DarkTabItem}" Visibility="Collapsed">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="X" Foreground="#000000" FontSize="11" FontWeight="Bold"
@@ -1994,8 +1994,8 @@
                 </Grid>
             </TabItem>
 
-            <!-- ═══ GROK / xAI API TAB (v2.8.0) ═══ -->
-            <TabItem Style="{StaticResource DarkTabItem}">
+            <!-- ═══ GROK / xAI API TAB (v2.8.0) — hidden until verified ═══ -->
+            <TabItem Style="{StaticResource DarkTabItem}" Visibility="Collapsed">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="X" Foreground="#000000" FontSize="11" FontWeight="Bold"

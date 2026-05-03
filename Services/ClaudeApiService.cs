@@ -18,7 +18,9 @@ public class ClaudeApiService
 
     public static readonly string FetchViaPostMessage = @"
 (function() {
-  fetch('https://claude.ai/api/organizations', { credentials: 'include' })
+  var noCacheHeaders = { 'Accept': 'application/json', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' };
+  var ts = Date.now();
+  fetch('https://claude.ai/api/organizations?_t=' + ts, { credentials: 'include', cache: 'no-store', headers: noCacheHeaders })
     .then(function(orgsRes) {
       if (orgsRes.status === 401 || orgsRes.status === 403) {
         window.chrome.webview.postMessage({ ok: false, error: 'not_logged_in', status: orgsRes.status });
@@ -34,9 +36,10 @@ public class ClaudeApiService
           return;
         }
         var orgId = orgs[0].uuid;
-        fetch('https://claude.ai/api/organizations/' + orgId + '/usage', {
+        fetch('https://claude.ai/api/organizations/' + orgId + '/usage?_t=' + Date.now(), {
           credentials: 'include',
-          headers: { 'Accept': 'application/json' }
+          cache: 'no-store',
+          headers: noCacheHeaders
         }).then(function(usageRes) {
           if (usageRes.status === 401 || usageRes.status === 403) {
             window.chrome.webview.postMessage({ ok: false, error: 'not_logged_in', status: usageRes.status });

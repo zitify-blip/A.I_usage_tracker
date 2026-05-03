@@ -85,14 +85,31 @@ public class UsageService
         var routine = data.GetDailyRoutines();
         var extra = data.GetExtraUsage();
 
+        Logger.Info($"Claude usage parsed: 5h={fiveHour?.Utilization:F3}/{fiveHour?.GetResetTime() ?? "—"}, " +
+                    $"week={sevenDay?.Utilization:F3}/{sevenDay?.GetResetTime() ?? "—"}, " +
+                    $"sub({data.GetSubModelName()})={sub?.Utilization:F3}/{sub?.GetResetTime() ?? "—"}, " +
+                    $"design={design?.Utilization:F3}, routine={routine?.GetUsed()}/{routine?.GetLimit()}");
+
+        // SubResetAt이 누락되거나 이미 지난 시각이면 WeekResetAt으로 fallback —
+        // Claude API가 sub-model 카테고리의 reset_at을 새 주 시점으로 갱신하지 않는 경우,
+        // EffectivePct가 작동 안 해서 옛 % 값이 새 주에도 표시되는 버그 방지.
+        var weekReset = sevenDay?.GetResetTime();
+        var subResetRaw = sub?.GetResetTime();
+        string? subReset = subResetRaw;
+        if (string.IsNullOrEmpty(subResetRaw) ||
+            (DateTimeOffset.TryParse(subResetRaw, out var subDt) && subDt <= DateTimeOffset.Now))
+        {
+            subReset = weekReset;
+        }
+
         Latest = new LatestUsage
         {
             SessionPct = ToPercent(fiveHour?.Utilization ?? 0),
             SessionResetAt = fiveHour?.GetResetTime(),
             WeekPct = ToPercent(sevenDay?.Utilization ?? 0),
-            WeekResetAt = sevenDay?.GetResetTime(),
+            WeekResetAt = weekReset,
             SubPct = ToPercent(sub?.Utilization ?? 0),
-            SubResetAt = sub?.GetResetTime(),
+            SubResetAt = subReset,
             SubModelName = data.GetSubModelName(),
             HasDesign = design != null,
             DesignPct = ToPercent(design?.Utilization ?? 0),
