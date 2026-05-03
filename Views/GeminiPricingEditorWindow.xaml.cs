@@ -65,15 +65,14 @@ public partial class GeminiPricingEditorWindow : Window
             }
 
             _storage.SetPricingOverride(row.Preset.ModelId, inp, outp, cac);
-            row.SetStatus("저장됨", "#4ade80");
+            row.SetStatus("저장됨", "StatusGoodBrush");
             saved++;
         }
 
         StatusLabel.Text = errors > 0
             ? $"저장 {saved}건 · 제거 {removed}건 · 오류 {errors}건"
             : $"저장 {saved}건 · 제거 {removed}건";
-        StatusLabel.Foreground = new SolidColorBrush(
-            (Color)ColorConverter.ConvertFromString(errors > 0 ? "#f87171" : "#4ade80"));
+        StatusLabel.Foreground = ThemeBrush.BR(errors > 0 ? "StatusBadBrush" : "StatusGoodBrush");
     }
 
     private void ResetAll_Click(object sender, RoutedEventArgs e)
@@ -89,11 +88,10 @@ public partial class GeminiPricingEditorWindow : Window
             row.InputText = "";
             row.OutputText = "";
             row.CacheText = "";
-            row.SetStatus("프리셋", "#888");
+            row.SetStatus("프리셋", "TxtSubBrush");
         }
         StatusLabel.Text = "모두 프리셋으로 복원됨";
-        StatusLabel.Foreground = new SolidColorBrush(
-            (Color)ColorConverter.ConvertFromString("#4ade80"));
+        StatusLabel.Foreground = ThemeBrush.BR("StatusGoodBrush");
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
@@ -132,18 +130,19 @@ public partial class GeminiPricingEditorWindow : Window
                 _input = ov.InputPricePerMTok.ToString("G", CultureInfo.InvariantCulture);
                 _output = ov.OutputPricePerMTok.ToString("G", CultureInfo.InvariantCulture);
                 _cache = ov.CachePricePerMTok.ToString("G", CultureInfo.InvariantCulture);
-                SetStatus("오버라이드", "#facc15");
+                SetStatus("오버라이드", "AccentYellowBrush");
             }
             else
             {
-                SetStatus($"프리셋 ({preset.InputPricePerMTok}/{preset.OutputPricePerMTok}/{preset.CachePricePerMTok})", "#666");
+                SetStatus($"프리셋 ({preset.InputPricePerMTok}/{preset.OutputPricePerMTok}/{preset.CachePricePerMTok})", "TxtHintBrush");
             }
         }
 
-        public void SetStatus(string text, string colorHex)
+        // colorKey는 디자인 시스템 brush 토큰 키 (예: "StatusGoodBrush", "TxtSubBrush").
+        public void SetStatus(string text, string colorKey)
         {
             StatusText = text;
-            StatusBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex));
+            StatusBrush = ThemeBrush.BR(colorKey);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

@@ -6,10 +6,9 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using UserControl = System.Windows.Controls.UserControl;
 using System.Windows.Threading;
+using AIUsageTracker.Services;
 using Clipboard = System.Windows.Clipboard;
-using Color = System.Windows.Media.Color;
 using MessageBox = System.Windows.MessageBox;
-using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace AIUsageTracker.Views;
@@ -180,14 +179,14 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
         if (IsRuleInstalled())
         {
             RuleStatusBadgeText.Text = "✓ 설치됨 — Claude CLI가 규칙을 자동 인식합니다";
-            RuleStatusBadgeText.Foreground = B("#4ade80");
+            RuleStatusBadgeText.Foreground = ThemeBrush.BR("StatusGoodBrush");
             InstallRuleBtn.Visibility = Visibility.Collapsed;
             RemoveRuleBtn.Visibility = Visibility.Visible;
         }
         else
         {
             RuleStatusBadgeText.Text = "⚪ 미설치";
-            RuleStatusBadgeText.Foreground = B("#9ca3af");
+            RuleStatusBadgeText.Foreground = ThemeBrush.BR("TxtSubBrush");
             InstallRuleBtn.Visibility = Visibility.Visible;
             InstallRuleBtn.Content = "⚡ 규칙 설치";
             RemoveRuleBtn.Visibility = Visibility.Collapsed;
@@ -294,14 +293,14 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
         if (match == ManagedVars.Length)
         {
             StatusBadgeText.Text = "✓ 적용됨 — 환경변수 4개 모두 트래커로 향함";
-            StatusBadgeText.Foreground = B("#4ade80");
+            StatusBadgeText.Foreground = ThemeBrush.BR("StatusGoodBrush");
             PrimaryActionBtn.Visibility = Visibility.Collapsed;
             RevertBtn.Visibility = Visibility.Visible;
         }
         else if (missing == ManagedVars.Length)
         {
             StatusBadgeText.Text = "⚪ 미적용 — 설정된 환경변수 없음";
-            StatusBadgeText.Foreground = B("#9ca3af");
+            StatusBadgeText.Foreground = ThemeBrush.BR("TxtSubBrush");
             PrimaryActionBtn.Content = "⚡ 자동 설정";
             PrimaryActionBtn.Visibility = Visibility.Visible;
             RevertBtn.Visibility = Visibility.Collapsed;
@@ -309,7 +308,7 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
         else if (foreign > 0)
         {
             StatusBadgeText.Text = $"⚠ 다른 값 감지됨 ({foreign}/{ManagedVars.Length}) — 적용 시 백업 후 교체";
-            StatusBadgeText.Foreground = B("#facc15");
+            StatusBadgeText.Foreground = ThemeBrush.BR("StatusWarnBrush");
             PrimaryActionBtn.Content = "⚡ 백업 후 자동 설정";
             PrimaryActionBtn.Visibility = Visibility.Visible;
             RevertBtn.Visibility = foreign == 0 ? Visibility.Collapsed : Visibility.Visible;
@@ -317,17 +316,11 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
         else
         {
             StatusBadgeText.Text = $"⚠ 부분 적용 ({match}/{ManagedVars.Length})";
-            StatusBadgeText.Foreground = B("#facc15");
+            StatusBadgeText.Foreground = ThemeBrush.BR("StatusWarnBrush");
             PrimaryActionBtn.Content = "⚡ 마저 적용하기";
             PrimaryActionBtn.Visibility = Visibility.Visible;
             RevertBtn.Visibility = Visibility.Visible;
         }
-    }
-
-    private static SolidColorBrush B(string hex)
-    {
-        var c = (Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
-        return new SolidColorBrush(c);
     }
 
     private void PrimaryAction_Click(object sender, RoutedEventArgs e)
@@ -444,9 +437,7 @@ $body = @{contents=@(@{parts=@(@{text=$prompt})})} | ConvertTo-Json -Depth 5 -Co
     private void FlashStatus(string text, bool ok)
     {
         StatusText.Text = text;
-        StatusText.Foreground = new SolidColorBrush(
-            ok ? Color.FromRgb(0x4a, 0xde, 0x80)
-               : Color.FromRgb(0xf8, 0x71, 0x71));
+        StatusText.Foreground = ThemeBrush.BR(ok ? "StatusGoodBrush" : "StatusBadBrush");
         _statusTimer.Stop();
         _statusTimer.Start();
     }

@@ -3,58 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Gemini 단가 편집"
         Width="720" Height="500"
-        Background="#0f0f0f"
+        Background="{StaticResource BgBaseBrush}"
         WindowStartupLocation="CenterOwner">
-
-    <Window.Resources>
-        <SolidColorBrush x:Key="TxtHighlight" Color="#f5f5f5"/>
-        <SolidColorBrush x:Key="TxtSub" Color="#888888"/>
-
-        <Style x:Key="Btn" TargetType="Button">
-            <Setter Property="Background" Value="#262626"/>
-            <Setter Property="Foreground" Value="#e8e8e8"/>
-            <Setter Property="BorderBrush" Value="#2a2a2a"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#333"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Background" Value="#1e1e1e"/>
-            <Setter Property="BorderBrush" Value="#2a2a2a"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="14"/>
-        </Style>
-
-        <Style x:Key="Sec" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="9"/>
-            <Setter Property="Foreground" Value="#888"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
-        </Style>
-    </Window.Resources>
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
@@ -66,7 +16,7 @@
 
         <TextBlock Grid.Row="0" Text="Gemini 단가 편집 (USD / 1M tokens)"
                    FontSize="18" FontWeight="Bold"
-                   Foreground="{StaticResource TxtHighlight}" Margin="0,0,0,12"/>
+                   Foreground="{StaticResource TxtHighlightBrush}" Margin="0,0,0,12"/>
 
         <Border Grid.Row="1" Style="{StaticResource Card}">
             <Grid>
@@ -103,7 +53,7 @@
                                         <ColumnDefinition Width="80"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="{Binding DisplayName}"
-                                               Foreground="#e8e8e8" FontSize="11"
+                                               Foreground="{StaticResource TxtBrush}" FontSize="11"
                                                VerticalAlignment="Center"/>
                                     <TextBox Grid.Column="1" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
                                              TextAlignment="Right" Margin="3,0"/>
@@ -124,7 +74,7 @@
 
         <TextBlock Grid.Row="2"
                    Text="💡 빈 칸이면 프리셋 단가 사용. 값을 비워두고 저장하면 오버라이드가 제거됩니다."
-                   FontSize="10" Foreground="#aaa" Margin="0,10,0,0"/>
+                   FontSize="10" Foreground="{StaticResource TxtHintBrush}" Margin="0,10,0,0"/>
 
         <Grid Grid.Row="3" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
@@ -136,11 +86,11 @@
             </Grid.ColumnDefinitions>
             <Button Grid.Column="0" Content="↺ 모두 프리셋으로 복원"
                     Style="{StaticResource Btn}" Click="ResetAll_Click"/>
-            <TextBlock Grid.Column="1" x:Name="StatusLabel" Foreground="#888" FontSize="11"
+            <TextBlock Grid.Column="1" x:Name="StatusLabel" Foreground="{StaticResource TxtSubBrush}" FontSize="11"
                        VerticalAlignment="Center" Margin="12,0,0,0"/>
             <Button Grid.Column="2" Content="닫기" Style="{StaticResource Btn}" Click="Close_Click"/>
-            <Button Grid.Column="4" Content="💾 저장" Style="{StaticResource Btn}"
-                    Click="Save_Click" Background="#1a3a1a" BorderBrush="#4ade80"/>
+            <Button Grid.Column="4" Content="💾 저장" Style="{StaticResource BtnPrimary}"
+                    Click="Save_Click"/>
         </Grid>
     </Grid>
 </Window>

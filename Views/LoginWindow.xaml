@@ -5,7 +5,7 @@
         Title="Claude Login"
         Width="500" Height="700"
         WindowStartupLocation="CenterOwner"
-        Background="#0f0f0f"
+        Background="{StaticResource BgBaseBrush}"
         ResizeMode="CanResize">
 
     <Grid>
@@ -16,13 +16,15 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#1a1a1a" Padding="16,10">
+        <Border Grid.Row="0" Background="{StaticResource BgInputBrush}" Padding="16,10">
             <Grid>
                 <StackPanel>
-                    <TextBlock Text="Log in to Claude" FontSize="15" FontWeight="Bold" Foreground="#f5f5f5"/>
-                    <TextBlock Text="로그인 후 아래 '로그인 완료' 버튼을 클릭하세요." FontSize="11" Foreground="#888" Margin="0,3,0,0"/>
+                    <TextBlock Text="Log in to Claude" FontSize="15" FontWeight="Bold"
+                               Foreground="{StaticResource TxtHighlightBrush}"/>
+                    <TextBlock Text="로그인 후 아래 '로그인 완료' 버튼을 클릭하세요." FontSize="11"
+                               Foreground="{StaticResource TxtSubBrush}" Margin="0,3,0,0"/>
                 </StackPanel>
-                <TextBlock x:Name="StatusText" Text="" FontSize="11" Foreground="#facc15"
+                <TextBlock x:Name="StatusText" Text="" FontSize="11" Foreground="{StaticResource AccentYellowBrush}"
                            HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </Grid>
         </Border>
@@ -31,44 +33,17 @@
         <wv2:WebView2 x:Name="LoginWebView" Grid.Row="1"/>
 
         <!-- Bottom bar -->
-        <Border Grid.Row="2" Background="#1a1a1a" Padding="12,8">
+        <Border Grid.Row="2" Background="{StaticResource BgInputBrush}" Padding="12,8">
             <Grid>
                 <Button x:Name="DoneBtn" Content="✓ 로그인 완료" Click="DoneBtn_Click"
-                        HorizontalAlignment="Right" Cursor="Hand"
-                        FontSize="13" FontWeight="Bold" Foreground="White" Padding="24,8"
-                        BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="bd" Background="#4ade80" CornerRadius="6"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#6ee7a0"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                        Style="{StaticResource BtnPrimary}"
+                        HorizontalAlignment="Right"
+                        FontSize="13" Padding="24,8"/>
                 <Button Content="취소" Click="CancelBtn_Click"
-                        HorizontalAlignment="Left" Cursor="Hand"
-                        FontSize="12" Foreground="#bbb" Padding="16,8"
-                        Background="#262626" BorderBrush="#333" BorderThickness="1">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="bd" Background="#262626" CornerRadius="6"
-                                    Padding="{TemplateBinding Padding}" BorderBrush="#333" BorderThickness="1">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#333"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                        Style="{StaticResource Btn}"
+                        HorizontalAlignment="Left"
+                        Padding="16,8"
+                        IsCancel="True"/>
             </Grid>
         </Border>
     </Grid>

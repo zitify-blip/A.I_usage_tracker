@@ -82,7 +82,7 @@ public partial class GeminiAccountManagerWindow : Window
         var alias = AliasBox.Text?.Trim() ?? "";
         if (string.IsNullOrEmpty(alias))
         {
-            SetStatus("별칭이 비어있습니다", "#f87171");
+            SetStatus("별칭이 비어있습니다", "StatusBadBrush");
             return;
         }
 
@@ -97,7 +97,7 @@ public partial class GeminiAccountManagerWindow : Window
         if (PrimaryCheck.IsChecked == true && !_current.IsPrimary)
             _accounts.SetPrimary(_current.Id);
 
-        SetStatus("저장됨", "#4ade80");
+        SetStatus("저장됨", "StatusGoodBrush");
         RefreshList();
     }
 
@@ -107,21 +107,21 @@ public partial class GeminiAccountManagerWindow : Window
         var newKey = NewKeyBox.Password?.Trim() ?? "";
         if (string.IsNullOrEmpty(newKey))
         {
-            SetStatus("새 API Key를 입력해주세요", "#f87171");
+            SetStatus("새 API Key를 입력해주세요", "StatusBadBrush");
             return;
         }
 
-        SetStatus("검증 중...", "#facc15");
+        SetStatus("검증 중...", "StatusWarnBrush");
         var (ok, err) = await _accounts.RotateKeyAsync(_current.Id, newKey);
         if (ok)
         {
-            SetStatus("Key 교체 완료", "#4ade80");
+            SetStatus("Key 교체 완료", "StatusGoodBrush");
             NewKeyBox.Password = "";
             RefreshList();
         }
         else
         {
-            SetStatus($"실패: {err}", "#f87171");
+            SetStatus($"실패: {err}", "StatusBadBrush");
         }
     }
 
@@ -136,16 +136,16 @@ public partial class GeminiAccountManagerWindow : Window
         _accounts.RemoveAccount(_current.Id);
         _current = null;
         RefreshList();
-        SetStatus("삭제됨", "#888");
+        SetStatus("삭제됨", "TxtSubBrush");
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void SetStatus(string text, string colorHex)
+    // colorKey는 디자인 시스템 brush 토큰 키 (예: "StatusGoodBrush", "StatusBadBrush", "TxtSubBrush").
+    private void SetStatus(string text, string colorKey)
     {
         StatusLabel.Text = text;
-        StatusLabel.Foreground = new SolidColorBrush(
-            (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorHex));
+        StatusLabel.Foreground = ThemeBrush.BR(colorKey);
     }
 
     private class ListRow

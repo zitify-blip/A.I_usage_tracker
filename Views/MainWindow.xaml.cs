@@ -560,8 +560,8 @@ public partial class MainWindow : Window
             Fill = new LinearGradientBrush(
                 new GradientStopCollection
                 {
-                    new(Color.FromArgb(60, 74, 222, 128), 0),   // #4ade80 with alpha
-                    new(Color.FromArgb(5, 74, 222, 128), 1)
+                    new(WithAlpha(CR("StatusGoodBrush"), 60), 0),
+                    new(WithAlpha(CR("StatusGoodBrush"), 5),  1)
                 }, 90)
         };
         DeltaChartCanvas.Children.Add(fillPolygon);
@@ -911,6 +911,9 @@ public partial class MainWindow : Window
     /// <summary>Theme-aware color lookup — same as BR but returns Color for ColorAnimation/SolidColorBrush.Color.</summary>
     private static Color CR(string key) =>
         (System.Windows.Application.Current.Resources[key] as SolidColorBrush)?.Color ?? C("#888");
+
+    /// <summary>현재 색상에 알파 채널을 덧입혀 반환 (그라디언트·반투명 오버레이용).</summary>
+    private static Color WithAlpha(Color c, byte alpha) => Color.FromArgb(alpha, c.R, c.G, c.B);
 
     private static SolidColorBrush UsageColor(double pct)
     {
@@ -2071,9 +2074,7 @@ public partial class MainWindow : Window
             GrokUserId.Text = selected.UserId ?? "--";
             GrokTeamId.Text = selected.TeamId ?? "--";
             GrokKeyStatus.Text = selected.IsActive ? "ACTIVE" : "DISABLED";
-            GrokKeyStatus.Foreground = selected.IsActive
-                ? new SolidColorBrush(Color.FromRgb(0x4a, 0xde, 0x80))
-                : new SolidColorBrush(Color.FromRgb(0xf8, 0x71, 0x71));
+            GrokKeyStatus.Foreground = BR(selected.IsActive ? "StatusGoodBrush" : "StatusBadBrush");
             GrokAllowedModels.ItemsSource = selected.AllowedModels;
         }
         _suppressGrokSelection = false;
@@ -2287,13 +2288,7 @@ internal class GeminiBudgetRow
         BarWidth = Math.Max(0, Math.Min(1.0, pct)) * barMaxPx;
     }
 
-    private static SolidColorBrush PickBrush(double pct)
-    {
-        if (pct >= 1.0) return new SolidColorBrush(Color.FromRgb(0xf8, 0x71, 0x71));
-        if (pct >= 0.8) return new SolidColorBrush(Color.FromRgb(0xfb, 0x92, 0x3c));
-        if (pct >= 0.6) return new SolidColorBrush(Color.FromRgb(0xfa, 0xcc, 0x15));
-        return new SolidColorBrush(Color.FromRgb(0x4a, 0xde, 0x80));
-    }
+    private static SolidColorBrush PickBrush(double pct) => Services.ThemeBrush.UsageColor(pct);
 }
 
 internal class TopModelRow
