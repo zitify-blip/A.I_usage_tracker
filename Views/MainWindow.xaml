@@ -1430,6 +1430,8 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Codex CLI Sessions" FontSize="20" FontWeight="Bold"
                                    Foreground="{StaticResource TxtHighlight}" VerticalAlignment="Center"/>
@@ -1440,7 +1442,13 @@
                             <ComboBoxItem Content="30일" Tag="30"/>
                         </ComboBox>
                         <Button Grid.Column="3" x:Name="CodexRefreshBtn" Content="↻ 새로고침"
-                                Style="{StaticResource Btn}" Click="CodexRefreshBtn_Click"/>
+                                Style="{StaticResource Btn}" Click="CodexRefreshBtn_Click" Margin="0,0,8,0"/>
+                        <Button Grid.Column="4" x:Name="CodexLoginBtn" Content="로그인"
+                                Style="{StaticResource BtnPrimary}" Click="CodexLoginBtn_Click" Margin="0,0,6,0"
+                                ToolTip="codex login 실행 (브라우저에서 OpenAI 인증)"/>
+                        <Button Grid.Column="5" x:Name="CodexLogoutBtn" Content="로그아웃"
+                                Style="{StaticResource BtnDanger}" Click="CodexLogoutBtn_Click"
+                                ToolTip="codex logout 실행"/>
                     </Grid>
 
                     <Grid Grid.Row="1">

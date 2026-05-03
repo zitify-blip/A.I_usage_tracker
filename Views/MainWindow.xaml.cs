@@ -246,12 +246,14 @@ public partial class MainWindow : Window
         if (_usage.IsLoggedIn)
         {
             LoginBtn.Content = "Logout";
-            LoginBtn.Background = B("#262626");
+            LoginBtn.Style = (Style)FindResource("BtnDanger");
         }
         else
         {
             LoginBtn.Content = "Login";
-            LoginBtn.Background = _usage.StatusKind == "error" ? BR("StatusBadBrush") : B("#262626");
+            LoginBtn.Style = _usage.StatusKind == "error"
+                ? (Style)FindResource("BtnDanger")
+                : (Style)FindResource("BtnPrimary");
         }
     }
 
@@ -726,7 +728,7 @@ public partial class MainWindow : Window
     {
         Topmost = !Topmost;
         TopMostBtn.Content = Topmost ? "📍" : "📌";
-        TopMostBtn.Foreground = Topmost ? BR("StatusGoodBrush") : B("#bfbfbf");
+        TopMostBtn.Foreground = Topmost ? BR("AccentYellowBrush") : BR("TitleBarTextBrush");
     }
 
     private void MinBtn_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
@@ -1991,6 +1993,41 @@ public partial class MainWindow : Window
     private void CodexRefreshBtn_Click(object sender, RoutedEventArgs e)
     {
         RenderCodexUsage();
+    }
+
+    private void CodexLoginBtn_Click(object sender, RoutedEventArgs e) =>
+        RunCodexCommand("login", "Codex CLI 로그인");
+
+    private void CodexLogoutBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var r = System.Windows.MessageBox.Show(this,
+            "Codex CLI 세션에서 로그아웃하시겠습니까?\n(`codex logout` 명령을 실행합니다.)",
+            "Codex CLI", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (r != MessageBoxResult.Yes) return;
+        RunCodexCommand("logout", "Codex CLI 로그아웃");
+    }
+
+    private void RunCodexCommand(string subcommand, string title)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("cmd.exe", $"/k codex {subcommand}")
+            {
+                UseShellExecute = true,
+                CreateNoWindow = false,
+                WindowStyle = ProcessWindowStyle.Normal
+            };
+            using var p = Process.Start(psi);
+            // Best-effort: refresh usage view shortly after to pick up new logs
+            _ = Task.Delay(2000).ContinueWith(_ => Dispatcher.Invoke(RenderCodexUsage));
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"{title} failed", ex);
+            System.Windows.MessageBox.Show(this,
+                $"{title} 실행 실패: {ex.Message}\n\nCodex CLI가 설치되어 있는지 확인하세요:\nnpm i -g @openai/codex",
+                title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     // ──────────────── Grok / xAI API tab ────────────────

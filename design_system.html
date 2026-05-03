@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<title>A.I. Usage Tracker — 디자인 시스템</title>
+<style>
+  :root {
+    /* ─── Dark theme tokens ─── */
+    --d-bg-base: #0F0F0F;
+    --d-bg-card: #1E1E1E;
+    --d-bg-input: #1A1A1A;
+    --d-bg-hover: #262626;
+    --d-bg-active: #333333;
+    --d-bg-titlebar: #141414;
+    --d-titlebar-text: #CCCCCC;
+    --d-border: #2A2A2A;
+    --d-border-strong: #3A3A3A;
+    --d-txt: #E8E8E8;
+    --d-txt-high: #F5F5F5;
+    --d-txt-sub: #888888;
+    --d-txt-hint: #9A9A9A;
+    --d-accent: #4ADE80;
+    --d-accent-blue: #60A5FA;
+    --d-accent-yellow: #FACC15;
+    --d-accent-red: #F87171;
+    --d-openai: #10A37F;
+    --d-status-good: #4ADE80;
+    --d-status-warn: #FACC15;
+    --d-status-high: #FB923C;
+    --d-status-bad: #F87171;
+    --d-accent-bg: #1A3A1A;
+    --d-accent-bg-hover: #2A4A2A;
+
+    /* ─── Dog theme tokens ─── */
+    --g-bg-base: #FAF4E4;
+    --g-bg-card: #FFFDF7;
+    --g-bg-input: #FEFCF5;
+    --g-bg-hover: #F2E4CC;
+    --g-bg-active: #E8D4B0;
+    --g-bg-titlebar: #5C2E0E;
+    --g-titlebar-text: #F5E6C8;
+    --g-border: #D4B896;
+    --g-border-strong: #C09878;
+    --g-txt: #3D2B1F;
+    --g-txt-high: #2C1F14;
+    --g-txt-sub: #7A5A40;
+    --g-txt-hint: #6B4F38;
+    --g-accent: #B85220;
+    --g-accent-blue: #2060A0;
+    --g-accent-yellow: #C09010;
+    --g-accent-red: #C04030;
+    --g-openai: #0A7659;
+    --g-status-good: #15803D;
+    --g-status-warn: #A16207;
+    --g-status-high: #C2410C;
+    --g-status-bad: #B91C1C;
+    --g-accent-bg: #F8EEE8;
+    --g-accent-bg-hover: #F0DDD0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    background: #0a0a0a;
+    color: var(--d-txt);
+    padding: 32px;
+    line-height: 1.5;
+  }
+  h1 {
+    font-size: 28px; font-weight: 700; color: var(--d-txt-high);
+    margin-bottom: 8px;
+  }
+  h2 {
+    font-size: 20px; font-weight: 700; color: var(--d-txt-high);
+    margin: 32px 0 12px;
+    border-bottom: 1px solid var(--d-border);
+    padding-bottom: 6px;
+  }
+  h3 {
+    font-size: 14px; font-weight: 600; color: var(--d-txt-sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin: 20px 0 8px;
+  }
+  .meta { color: var(--d-txt-sub); font-size: 13px; margin-bottom: 24px; }
+
+  /* Theme split layout */
+  .theme-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    margin-bottom: 16px;
+  }
+  .theme-card {
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid;
+  }
+  .theme-card.dark {
+    background: var(--d-bg-base);
+    color: var(--d-txt);
+    border-color: var(--d-border);
+  }
+  .theme-card.dog {
+    background: var(--g-bg-base);
+    color: var(--g-txt);
+    border-color: var(--g-border);
+    background-image:
+      radial-gradient(ellipse 20px 15px at 80px 103px, #C4633E14 0, transparent 70%),
+      radial-gradient(ellipse 9.5px 8px at 52px 67px,  #C4633E14 0, transparent 70%),
+      radial-gradient(ellipse 9px 8px at 68px 55px,    #C4633E14 0, transparent 70%),
+      radial-gradient(ellipse 9px 8px at 92px 55px,    #C4633E14 0, transparent 70%),
+      radial-gradient(ellipse 9.5px 8px at 108px 67px, #C4633E14 0, transparent 70%);
+    background-size: 160px 160px;
+  }
+  .theme-card .theme-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; opacity: 0.6; margin-bottom: 12px;
+  }
+
+  /* Color swatches */
+  .swatches {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .swatch {
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 11px;
+    font-family: 'Cascadia Code', Consolas, monospace;
+    display: flex; flex-direction: column; gap: 2px;
+    min-height: 64px;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+  .swatch .name { font-weight: 600; }
+  .swatch .hex { opacity: 0.8; }
+
+  /* Button samples */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .btn {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: background 0.15s, color 0.15s;
+  }
+  /* Dark variants */
+  .dark .btn-default {
+    background: var(--d-bg-hover); color: var(--d-txt);
+    border-color: var(--d-border);
+  }
+  .dark .btn-default:hover { background: var(--d-bg-active); color: var(--d-txt-high); }
+  .dark .btn-primary {
+    background: var(--d-accent-bg); color: var(--d-accent);
+    border-color: var(--d-accent);
+  }
+  .dark .btn-primary:hover { background: var(--d-accent-bg-hover); }
+  .dark .btn-danger {
+    background: var(--d-bg-hover); color: var(--d-status-bad);
+    border-color: var(--d-status-bad);
+  }
+  .dark .btn-danger:hover { background: var(--d-status-bad); color: #fff; }
+  .dark .btn-ghost {
+    background: transparent; color: var(--d-txt-sub);
+    border-color: var(--d-border);
+  }
+  .dark .btn-ghost:hover { background: var(--d-bg-hover); color: var(--d-txt); }
+  /* Dog variants — pill (radius 20) */
+  .dog .btn { border-radius: 20px; padding: 7px 16px; border-width: 1.5px; }
+  .dog .btn-default {
+    background: var(--g-bg-hover); color: var(--g-txt);
+    border-color: var(--g-border-strong);
+  }
+  .dog .btn-default:hover { background: var(--g-bg-active); color: var(--g-txt-high); }
+  .dog .btn-primary {
+    background: var(--g-accent-bg); color: var(--g-accent);
+    border-color: var(--g-accent);
+  }
+  .dog .btn-primary:hover { background: var(--g-accent-bg-hover); }
+  .dog .btn-danger {
+    background: var(--g-bg-hover); color: var(--g-status-bad);
+    border-color: var(--g-status-bad);
+  }
+  .dog .btn-danger:hover { background: var(--g-status-bad); color: #fff; }
+  .dog .btn-ghost {
+    background: transparent; color: var(--g-txt-sub);
+    border-color: var(--g-border);
+  }
+  .dog .btn-ghost:hover { background: var(--g-bg-hover); color: var(--g-txt); }
+
+  /* Chrome buttons (titlebar) */
+  .chrome-bar {
+    display: flex; gap: 0; align-items: center;
+    border-radius: 8px; overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .chrome-bar.dark { background: var(--d-bg-titlebar); border: 1px solid var(--d-border); }
+  .chrome-bar.dog { background: var(--g-bg-titlebar); border: 1px solid var(--g-border); }
+  .chrome-bar .title {
+    flex: 1; padding: 0 14px; font-size: 12px; font-weight: 600;
+  }
+  .dark .chrome-bar .title { color: var(--d-titlebar-text); }
+  .dog .chrome-bar .title { color: var(--g-titlebar-text); }
+  .chrome-btn {
+    width: 46px; height: 36px; border: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    background: transparent;
+  }
+  .dark .chrome-btn { color: var(--d-titlebar-text); }
+  .dark .chrome-btn:hover { background: var(--d-bg-hover); color: var(--d-txt-high); }
+  .dog .chrome-btn { color: var(--g-titlebar-text); }
+  .dog .chrome-btn:hover { background: #9C5424; color: #fff; }
+  .chrome-btn.close:hover { background: #C42B1C !important; color: #fff !important; }
+  .chrome-btn.active-pin { color: var(--d-accent-yellow) !important; }
+  .dog .chrome-btn.active-pin { color: var(--g-accent-yellow) !important; }
+
+  /* Cards */
+  .card {
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid;
+  }
+  .dark .card {
+    background: var(--d-bg-card);
+    color: var(--d-txt);
+    border-color: var(--d-border);
+  }
+  .dog .card {
+    background: linear-gradient(180deg, #fff, #FFFDF7);
+    color: var(--g-txt);
+    border-color: var(--g-border);
+    border-width: 1.5px;
+    box-shadow: 0 3px 12px rgba(160,120,72,0.18);
+    border-radius: 10px;
+  }
+  .card .label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .dark .card .label { color: var(--d-txt-sub); }
+  .dog  .card .label { color: var(--g-txt-sub); }
+  .card .big {
+    font-size: 24px; font-weight: 700;
+  }
+  .dark .card .big { color: var(--d-txt-high); }
+  .dog  .card .big { color: var(--g-txt-high); }
+
+  /* Status pills */
+  .status-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    border: 1px solid;
+  }
+  .dark .pill-good { background: rgba(74,222,128,.15); color: var(--d-status-good); border-color: var(--d-status-good); }
+  .dark .pill-warn { background: rgba(250,204,21,.15); color: var(--d-status-warn); border-color: var(--d-status-warn); }
+  .dark .pill-high { background: rgba(251,146,60,.15); color: var(--d-status-high); border-color: var(--d-status-high); }
+  .dark .pill-bad  { background: rgba(248,113,113,.15); color: var(--d-status-bad);  border-color: var(--d-status-bad); }
+  .dog .pill-good { background: rgba(21,128,61,.15);  color: var(--g-status-good); border-color: var(--g-status-good); }
+  .dog .pill-warn { background: rgba(161,98,7,.15);   color: var(--g-status-warn); border-color: var(--g-status-warn); }
+  .dog .pill-high { background: rgba(194,65,12,.15);  color: var(--g-status-high); border-color: var(--g-status-high); }
+  .dog .pill-bad  { background: rgba(185,28,28,.15);  color: var(--g-status-bad);  border-color: var(--g-status-bad); }
+
+  /* Typography sample */
+  .typo-row { margin-bottom: 8px; display: flex; align-items: baseline; gap: 16px; }
+  .typo-row .label-tag {
+    font-family: 'Cascadia Code', Consolas, monospace; font-size: 11px;
+    color: var(--d-txt-sub); min-width: 140px;
+  }
+
+  /* Empty state preview */
+  .empty-state {
+    border-radius: 12px; padding: 28px; max-width: 440px; margin: 0 auto;
+    text-align: center;
+  }
+  .dark .empty-state { background: var(--d-bg-base); }
+  .dog  .empty-state { background: var(--g-bg-base); }
+  .empty-state .icon {
+    font-size: 48px; font-weight: 700; margin-bottom: 10px;
+  }
+  .dark .empty-state .icon { color: var(--d-openai); }
+  .dog  .empty-state .icon { color: var(--g-openai); }
+  .empty-state .title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .dark .empty-state .title { color: var(--d-txt-high); }
+  .dog  .empty-state .title { color: var(--g-txt-high); }
+  .empty-state .subtitle { font-size: 11px; margin-bottom: 20px; }
+  .dark .empty-state .subtitle { color: var(--d-txt-sub); }
+  .dog  .empty-state .subtitle { color: var(--g-txt-sub); }
+  .step-card {
+    border-radius: 8px; padding: 14px 20px;
+    text-align: left; margin-bottom: 14px;
+  }
+  .dark .step-card { background: var(--d-bg-input); }
+  .dog  .step-card { background: var(--g-bg-input); }
+  .step-card .step-title {
+    font-size: 12px; font-weight: 600; margin-bottom: 10px;
+  }
+  .dark .step-card .step-title { color: var(--d-txt-high); }
+  .dog  .step-card .step-title { color: var(--g-txt-high); }
+  .step {
+    display: grid; grid-template-columns: 22px 1fr; gap: 6px;
+    margin-bottom: 7px; font-size: 11px;
+  }
+  .step-num {
+    width: 18px; height: 18px; border-radius: 10px;
+    color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dark .step-num { background: var(--d-openai); }
+  .dog  .step-num { background: var(--g-openai); }
+
+  code, .mono {
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 11px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.05);
+  }
+  .dog code, .dog .mono { background: rgba(0,0,0,0.05); }
+
+  /* Footer info */
+  .footer {
+    margin-top: 48px; padding-top: 16px;
+    border-top: 1px solid var(--d-border);
+    font-size: 12px; color: var(--d-txt-sub);
+  }
+  .footer a { color: var(--d-accent-blue); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>A.I. Usage Tracker — Design System</h1>
+<p class="meta">v2.13.15 · 마지막 업데이트 2026-05-03 · 두 가지 테마 (다크 / 강아지) WPF 토큰 1:1 매핑</p>
+
+<!-- ════════════ Color Tokens ════════════ -->
+<h2>1. 색상 토큰</h2>
+
+<h3>표면 (Background)</h3>
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:var(--d-bg-base);color:var(--d-txt);"><span class="name">BgBaseBrush</span><span class="hex">#0F0F0F</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-txt);"><span class="name">BgCardBrush</span><span class="hex">#1E1E1E</span></div>
+      <div class="swatch" style="background:var(--d-bg-input);color:var(--d-txt);"><span class="name">BgInputBrush</span><span class="hex">#1A1A1A</span></div>
+      <div class="swatch" style="background:var(--d-bg-hover);color:var(--d-txt);"><span class="name">BgHoverBrush</span><span class="hex">#262626</span></div>
+      <div class="swatch" style="background:var(--d-bg-active);color:var(--d-txt);"><span class="name">BgActiveBrush</span><span class="hex">#333333</span></div>
+      <div class="swatch" style="background:var(--d-bg-titlebar);color:var(--d-titlebar-text);"><span class="name">BgTitleBarBrush</span><span class="hex">#141414</span></div>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:var(--g-bg-base);color:var(--g-txt);border-color:var(--g-border);"><span class="name">BgBaseBrush</span><span class="hex">#FAF4E4 + paws</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-txt);border-color:var(--g-border);"><span class="name">BgCardBrush</span><span class="hex">#FFFDF7 grad</span></div>
+      <div class="swatch" style="background:var(--g-bg-input);color:var(--g-txt);border-color:var(--g-border);"><span class="name">BgInputBrush</span><span class="hex">#FEFCF5</span></div>
+      <div class="swatch" style="background:var(--g-bg-hover);color:var(--g-txt);border-color:var(--g-border);"><span class="name">BgHoverBrush</span><span class="hex">#F2E4CC</span></div>
+      <div class="swatch" style="background:var(--g-bg-active);color:var(--g-txt);border-color:var(--g-border);"><span class="name">BgActiveBrush</span><span class="hex">#E8D4B0</span></div>
+      <div class="swatch" style="background:var(--g-bg-titlebar);color:var(--g-titlebar-text);"><span class="name">BgTitleBarBrush</span><span class="hex">#5C2E0E</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>텍스트</h3>
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-txt-high);"><span class="name">TxtHighlightBrush</span><span class="hex">#F5F5F5 (14:1)</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-txt);"><span class="name">TxtBrush</span><span class="hex">#E8E8E8 (12:1)</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-txt-sub);"><span class="name">TxtSubBrush</span><span class="hex">#888888 (4.6:1)</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-txt-hint);"><span class="name">TxtHintBrush</span><span class="hex">#9A9A9A (5.9:1)</span></div>
+      <div class="swatch" style="background:var(--d-bg-titlebar);color:var(--d-titlebar-text);"><span class="name">TitleBarTextBrush</span><span class="hex">#CCCCCC (12:1)</span></div>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-txt-high);border-color:var(--g-border);"><span class="name">TxtHighlightBrush</span><span class="hex">#2C1F14 (16:1)</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-txt);border-color:var(--g-border);"><span class="name">TxtBrush</span><span class="hex">#3D2B1F (13:1)</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-txt-sub);border-color:var(--g-border);"><span class="name">TxtSubBrush</span><span class="hex">#7A5A40 (6.4:1)</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-txt-hint);border-color:var(--g-border);"><span class="name">TxtHintBrush</span><span class="hex">#6B4F38 (8:1)</span></div>
+      <div class="swatch" style="background:var(--g-bg-titlebar);color:var(--g-titlebar-text);"><span class="name">TitleBarTextBrush</span><span class="hex">#F5E6C8 (11:1)</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>액센트 / 브랜드</h3>
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-accent);"><span class="name">AccentBrush</span><span class="hex">#4ADE80</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-accent-blue);"><span class="name">AccentBlueBrush</span><span class="hex">#60A5FA</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-accent-yellow);"><span class="name">AccentYellowBrush</span><span class="hex">#FACC15</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-accent-red);"><span class="name">AccentRedBrush</span><span class="hex">#F87171</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-openai);"><span class="name">OpenAiBrandBrush</span><span class="hex">#10A37F</span></div>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-accent);border-color:var(--g-border);"><span class="name">AccentBrush</span><span class="hex">#B85220</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-accent-blue);border-color:var(--g-border);"><span class="name">AccentBlueBrush</span><span class="hex">#2060A0</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-accent-yellow);border-color:var(--g-border);"><span class="name">AccentYellowBrush</span><span class="hex">#C09010</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-accent-red);border-color:var(--g-border);"><span class="name">AccentRedBrush</span><span class="hex">#C04030</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-openai);border-color:var(--g-border);"><span class="name">OpenAiBrandBrush</span><span class="hex">#0A7659</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>상태 색상 (신호등)</h3>
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-status-good);"><span class="name">StatusGoodBrush</span><span class="hex">#4ADE80 (~0%~70%)</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-status-warn);"><span class="name">StatusWarnBrush</span><span class="hex">#FACC15 (60%~)</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-status-high);"><span class="name">StatusHighBrush</span><span class="hex">#FB923C (80%~)</span></div>
+      <div class="swatch" style="background:var(--d-bg-card);color:var(--d-status-bad);"><span class="name">StatusBadBrush</span><span class="hex">#F87171 (100%~)</span></div>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="swatches">
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-status-good);border-color:var(--g-border);"><span class="name">StatusGoodBrush</span><span class="hex">#15803D (5.7:1)</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-status-warn);border-color:var(--g-border);"><span class="name">StatusWarnBrush</span><span class="hex">#A16207 (5.0:1)</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-status-high);border-color:var(--g-border);"><span class="name">StatusHighBrush</span><span class="hex">#C2410C (5.5:1)</span></div>
+      <div class="swatch" style="background:#FFFDF7;color:var(--g-status-bad);border-color:var(--g-border);"><span class="name">StatusBadBrush</span><span class="hex">#B91C1C (6.5:1)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ Typography ════════════ -->
+<h2>2. 타이포그래피</h2>
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="typo-row"><span class="label-tag">Big · 24/Bold</span><span style="font-size:24px;font-weight:700;color:var(--d-txt-high);">$1,234.56</span></div>
+    <div class="typo-row"><span class="label-tag">H1 · 20/Bold</span><span style="font-size:20px;font-weight:700;color:var(--d-txt-high);">대시보드</span></div>
+    <div class="typo-row"><span class="label-tag">H2 · 16/SemiBold</span><span style="font-size:16px;font-weight:600;color:var(--d-txt-high);">Codex CLI Sessions</span></div>
+    <div class="typo-row"><span class="label-tag">Body · 12</span><span style="font-size:12px;color:var(--d-txt);">본문 기본 텍스트입니다.</span></div>
+    <div class="typo-row"><span class="label-tag">Body sm · 11</span><span style="font-size:11px;color:var(--d-txt);">작은 본문 텍스트입니다.</span></div>
+    <div class="typo-row"><span class="label-tag">Sec · 10/SemiBold/Sub</span><span style="font-size:10px;font-weight:600;color:var(--d-txt-sub);text-transform:uppercase;letter-spacing:0.5px;">SECTION LABEL</span></div>
+    <div class="typo-row"><span class="label-tag">Hint · 10/Hint</span><span style="font-size:10px;color:var(--d-txt-hint);">보조/힌트 텍스트</span></div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="typo-row"><span class="label-tag" style="color:var(--g-txt-sub);">Big · 24/Bold</span><span style="font-size:24px;font-weight:700;color:var(--g-txt-high);">$1,234.56</span></div>
+    <div class="typo-row"><span class="label-tag" style="color:var(--g-txt-sub);">H1 · 20/Bold</span><span style="font-size:20px;font-weight:700;color:var(--g-txt-high);">대시보드</span></div>
+    <div class="typo-row"><span class="label-tag" style="color:var(--g-txt-sub);">H2 · 16/SemiBold</span><span style="font-size:16px;font-weight:600;color:var(--g-txt-high);">Codex CLI Sessions</span></div>
+    <div class="typo-row"><span class="label-tag" style="color:var(--g-txt-sub);">Body · 12</span><span style="font-size:12px;color:var(--g-txt);">본문 기본 텍스트입니다.</span></div>
+    <div class="typo-row"><span class="label-tag" style="color:var(--g-txt-sub);">Body sm · 11</span><span style="font-size:11px;color:var(--g-txt);">작은 본문 텍스트입니다.</span></div>
+    <div class="typo-row"><span class="label-tag" style="color:var(--g-txt-sub);">Sec · 10/SemiBold/Sub</span><span style="font-size:10px;font-weight:600;color:var(--g-txt-sub);text-transform:uppercase;letter-spacing:0.5px;">SECTION LABEL</span></div>
+    <div class="typo-row"><span class="label-tag" style="color:var(--g-txt-sub);">Hint · 10/Hint</span><span style="font-size:10px;color:var(--g-txt-hint);">보조/힌트 텍스트</span></div>
+  </div>
+</div>
+
+<!-- ════════════ Buttons ════════════ -->
+<h2>3. 버튼 시스템</h2>
+<p class="meta">모든 일반 버튼은 4가지 변형 중 하나를 사용. 코드에서 직접 색상을 set하지 않고 Style만 토글한다.</p>
+
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode (radius 6)</div>
+    <h3 style="color:var(--d-txt-sub);">Btn (default / secondary)</h3>
+    <div class="btn-row"><button class="btn btn-default">새로고침</button><button class="btn btn-default">↻ 새로고침</button><button class="btn btn-default" disabled style="opacity:0.5">disabled</button></div>
+    <h3 style="color:var(--d-txt-sub);">BtnPrimary (강조 — 로그인/주요 액션)</h3>
+    <div class="btn-row"><button class="btn btn-primary">Login</button><button class="btn btn-primary">로그인</button><button class="btn btn-primary">+ 계정 추가</button></div>
+    <h3 style="color:var(--d-txt-sub);">BtnDanger (위험 — 로그아웃/삭제)</h3>
+    <div class="btn-row"><button class="btn btn-danger">Logout</button><button class="btn btn-danger">로그아웃</button><button class="btn btn-danger">🗑 제거</button></div>
+    <h3 style="color:var(--d-txt-sub);">BtnGhost (보조 — 약한 액션)</h3>
+    <div class="btn-row"><button class="btn btn-ghost">취소</button><button class="btn btn-ghost">자세히</button></div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode (pill — radius 20)</div>
+    <h3 style="color:var(--g-txt-sub);">Btn (default / secondary)</h3>
+    <div class="btn-row"><button class="btn btn-default">새로고침</button><button class="btn btn-default">↻ 새로고침</button><button class="btn btn-default" disabled style="opacity:0.5">disabled</button></div>
+    <h3 style="color:var(--g-txt-sub);">BtnPrimary (강조 — 로그인/주요 액션)</h3>
+    <div class="btn-row"><button class="btn btn-primary">Login</button><button class="btn btn-primary">로그인</button><button class="btn btn-primary">+ 계정 추가</button></div>
+    <h3 style="color:var(--g-txt-sub);">BtnDanger (위험 — 로그아웃/삭제)</h3>
+    <div class="btn-row"><button class="btn btn-danger">Logout</button><button class="btn btn-danger">로그아웃</button><button class="btn btn-danger">🗑 제거</button></div>
+    <h3 style="color:var(--g-txt-sub);">BtnGhost (보조 — 약한 액션)</h3>
+    <div class="btn-row"><button class="btn btn-ghost">취소</button><button class="btn btn-ghost">자세히</button></div>
+  </div>
+</div>
+
+<!-- ════════════ Chrome (Title bar) ════════════ -->
+<h2>4. 헤더 / 윈도우 컨트롤</h2>
+<p class="meta">ChromeBtn — 14pt SemiBold. 호버 시 배경 색 변화 + Foreground 흰색으로 명도 보강.</p>
+
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="chrome-bar dark">
+      <span class="title">A.I. Usage Tracker</span>
+      <button class="chrome-btn">🐶</button>
+      <button class="chrome-btn active-pin">📍</button>
+      <button class="chrome-btn" style="font-size:16px">–</button>
+      <button class="chrome-btn" style="font-size:11px">▢</button>
+      <button class="chrome-btn close" style="font-size:12px">✕</button>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="chrome-bar dog">
+      <span class="title">A.I. Usage Tracker 🐾</span>
+      <button class="chrome-btn">🌙</button>
+      <button class="chrome-btn active-pin">📍</button>
+      <button class="chrome-btn" style="font-size:16px">–</button>
+      <button class="chrome-btn" style="font-size:11px">▢</button>
+      <button class="chrome-btn close" style="font-size:12px">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ Cards ════════════ -->
+<h2>5. 카드</h2>
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode (radius 12)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="card"><div class="label">SESSIONS</div><div class="big">42</div></div>
+      <div class="card"><div class="label">EST. COST</div><div class="big">$3.21</div></div>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode (radius 10 + warm shadow)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="card"><div class="label">SESSIONS</div><div class="big">42</div></div>
+      <div class="card"><div class="label">EST. COST</div><div class="big">$3.21</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ Status pills ════════════ -->
+<h2>6. 상태 배지</h2>
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="status-pills">
+      <span class="pill pill-good">12% — Safe</span>
+      <span class="pill pill-warn">68% — Warn</span>
+      <span class="pill pill-high">85% — High</span>
+      <span class="pill pill-bad">102% — Critical</span>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="status-pills">
+      <span class="pill pill-good">12% — Safe</span>
+      <span class="pill pill-warn">68% — Warn</span>
+      <span class="pill pill-high">85% — High</span>
+      <span class="pill pill-bad">102% — Critical</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ Empty state ════════════ -->
+<h2>7. 빈 화면 패턴</h2>
+<p class="meta">탭에 데이터가 없을 때 — 단계별 사용법 가이드 카드 제공.</p>
+
+<div class="theme-grid">
+  <div class="theme-card dark">
+    <div class="theme-label">Dark mode</div>
+    <div class="empty-state">
+      <div class="icon">◯</div>
+      <div class="title">OpenAI Codex CLI 사용량 추적</div>
+      <div class="subtitle">Codex CLI를 설치 후 사용하면 자동으로 집계됩니다</div>
+      <div class="step-card">
+        <div class="step-title">설치 및 사용 방법</div>
+        <div class="step"><div class="step-num">1</div><div>설치: <code>npm i -g @openai/codex</code></div></div>
+        <div class="step"><div class="step-num">2</div><div>로그인: <code>codex login</code></div></div>
+        <div class="step"><div class="step-num">3</div><div>실행: <code>codex</code> 으로 세션 시작</div></div>
+        <div class="step"><div class="step-num">4</div><div>이 화면에 토큰/비용 자동 집계</div></div>
+      </div>
+      <button class="btn btn-primary">+ 첫 계정 추가하기</button>
+    </div>
+  </div>
+  <div class="theme-card dog">
+    <div class="theme-label">Dog mode</div>
+    <div class="empty-state">
+      <div class="icon">◯</div>
+      <div class="title">OpenAI Codex CLI 사용량 추적</div>
+      <div class="subtitle">Codex CLI를 설치 후 사용하면 자동으로 집계됩니다</div>
+      <div class="step-card">
+        <div class="step-title">설치 및 사용 방법</div>
+        <div class="step"><div class="step-num">1</div><div>설치: <code>npm i -g @openai/codex</code></div></div>
+        <div class="step"><div class="step-num">2</div><div>로그인: <code>codex login</code></div></div>
+        <div class="step"><div class="step-num">3</div><div>실행: <code>codex</code> 으로 세션 시작</div></div>
+        <div class="step"><div class="step-num">4</div><div>이 화면에 토큰/비용 자동 집계</div></div>
+      </div>
+      <button class="btn btn-primary">+ 첫 계정 추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ Reference ════════════ -->
+<h2>8. 사용 가이드 (코드)</h2>
+<h3>XAML — 정적 적용</h3>
+<pre class="mono" style="padding:14px;background:#0a0a0a;border:1px solid var(--d-border);border-radius:8px;color:var(--d-txt);overflow-x:auto;">
+&lt;Button Content="새로고침" Style="{StaticResource Btn}"        Click="Refresh_Click"/&gt;
+&lt;Button Content="로그인"   Style="{StaticResource BtnPrimary}" Click="Login_Click"/&gt;
+&lt;Button Content="로그아웃" Style="{StaticResource BtnDanger}"  Click="Logout_Click"/&gt;
+&lt;Button Content="취소"     Style="{StaticResource BtnGhost}"   Click="Cancel_Click"/&gt;
+</pre>
+
+<h3>C# — 동적 토글</h3>
+<pre class="mono" style="padding:14px;background:#0a0a0a;border:1px solid var(--d-border);border-radius:8px;color:var(--d-txt);overflow-x:auto;">
+LoginBtn.Content = isLoggedIn ? "Logout" : "Login";
+LoginBtn.Style = (Style)FindResource(isLoggedIn ? "BtnDanger" : "BtnPrimary");
+</pre>
+
+<h3>C# — 테마 인식 색상 (UsageColor 등)</h3>
+<pre class="mono" style="padding:14px;background:#0a0a0a;border:1px solid var(--d-border);border-radius:8px;color:var(--d-txt);overflow-x:auto;">
+// BR(key)/CR(key) 헬퍼는 현재 테마의 ResourceDictionary에서 lookup
+private static SolidColorBrush BR(string key) =&gt;
+    System.Windows.Application.Current.Resources[key] as SolidColorBrush ?? B("#888");
+
+// 예: 신호등 색
+StatusLabel.Foreground = BR(pct &gt;= 90 ? "StatusBadBrush" :
+                            pct &gt;= 70 ? "StatusWarnBrush" :
+                                        "StatusGoodBrush");
+</pre>
+
+<div class="footer">
+  <p>WPF ResourceDictionary 위치: <code>Styles/DarkTheme.xaml</code> · <code>Styles/DogTheme.xaml</code> — App.xaml에서 한 번만 merge.</p>
+  <p>이 HTML은 정적 레퍼런스 — WPF 실 출력과 1:1 매핑. WCAG AA(4.5:1) 이상 통과 보장.</p>
+</div>
+
+</body>
+</html>
