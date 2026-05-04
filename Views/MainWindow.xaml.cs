@@ -240,7 +240,7 @@ public partial class MainWindow : Window
             "connected" => BR("StatusGoodBrush"),
             "loading" => BR("StatusWarnBrush"),
             "error" => BR("StatusBadBrush"),
-            _ => B("#888888")
+            _ => BR("TxtSubBrush")
         };
 
         if (_usage.IsLoggedIn)
@@ -425,7 +425,7 @@ public partial class MainWindow : Window
         {
             DesignCard.Opacity = 0.4;
             DesignPctText.Text = "--";
-            DesignPctText.Foreground = B("#666");
+            DesignPctText.Foreground = BR("TxtHintBrush");
             DesignBar.Width = 0;
             DesignMarker.Visibility = Visibility.Collapsed;
             DesignResetText.Text = "Not available";
@@ -529,11 +529,11 @@ public partial class MainWindow : Window
         for (double y = 0; y <= maxPct; y += gridStep)
         {
             var py = top + plotH - (y / maxPct * plotH);
-            DeltaChartCanvas.Children.Add(MkText($"{y:F0}%", 0, py - 6, 8, "#555"));
+            DeltaChartCanvas.Children.Add(MkText($"{y:F0}%", 0, py - 6, 8, BR("TxtHintBrush")));
             DeltaChartCanvas.Children.Add(new Line
             {
                 X1 = left, X2 = cw - right, Y1 = py, Y2 = py,
-                Stroke = B("#1a1a1a"), StrokeThickness = 0.5
+                Stroke = BR("BorderBrushBase"), StrokeThickness = 0.5
             });
         }
 
@@ -595,14 +595,14 @@ public partial class MainWindow : Window
         // Time labels
         var t0 = DateTimeOffset.FromUnixTimeMilliseconds(points[0].ts).ToLocalTime();
         var t1 = DateTimeOffset.FromUnixTimeMilliseconds(points[^1].ts).ToLocalTime();
-        DeltaChartCanvas.Children.Add(MkText(t0.ToString("HH:mm"), left, ch - 14, 8, "#666"));
-        DeltaChartCanvas.Children.Add(MkText(t1.ToString("HH:mm"), cw - right - 28, ch - 14, 8, "#666"));
+        DeltaChartCanvas.Children.Add(MkText(t0.ToString("HH:mm"), left, ch - 14, 8, BR("TxtHintBrush")));
+        DeltaChartCanvas.Children.Add(MkText(t1.ToString("HH:mm"), cw - right - 28, ch - 14, 8, BR("TxtHintBrush")));
 
         // Latest value label
         var lastPt = linePoints[^1];
         var lastVal = points[^1].delta;
         DeltaChartCanvas.Children.Add(MkText($"+{lastVal:F1}%", lastPt.X + 4, lastPt.Y - 6, 9,
-            lastVal >= 15 ? "#f87171" : lastVal >= 8 ? "#facc15" : "#4ade80"));
+            BR(lastVal >= 15 ? "StatusBadBrush" : lastVal >= 8 ? "StatusWarnBrush" : "StatusGoodBrush")));
     }
 
     private void DeltaChartCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
@@ -938,9 +938,9 @@ public partial class MainWindow : Window
         return $"Resets in {r.Minutes}m";
     }
 
-    private static TextBlock MkText(string text, double x, double y, double size, string color)
+    private static TextBlock MkText(string text, double x, double y, double size, SolidColorBrush brush)
     {
-        var tb = new TextBlock { Text = text, FontSize = size, Foreground = B(color) };
+        var tb = new TextBlock { Text = text, FontSize = size, Foreground = brush };
         Canvas.SetLeft(tb, x);
         Canvas.SetTop(tb, y);
         return tb;
@@ -1183,7 +1183,7 @@ public partial class MainWindow : Window
                 X2 = canvasWidth,
                 Y1 = y,
                 Y2 = y,
-                Stroke = B("#222"),
+                Stroke = BR("BorderBrushBase"),
                 StrokeThickness = 1
             });
         }
@@ -1213,7 +1213,7 @@ public partial class MainWindow : Window
                     Width = 5,
                     Height = 5,
                     Fill = B(FamilyColors[fam]),
-                    Stroke = B("#0f0f0f"),
+                    Stroke = BR("BgCardBrush") is SolidColorBrush bgSolid ? bgSolid : BR("BorderBrushBase"),
                     StrokeThickness = 1
                 };
                 Canvas.SetLeft(dot, X(i) - 2.5);
@@ -1230,7 +1230,7 @@ public partial class MainWindow : Window
             {
                 Text = total >= 1 ? $"${total:F2}" : $"${total:F3}",
                 FontSize = 9,
-                Foreground = B("#aaa")
+                Foreground = BR("TxtHintBrush")
             };
             lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             var lx = X(i) - lbl.DesiredSize.Width / 2;
@@ -1258,7 +1258,7 @@ public partial class MainWindow : Window
         {
             Text = label,
             FontSize = 10,
-            Foreground = B("#aaa"),
+            Foreground = BR("TxtHintBrush"),
             VerticalAlignment = VerticalAlignment.Center
         });
         TrendLegend.Children.Add(sp);
@@ -1313,8 +1313,7 @@ public partial class MainWindow : Window
             GeminiRelayStatusText.Text = $"● Running on 127.0.0.1:{_geminiRelay.Port}";
             GeminiRelayStatusText.Foreground = BR("StatusGoodBrush");
             GeminiRelayStartBtn.Content = "⏹ Stop";
-            GeminiRelayStartBtn.Background = B("#3a1a1a");
-            GeminiRelayStartBtn.BorderBrush = BR("StatusBadBrush");
+            GeminiRelayStartBtn.Style = (Style)FindResource("BtnDanger");
             GeminiRelayPortBox.IsEnabled = false;
 
             var stats = $"served: {_geminiRelay.RequestsServed}";
@@ -1329,10 +1328,9 @@ public partial class MainWindow : Window
         {
             var err = _geminiRelay.LastError;
             GeminiRelayStatusText.Text = string.IsNullOrEmpty(err) ? "● Stopped" : $"● Error: {err}";
-            GeminiRelayStatusText.Foreground = B(string.IsNullOrEmpty(err) ? "#888" : "#f87171");
+            GeminiRelayStatusText.Foreground = BR(string.IsNullOrEmpty(err) ? "TxtSubBrush" : "StatusBadBrush");
             GeminiRelayStartBtn.Content = "▶ Start";
-            GeminiRelayStartBtn.Background = B("#1a3a1a");
-            GeminiRelayStartBtn.BorderBrush = BR("StatusGoodBrush");
+            GeminiRelayStartBtn.Style = (Style)FindResource("BtnPrimary");
             GeminiRelayPortBox.IsEnabled = true;
             GeminiRelayStatsText.Text = "";
         }

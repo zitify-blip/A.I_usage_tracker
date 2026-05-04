@@ -137,7 +137,8 @@
                             BorderThickness="0" Padding="10,5">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="bd" Background="{StaticResource AccentBgBrush}" CornerRadius="6" BorderBrush="#4ade80"
+                                <Border x:Name="bd" Background="{StaticResource AccentBgBrush}" CornerRadius="6"
+                                        BorderBrush="{StaticResource AccentBrush}"
                                         BorderThickness="1" Padding="{TemplateBinding Padding}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock x:Name="UpdateBtnIcon" Text="⬆" FontSize="12" Foreground="{StaticResource AccentBrush}"
@@ -666,12 +667,12 @@
                             <Grid Height="12" x:Name="TimeBarRoot">
                                 <Border Background="{StaticResource BorderBrushBase}" CornerRadius="6" Height="10"
                                         VerticalAlignment="Center"/>
-                                <Border x:Name="TimeBar" Background="#60a5fa" CornerRadius="6"
+                                <Border x:Name="TimeBar" Background="{DynamicResource AccentBlueBrush}" CornerRadius="6"
                                         Height="10" VerticalAlignment="Center"
                                         HorizontalAlignment="Left" Width="0"/>
                                 <Canvas x:Name="TimePlayheadCanvas" ClipToBounds="False">
                                     <Grid x:Name="TimePlayhead" Canvas.Left="0" Canvas.Top="-2">
-                                        <Ellipse Width="16" Height="16" Fill="#60a5fa"
+                                        <Ellipse Width="16" Height="16" Fill="{DynamicResource AccentBlueBrush}"
                                                  Stroke="{StaticResource BgBaseBrush}" StrokeThickness="2"
                                                  Margin="-8,0,0,0"/>
                                     </Grid>
@@ -1312,8 +1313,7 @@
                                                   Unchecked="GeminiRelayAutoStart_Changed"/>
 
                                         <Button Grid.Column="6" x:Name="GeminiRelayStartBtn"
-                                                Content="▶ 시작" Style="{StaticResource Btn}"
-                                                Background="{StaticResource AccentBgBrush}" BorderBrush="#4ade80"
+                                                Content="▶ 시작" Style="{StaticResource BtnPrimary}"
                                                 Click="GeminiRelayStartBtn_Click" MinWidth="80"/>
                                         <Button Grid.Column="8" x:Name="GeminiRelayCopyBtn"
                                                 Content="⚙ 설정" Style="{StaticResource Btn}"
@@ -1454,7 +1454,7 @@
                     <Grid Grid.Row="1">
                         <StackPanel x:Name="CodexEmptyState" VerticalAlignment="Center"
                                     HorizontalAlignment="Center" MaxWidth="440">
-                            <TextBlock Text="◯" Foreground="#10a37f" FontSize="48" FontWeight="Bold"
+                            <TextBlock Text="◯" Foreground="{StaticResource OpenAiBrandBrush}" FontSize="48" FontWeight="Bold"
                                        HorizontalAlignment="Center" Margin="0,0,0,10"/>
                             <TextBlock Text="OpenAI Codex CLI 사용량 추적"
                                        FontSize="16" FontWeight="SemiBold"
@@ -1669,7 +1669,7 @@
                     <Grid Grid.Row="1" x:Name="OpenAiContent">
                         <StackPanel x:Name="OpenAiEmptyState" VerticalAlignment="Center"
                                     HorizontalAlignment="Center" MaxWidth="420">
-                            <TextBlock Text="◯" Foreground="#10a37f" FontSize="48" FontWeight="Bold"
+                            <TextBlock Text="◯" Foreground="{StaticResource OpenAiBrandBrush}" FontSize="48" FontWeight="Bold"
                                        HorizontalAlignment="Center" Margin="0,0,0,10"/>
                             <TextBlock Text="OpenAI API 사용량 모니터링"
                                        FontSize="16" FontWeight="SemiBold"
@@ -1918,7 +1918,7 @@
                     <Grid Grid.Row="1">
                         <StackPanel x:Name="GrokCliEmptyState" VerticalAlignment="Center"
                                     HorizontalAlignment="Center">
-                            <TextBlock Text="𝕏" Foreground="#ffffff" FontSize="56" FontWeight="Bold"
+                            <TextBlock Text="𝕏" Foreground="{StaticResource TxtHighlightBrush}" FontSize="56" FontWeight="Bold"
                                        HorizontalAlignment="Center" Margin="0,0,0,12"/>
                             <TextBlock Text="Grok CLI 세션 로그를 찾을 수 없습니다"
                                        FontSize="16" FontWeight="SemiBold"
@@ -2053,7 +2053,7 @@
                     <Grid Grid.Row="1" x:Name="GrokContent">
                         <StackPanel x:Name="GrokEmptyState" VerticalAlignment="Center"
                                     HorizontalAlignment="Center">
-                            <TextBlock Text="𝕏" Foreground="#ffffff" FontSize="56" FontWeight="Bold"
+                            <TextBlock Text="𝕏" Foreground="{StaticResource TxtHighlightBrush}" FontSize="56" FontWeight="Bold"
                                        HorizontalAlignment="Center" Margin="0,0,0,12"/>
                             <TextBlock Text="Grok / xAI 계정이 등록되지 않았습니다"
                                        FontSize="16" FontWeight="SemiBold"
