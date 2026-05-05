@@ -60,6 +60,10 @@ public partial class MainWindow : Window
     private UpdateInfo? _pendingUpdate;
     private DateTimeOffset _lastForcedResetRefresh = DateTimeOffset.MinValue;
 
+    // 7-day Gemini cost trend 의 최근 데이터 캐시 — TrendCanvas 가 리사이즈될 때
+    // 데이터 재조회 없이 즉시 다시 그릴 수 있게 보관 (Update7DayTrend 가 갱신).
+    private IReadOnlyList<GeminiUsageRecord>? _lastTrendRecords;
+
     private const int SessionTotalMs = 5 * 60 * 60 * 1000;
     private const long WeekTotalMs = 7L * 24 * 60 * 60 * 1000;
     private const int ForcedRefreshDebounceSeconds = 30;
@@ -708,6 +712,13 @@ public partial class MainWindow : Window
 
     private void DeltaChartCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
+    /// <summary>7-day trend 캔버스 크기 변경 시 캐시된 데이터로 다시 그림 — 첫 레이아웃에서
+    /// ActualWidth=0 → 480 폴백 → 실제 크기 확정 후 정렬 안 맞던 짤림 문제 해결.</summary>
+    private void TrendCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (_lastTrendRecords != null) Update7DayTrend(_lastTrendRecords);
+    }
+
     // ────────── Login ──────────
 
     private async void OpenLogin()
@@ -1132,17 +1143,19 @@ public partial class MainWindow : Window
             HeroProjectedSub.Text = avgPerDay > 0 ? $"based on ${avgPerDay:F2}/day avg" : "no usage yet";
         }
 
-        // ─── Row 2: Claude quota (rings) ───
+        // ─── Row 2: Claude quota — 가로 막대 + 시간 마커 (CLI 탭 5h 세션 카드와 동일 패턴) ───
         var l = _usage.Latest;
         var gSessionPct = EffectivePct(l.SessionPct, l.SessionResetAt);
         var gWeekPct = EffectivePct(l.WeekPct, l.WeekResetAt);
 
-        SetRing(GSessionRingFigure, GSessionRingArc, GSessionRingPath, gSessionPct, GSessionRingBrush, true);
+        SetBar(GSessionBar, gSessionPct);
+        SetMarker(GSessionMarker, GSessionMarkerLabel, GSessionMarkerCanvas, l.SessionResetAt, SessionTotalMs);
         ClaudeSessionText.Text = $"{gSessionPct:F0}%";
         ClaudeSessionText.Foreground = UsageColor(gSessionPct);
         ClaudeSessionReset.Text = FmtResetIn(l.SessionResetAt);
 
-        SetRing(GWeekRingFigure, GWeekRingArc, GWeekRingPath, gWeekPct, GWeekRingBrush, true);
+        SetBar(GWeekBar, gWeekPct);
+        SetMarker(GWeekMarker, GWeekMarkerLabel, GWeekMarkerCanvas, l.WeekResetAt);   // WeekTotalMs 기본
         ClaudeWeekText.Text = $"{gWeekPct:F0}%";
         ClaudeWeekText.Foreground = UsageColor(gWeekPct);
         ClaudeWeekReset.Text = FmtResetIn(l.WeekResetAt);
@@ -1232,6 +1245,7 @@ public partial class MainWindow : Window
 
     private void Update7DayTrend(IReadOnlyList<GeminiUsageRecord> all)
     {
+        _lastTrendRecords = all;
         TrendCanvas.Children.Clear();
         TrendLegend.Children.Clear();
 

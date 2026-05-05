@@ -304,14 +304,19 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Claude quota (dual ring gauges) -->
+                    <!-- Claude quota — Claude CLI 탭의 5h 세션 카드와 동일한 가로 막대 + 시간 마커 패턴 -->
                     <Border Grid.Column="0" Style="{StaticResource Card}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>     <!-- Header -->
+                                <RowDefinition Height="Auto"/>     <!-- Session big numbers -->
+                                <RowDefinition Height="Auto"/>     <!-- Session bar+marker -->
+                                <RowDefinition Height="14"/>
+                                <RowDefinition Height="Auto"/>     <!-- Weekly big numbers -->
+                                <RowDefinition Height="Auto"/>     <!-- Weekly bar+marker -->
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                                 <ContentControl Style="{StaticResource ClaudeBrandIcon}"
                                                 Width="11" Height="11" Margin="0,0,6,0"
                                                 VerticalAlignment="Center"/>
@@ -319,97 +324,102 @@
                                            VerticalAlignment="Center" Margin="0"/>
                             </StackPanel>
 
-                            <Grid Grid.Row="1">
+                            <!-- ─── Session row ─── -->
+                            <Grid Grid.Row="1" Margin="0,0,0,26">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Text="5-HOUR SESSION  " FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TxtSubBrush}"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="ClaudeSessionText" Text="--%"
+                                               FontSize="22" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentBrush}"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" x:Name="ClaudeSessionReset"
+                                           Text="Resets in --" FontSize="10"
+                                           Foreground="{StaticResource TxtHintBrush}"
+                                           VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                            </Grid>
 
-                                <!-- Session gauge -->
-                                <Grid Grid.Column="0">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <Viewbox Grid.Row="0" Stretch="Uniform" Margin="6">
-                                        <Grid Width="200" Height="200">
-                                            <Canvas Width="200" Height="200">
-                                                <Ellipse Width="172" Height="172"
-                                                         Canvas.Left="14" Canvas.Top="14"
-                                                         Stroke="{StaticResource BorderBrushBase}" StrokeThickness="14"
-                                                         Fill="Transparent"/>
-                                                <Path x:Name="GSessionRingPath" StrokeThickness="14"
-                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
-                                                    <Path.Stroke>
-                                                        <SolidColorBrush x:Name="GSessionRingBrush" Color="{StaticResource AccentColor}"/>
-                                                    </Path.Stroke>
-                                                    <Path.Data>
-                                                        <PathGeometry>
-                                                            <PathFigure x:Name="GSessionRingFigure" StartPoint="100,14">
-                                                                <ArcSegment x:Name="GSessionRingArc" Point="100,14"
-                                                                            Size="86,86" SweepDirection="Clockwise"
-                                                                            IsLargeArc="False"/>
-                                                            </PathFigure>
-                                                        </PathGeometry>
-                                                    </Path.Data>
-                                                </Path>
-                                            </Canvas>
-                                            <TextBlock x:Name="ClaudeSessionText" Text="--%"
-                                                       FontSize="34" FontWeight="Bold" Foreground="{StaticResource TxtHighlight}"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Viewbox>
-                                    <TextBlock Grid.Row="1" Text="5-HOUR SESSION" FontSize="10"
-                                               Foreground="{StaticResource TxtSub}" HorizontalAlignment="Center"
-                                               Margin="0,4,0,0"/>
-                                    <TextBlock Grid.Row="2" x:Name="ClaudeSessionReset"
-                                               Text="Resets in --" FontSize="10" Foreground="{StaticResource TxtHintBrush}"
-                                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                            <Grid Grid.Row="2" Height="38" VerticalAlignment="Center" x:Name="GSessionBarRoot">
+                                <Grid Height="10" VerticalAlignment="Center">
+                                    <Border Background="{StaticResource BorderBrushBase}" CornerRadius="5"/>
+                                    <Border x:Name="GSessionBar" Background="{StaticResource AccentBrush}" CornerRadius="5"
+                                            HorizontalAlignment="Left" Width="0"/>
                                 </Grid>
+                                <Canvas x:Name="GSessionMarkerCanvas" ClipToBounds="False">
+                                    <Grid x:Name="GSessionMarker" Canvas.Left="0" Canvas.Top="-3"
+                                          Visibility="Collapsed">
+                                        <Rectangle Width="2" Height="26"
+                                                   Fill="{DynamicResource AccentBlueBrush}"
+                                                   HorizontalAlignment="Center"/>
+                                        <Ellipse Width="6" Height="6"
+                                                 Fill="{DynamicResource AccentBlueBrush}"
+                                                 VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-3,0,0"/>
+                                        <Ellipse Width="6" Height="6"
+                                                 Fill="{DynamicResource AccentBlueBrush}"
+                                                 VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,-3"/>
+                                        <Border VerticalAlignment="Top" HorizontalAlignment="Center"
+                                                Margin="0,-18,0,0"
+                                                Background="{DynamicResource AccentBlueBrush}"
+                                                CornerRadius="3" Padding="4,1">
+                                            <TextBlock x:Name="GSessionMarkerLabel" Text="--%"
+                                                       FontSize="9" FontWeight="Bold" Foreground="White"/>
+                                        </Border>
+                                    </Grid>
+                                </Canvas>
+                            </Grid>
 
-                                <!-- Weekly gauge -->
-                                <Grid Grid.Column="1">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <Viewbox Grid.Row="0" Stretch="Uniform" Margin="6">
-                                        <Grid Width="200" Height="200">
-                                            <Canvas Width="200" Height="200">
-                                                <Ellipse Width="172" Height="172"
-                                                         Canvas.Left="14" Canvas.Top="14"
-                                                         Stroke="{StaticResource BorderBrushBase}" StrokeThickness="14"
-                                                         Fill="Transparent"/>
-                                                <Path x:Name="GWeekRingPath" StrokeThickness="14"
-                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
-                                                    <Path.Stroke>
-                                                        <SolidColorBrush x:Name="GWeekRingBrush" Color="{StaticResource AccentColor}"/>
-                                                    </Path.Stroke>
-                                                    <Path.Data>
-                                                        <PathGeometry>
-                                                            <PathFigure x:Name="GWeekRingFigure" StartPoint="100,14">
-                                                                <ArcSegment x:Name="GWeekRingArc" Point="100,14"
-                                                                            Size="86,86" SweepDirection="Clockwise"
-                                                                            IsLargeArc="False"/>
-                                                            </PathFigure>
-                                                        </PathGeometry>
-                                                    </Path.Data>
-                                                </Path>
-                                            </Canvas>
-                                            <TextBlock x:Name="ClaudeWeekText" Text="--%"
-                                                       FontSize="34" FontWeight="Bold" Foreground="{StaticResource TxtHighlight}"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Viewbox>
-                                    <TextBlock Grid.Row="1" Text="WEEKLY" FontSize="10"
-                                               Foreground="{StaticResource TxtSub}" HorizontalAlignment="Center"
-                                               Margin="0,4,0,0"/>
-                                    <TextBlock Grid.Row="2" x:Name="ClaudeWeekReset"
-                                               Text="Resets in --" FontSize="10" Foreground="{StaticResource TxtHintBrush}"
-                                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                            <!-- ─── Weekly row ─── -->
+                            <Grid Grid.Row="4" Margin="0,0,0,26">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Text="WEEKLY  " FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TxtSubBrush}"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="ClaudeWeekText" Text="--%"
+                                               FontSize="22" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentBrush}"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" x:Name="ClaudeWeekReset"
+                                           Text="Resets in --" FontSize="10"
+                                           Foreground="{StaticResource TxtHintBrush}"
+                                           VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                            </Grid>
+
+                            <Grid Grid.Row="5" Height="38" VerticalAlignment="Center" x:Name="GWeekBarRoot">
+                                <Grid Height="10" VerticalAlignment="Center">
+                                    <Border Background="{StaticResource BorderBrushBase}" CornerRadius="5"/>
+                                    <Border x:Name="GWeekBar" Background="{StaticResource AccentBrush}" CornerRadius="5"
+                                            HorizontalAlignment="Left" Width="0"/>
                                 </Grid>
+                                <Canvas x:Name="GWeekMarkerCanvas" ClipToBounds="False">
+                                    <Grid x:Name="GWeekMarker" Canvas.Left="0" Canvas.Top="-3"
+                                          Visibility="Collapsed">
+                                        <Rectangle Width="2" Height="26"
+                                                   Fill="{DynamicResource AccentBlueBrush}"
+                                                   HorizontalAlignment="Center"/>
+                                        <Ellipse Width="6" Height="6"
+                                                 Fill="{DynamicResource AccentBlueBrush}"
+                                                 VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-3,0,0"/>
+                                        <Ellipse Width="6" Height="6"
+                                                 Fill="{DynamicResource AccentBlueBrush}"
+                                                 VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,-3"/>
+                                        <Border VerticalAlignment="Top" HorizontalAlignment="Center"
+                                                Margin="0,-18,0,0"
+                                                Background="{DynamicResource AccentBlueBrush}"
+                                                CornerRadius="3" Padding="4,1">
+                                            <TextBlock x:Name="GWeekMarkerLabel" Text="--%"
+                                                       FontSize="9" FontWeight="Bold" Foreground="White"/>
+                                        </Border>
+                                    </Grid>
+                                </Canvas>
                             </Grid>
                         </Grid>
                     </Border>
@@ -498,7 +508,8 @@
                             </Grid>
                             <StackPanel Grid.Row="1" x:Name="TrendLegend" Orientation="Horizontal"
                                         Margin="0,2,0,6"/>
-                            <Canvas Grid.Row="2" x:Name="TrendCanvas" ClipToBounds="True"/>
+                            <Canvas Grid.Row="2" x:Name="TrendCanvas" ClipToBounds="True"
+                                    SizeChanged="TrendCanvas_SizeChanged"/>
                             <Grid Grid.Row="3" x:Name="TrendAxis" Margin="0,4,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
