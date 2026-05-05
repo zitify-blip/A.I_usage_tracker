@@ -176,15 +176,12 @@ public class AppSettings
     public string Theme { get; set; } = "dark"; // "dark" | "dog"
 
     /// <summary>강아지 모드에서 등장시킬 견종 (Corgi / Bichon / Golden / Poodle).
-    /// 기본값 4종 모두. 빈 리스트면 GetEnabledBreedNames() 가 4종 전체로 폴백.</summary>
+    /// 기본값 4종 모두. 빈 리스트는 사용자가 의도적으로 0마리를 원한 것이므로 그대로 존중.
+    /// null 일 때만 (구버전 설정 파일에 필드 없음) 4종 전체로 폴백.</summary>
     public List<string> EnabledDogBreeds { get; set; } = new() { "Corgi", "Bichon", "Golden", "Poodle" };
 
-    public IReadOnlyList<string> GetEnabledBreedNames()
-    {
-        if (EnabledDogBreeds == null || EnabledDogBreeds.Count == 0)
-            return new[] { "Corgi", "Bichon", "Golden", "Poodle" };
-        return EnabledDogBreeds;
-    }
+    public IReadOnlyList<string> GetEnabledBreedNames() =>
+        EnabledDogBreeds ?? new List<string> { "Corgi", "Bichon", "Golden", "Poodle" };
 
     public int ClampedPollIntervalSeconds() => Math.Clamp(PollIntervalSeconds, 30, 3600);
     public int ClampedNotifyThreshold() => Math.Clamp(NotifyThreshold, 1, 100);
