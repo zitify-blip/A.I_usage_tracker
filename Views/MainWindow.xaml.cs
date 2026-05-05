@@ -348,7 +348,6 @@ public partial class MainWindow : Window
             TimeLeftText.Text = "5h 00m";
             TimeLeftPctText.Text = " · 새 세션 시작 (새로고침 중)";
             SessionResetAtLabel.Text = "Resetting...";
-            SessionTimeHintText.Text = "Time elapsed: --";
             TimeLeftText.Foreground = BR("AccentBlueBrush");
             return;
         }
@@ -357,11 +356,10 @@ public partial class MainWindow : Window
         var elapsedPct = Math.Clamp((SessionTotalMs - rem) / SessionTotalMs * 100, 0, 100);
         var remPct = 100 - elapsedPct;
 
-        SetMarker(SessionTimeMarker, null, SessionTimeMarkerCanvas, l.SessionResetAt, SessionTotalMs);
+        SetMarker(SessionTimeMarker, SessionTimeMarkerLabel, SessionTimeMarkerCanvas, l.SessionResetAt, SessionTotalMs);
         TimeLeftText.Text = FmtRemain((long)rem);
         TimeLeftPctText.Text = " left";
         SessionResetAtLabel.Text = $"Resets at {rst.ToLocalTime():ddd HH:mm}";
-        SessionTimeHintText.Text = $"Time elapsed: {elapsedPct:F0}%";
         TimeLeftText.Foreground = remPct > 30 ? BR("AccentBlueBrush") : remPct > 10 ? BR("StatusWarnBrush") : BR("StatusBadBrush");
     }
 

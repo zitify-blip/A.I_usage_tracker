@@ -619,7 +619,6 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <!-- Big numbers row: USAGE % (left) + TIME LEFT (right) -->
@@ -647,8 +646,9 @@
                             </TextBlock>
                         </Grid>
 
-                        <!-- Combined bar: usage fill + time marker (flowing) -->
-                        <Grid Grid.Row="1" Height="22" VerticalAlignment="Center" x:Name="SessionBarRoot">
+                        <!-- Combined bar: usage fill + time marker (flowing).
+                             Outer Grid 38px to leave room ABOVE the bar for the marker badge. -->
+                        <Grid Grid.Row="1" Height="38" VerticalAlignment="Center" x:Name="SessionBarRoot">
                             <Grid Height="10" VerticalAlignment="Center">
                                 <Border Background="{StaticResource BorderBrushBase}" CornerRadius="5"/>
                                 <Border x:Name="UsageBar" Background="{StaticResource AccentBrush}" CornerRadius="5"
@@ -666,15 +666,17 @@
                                     <Ellipse Width="6" Height="6"
                                              Fill="{DynamicResource AccentBlueBrush}"
                                              VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,-3"/>
+                                    <!-- 시간 경과 % 배지 — 마커 라인 상단에 항상 위치 -->
+                                    <Border VerticalAlignment="Top" HorizontalAlignment="Center"
+                                            Margin="0,-18,0,0"
+                                            Background="{DynamicResource AccentBlueBrush}"
+                                            CornerRadius="3" Padding="4,1">
+                                        <TextBlock x:Name="SessionTimeMarkerLabel" Text="--%"
+                                                   FontSize="9" FontWeight="Bold" Foreground="White"/>
+                                    </Border>
                                 </Grid>
                             </Canvas>
                         </Grid>
-
-                        <!-- Footer hint: shows where the playhead is heading -->
-                        <TextBlock Grid.Row="2" x:Name="SessionTimeHintText"
-                                   FontSize="10" Foreground="{StaticResource TxtHintBrush}"
-                                   HorizontalAlignment="Right" Margin="0,6,0,0"
-                                   Text="Time elapsed: --"/>
                     </Grid>
                 </Grid>
             </Border>
@@ -747,7 +749,8 @@
                     <TextBlock Grid.Row="0" Text="WEEKLY · ALL MODELS" Style="{StaticResource Sec}"/>
                     <TextBlock Grid.Row="1" x:Name="WeekAllPctText" Text="0%" Style="{StaticResource Big}"
                                Margin="0,0,0,8"/>
-                    <Grid Grid.Row="2" Height="18" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <!-- 마커 라벨이 위로 18px 떠 있어야 하므로 행 높이 30 으로 확보 -->
+                    <Grid Grid.Row="2" Height="30" VerticalAlignment="Center" Margin="0,0,0,6">
                         <Grid Height="6" VerticalAlignment="Center">
                             <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
                             <Border x:Name="WeekAllBar" Background="{StaticResource AccentBrush}" CornerRadius="3"
@@ -761,9 +764,14 @@
                                          HorizontalAlignment="Center" Margin="0,-2,0,0"/>
                                 <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Bottom"
                                          HorizontalAlignment="Center" Margin="0,0,0,-2"/>
-                                <TextBlock x:Name="WeekAllMarkerLabel" Text="--%"
-                                           FontSize="8" Foreground="{DynamicResource TxtHighlightBrush}" FontWeight="Bold"
-                                           Canvas.Top="-14" HorizontalAlignment="Center"/>
+                                <!-- % 배지: 마커 상단에 항상 떠 있도록 VerticalAlignment+Margin 사용 (Canvas.Top 은 Grid 부모에서 무시됨) -->
+                                <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-18,0,0"
+                                        Background="{DynamicResource TxtHighlightBrush}"
+                                        CornerRadius="3" Padding="4,1">
+                                    <TextBlock x:Name="WeekAllMarkerLabel" Text="--%"
+                                               FontSize="9" FontWeight="Bold"
+                                               Foreground="{DynamicResource BgCardColor}"/>
+                                </Border>
                             </Grid>
                         </Canvas>
                     </Grid>
@@ -785,7 +793,7 @@
                                Style="{StaticResource Sec}"/>
                     <TextBlock Grid.Row="1" x:Name="SubPctText" Text="0%" Style="{StaticResource Big}"
                                Margin="0,0,0,8"/>
-                    <Grid Grid.Row="2" Height="18" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <Grid Grid.Row="2" Height="30" VerticalAlignment="Center" Margin="0,0,0,6">
                         <Grid Height="6" VerticalAlignment="Center">
                             <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
                             <Border x:Name="SubBar" Background="{StaticResource AccentBrush}" CornerRadius="3"
@@ -799,9 +807,13 @@
                                          HorizontalAlignment="Center" Margin="0,-2,0,0"/>
                                 <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Bottom"
                                          HorizontalAlignment="Center" Margin="0,0,0,-2"/>
-                                <TextBlock x:Name="SubMarkerLabel" Text="--%"
-                                           FontSize="8" Foreground="{DynamicResource TxtHighlightBrush}" FontWeight="Bold"
-                                           Canvas.Top="-14" HorizontalAlignment="Center"/>
+                                <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-18,0,0"
+                                        Background="{DynamicResource TxtHighlightBrush}"
+                                        CornerRadius="3" Padding="4,1">
+                                    <TextBlock x:Name="SubMarkerLabel" Text="--%"
+                                               FontSize="9" FontWeight="Bold"
+                                               Foreground="{DynamicResource BgCardColor}"/>
+                                </Border>
                             </Grid>
                         </Canvas>
                     </Grid>
@@ -823,7 +835,7 @@
                                Style="{StaticResource Sec}"/>
                     <TextBlock Grid.Row="1" x:Name="DesignPctText" Text="0%" Style="{StaticResource Big}"
                                Margin="0,0,0,8"/>
-                    <Grid Grid.Row="2" Height="18" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <Grid Grid.Row="2" Height="30" VerticalAlignment="Center" Margin="0,0,0,6">
                         <Grid Height="6" VerticalAlignment="Center">
                             <Border Background="{StaticResource BorderBrushBase}" CornerRadius="3"/>
                             <Border x:Name="DesignBar" Background="{StaticResource AccentBrush}" CornerRadius="3"
@@ -837,9 +849,13 @@
                                          HorizontalAlignment="Center" Margin="0,-2,0,0"/>
                                 <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Bottom"
                                          HorizontalAlignment="Center" Margin="0,0,0,-2"/>
-                                <TextBlock x:Name="DesignMarkerLabel" Text="--%"
-                                           FontSize="8" Foreground="{DynamicResource TxtHighlightBrush}" FontWeight="Bold"
-                                           Canvas.Top="-14" HorizontalAlignment="Center"/>
+                                <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-18,0,0"
+                                        Background="{DynamicResource TxtHighlightBrush}"
+                                        CornerRadius="3" Padding="4,1">
+                                    <TextBlock x:Name="DesignMarkerLabel" Text="--%"
+                                               FontSize="9" FontWeight="Bold"
+                                               Foreground="{DynamicResource BgCardColor}"/>
+                                </Border>
                             </Grid>
                         </Canvas>
                     </Grid>
