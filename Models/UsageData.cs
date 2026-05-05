@@ -305,6 +305,12 @@ public class GeminiAccount
 
     public string? LastAlertedWarnKey { get; set; }
     public string? LastAlertedMaxKey { get; set; }
+
+    /// <summary>사용자가 직접 정한 릴레이 키. 비어 있으면 기본 'tracker-{alias}' 사용.</summary>
+    public string? CustomRelayKey { get; set; }
+
+    public string EffectiveRelayKey =>
+        !string.IsNullOrWhiteSpace(CustomRelayKey) ? CustomRelayKey! : $"tracker-{Alias}";
 }
 
 public class GeminiUsageRecord

@@ -47,10 +47,10 @@ public partial class GeminiRelaySettingsPage : UserControl
         _statusTimer.Tick += (_, _) => { StatusText.Text = ""; _statusTimer.Stop(); };
     }
 
-    public void Load(int port, string alias)
+    public void Load(int port, string effectiveKey)
     {
         _baseUrl = $"http://127.0.0.1:{port}";
-        _trackerKey = $"tracker-{alias}";
+        _trackerKey = effectiveKey;
 
         SubtitleText.Text = $"· Port {port}  ·  Key: {_trackerKey}";
         BaseUrlBox.Text = $"Base URL : {_baseUrl}\r\nAPI Key  : {_trackerKey}";

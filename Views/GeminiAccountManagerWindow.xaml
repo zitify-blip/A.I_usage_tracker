@@ -39,15 +39,17 @@
         <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}">
             <Grid x:Name="EditorPanel">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>  <!-- 0: Alias + preview -->
                     <RowDefinition Height="10"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>  <!-- 2: Key rotation -->
                     <RowDefinition Height="10"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>  <!-- 4: Relay Key (커스텀) -->
                     <RowDefinition Height="10"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>  <!-- 6: Budget -->
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="Auto"/>  <!-- 8: Toggles -->
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>  <!-- 10: Actions -->
                 </Grid.RowDefinitions>
 
                 <!-- Alias + Preview -->
@@ -90,8 +92,26 @@
                             Style="{StaticResource Btn}" Click="RotateKey_Click"/>
                 </Grid>
 
-                <!-- Budget -->
+                <!-- Relay Key (커스텀) — 비우면 기본 'tracker-{alias}' 사용 -->
                 <StackPanel Grid.Row="4">
+                    <TextBlock Text="RELAY KEY (커스텀 · 비우면 tracker-{alias} 사용)"
+                               Style="{StaticResource Sec}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" x:Name="CustomRelayKeyBox"
+                                 ToolTip="외부 클라이언트가 보낼 키. 영문/숫자/하이픈 권장. 빈 칸이면 'tracker-{alias}' 사용."/>
+                        <Button Grid.Column="2" Content="🎲 자동생성"
+                                Style="{StaticResource Btn}" Click="GenerateRelayKey_Click"
+                                ToolTip="안전한 랜덤 키 생성"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Budget -->
+                <StackPanel Grid.Row="6">
                     <TextBlock Text="BUDGET (USD · 0 = 비활성)" Style="{StaticResource Sec}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -118,7 +138,7 @@
                 </StackPanel>
 
                 <!-- Toggles -->
-                <StackPanel Grid.Row="6" Orientation="Horizontal">
+                <StackPanel Grid.Row="8" Orientation="Horizontal">
                     <CheckBox x:Name="PrimaryCheck" Content="Primary 계정으로 설정"
                               VerticalContentAlignment="Center"/>
                     <CheckBox x:Name="ActiveCheck" Content="활성화" Margin="24,0,0,0"
@@ -126,7 +146,7 @@
                 </StackPanel>
 
                 <!-- Actions -->
-                <Grid Grid.Row="8">
+                <Grid Grid.Row="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -35,6 +36,25 @@ public class GeminiRelayService : IDisposable
     public int RequestsServed { get; private set; }
     public string? LastError { get; private set; }
     public DateTime? StartedAt { get; private set; }
+
+    // 활성 클라이언트 추적 — RemoteIp::UA 단위로 마지막 접속 기록
+    private static readonly TimeSpan ActiveWindow = TimeSpan.FromMinutes(5);
+    private readonly ConcurrentDictionary<string, ClientInfo> _clients = new();
+
+    /// <summary>최근 5분 내 접속한 클라이언트 (활성).</summary>
+    public IReadOnlyList<ClientInfo> ActiveClients
+    {
+        get
+        {
+            var cutoff = DateTime.Now - ActiveWindow;
+            return _clients.Values
+                .Where(c => c.LastSeenAt >= cutoff)
+                .OrderByDescending(c => c.LastSeenAt)
+                .ToList();
+        }
+    }
+
+    public int ActiveClientCount => ActiveClients.Count;
 
     public GeminiRelayService(StorageService storage, GeminiAccountService accounts)
     {
@@ -172,11 +192,13 @@ public class GeminiRelayService : IDisposable
             }
 
             var (account, aliasUsed, missing) = ResolveAccount(req);
+            TrackClient(req, account);
+            StatusChanged?.Invoke();   // UI 가 활성 클라이언트 카운트 갱신
             if (account == null)
             {
                 var hint = missing
-                    ? "Missing credentials. Send '?key=tracker-<alias>' or header 'x-goog-api-key: tracker-<alias>'."
-                    : $"No Gemini account matches alias '{aliasUsed}'. Use an existing account alias or 'tracker-default'.";
+                    ? "Missing credentials. Send '?key=tracker-<alias>' or your custom relay key via header 'x-goog-api-key'."
+                    : $"No Gemini account matches '{aliasUsed}'. Use an existing alias, your custom relay key, or 'tracker-default'.";
                 await WriteError(res, 401, hint);
                 return;
             }
@@ -302,6 +324,13 @@ public class GeminiRelayService : IDisposable
         if (string.IsNullOrEmpty(keyValue))
             return (null, null, true);
 
+        // 1) 사용자가 정한 커스텀 릴레이 키 매칭 (정확히 일치)
+        var custom = _storage.GeminiAccounts.FirstOrDefault(a =>
+            !string.IsNullOrWhiteSpace(a.CustomRelayKey) &&
+            string.Equals(a.CustomRelayKey, keyValue, StringComparison.Ordinal));
+        if (custom != null) return (custom, custom.Alias, false);
+
+        // 2) 'tracker-<alias>' 형식
         if (!keyValue.StartsWith(AliasPrefix, StringComparison.OrdinalIgnoreCase))
             return (null, keyValue, false);
 
@@ -320,6 +349,33 @@ public class GeminiRelayService : IDisposable
         }
 
         return (acc, alias, false);
+    }
+
+    // ── 클라이언트 추적 ─────────────────────────────────────────
+    private void TrackClient(HttpListenerRequest req, GeminiAccount? account)
+    {
+        var ip = req.RemoteEndPoint?.Address?.ToString() ?? "?";
+        var ua = req.Headers["User-Agent"] ?? "(unknown)";
+        var key = $"{ip}::{ua}";
+        var alias = account?.Alias ?? "(unmatched)";
+        _clients.AddOrUpdate(key,
+            _ => new ClientInfo
+            {
+                RemoteIp = ip, UserAgent = ua, AccountAlias = alias,
+                FirstSeenAt = DateTime.Now, LastSeenAt = DateTime.Now, RequestCount = 1
+            },
+            (_, existing) =>
+            {
+                existing.LastSeenAt = DateTime.Now;
+                existing.RequestCount++;
+                existing.AccountAlias = alias;
+                return existing;
+            });
+
+        // 오래된 항목 정리 (1시간 넘은 건 GC)
+        var stale = DateTime.Now - TimeSpan.FromHours(1);
+        foreach (var (k, v) in _clients)
+            if (v.LastSeenAt < stale) _clients.TryRemove(k, out _);
     }
 
     private static string BuildUpstreamUrl(Uri reqUrl, string realKey)
@@ -472,4 +528,28 @@ public class GeminiRelayService : IDisposable
 
     private static long ReadLong(JsonElement el, string name) =>
         el.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetInt64() : 0;
+}
+
+/// <summary>릴레이가 인지한 외부 클라이언트 1건. RemoteIp + UA 단위로 집계.</summary>
+public class ClientInfo
+{
+    public string RemoteIp { get; set; } = "";
+    public string UserAgent { get; set; } = "";
+    public string AccountAlias { get; set; } = "";
+    public DateTime FirstSeenAt { get; set; }
+    public DateTime LastSeenAt { get; set; }
+    public int RequestCount { get; set; }
+
+    /// <summary>UA 에서 SDK 이름·버전을 짧게 추출 (예: "google-genai/0.5.2", "Python", "curl/8.4.0").</summary>
+    public string DisplayName
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(UserAgent) || UserAgent == "(unknown)") return "(unknown)";
+            var ua = UserAgent;
+            // 첫 토큰만 잘라 가독성 높임
+            var sp = ua.IndexOf(' ');
+            return sp > 0 ? ua.Substring(0, sp) : ua;
+        }
+    }
 }

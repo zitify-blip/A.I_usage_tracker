@@ -53,6 +53,7 @@ public partial class GeminiAccountManagerWindow : Window
         KeyPreviewText.Text = a.KeyPreview;
         PrimaryBadge.Visibility = a.IsPrimary ? Visibility.Visible : Visibility.Collapsed;
         NewKeyBox.Password = "";
+        CustomRelayKeyBox.Text = a.CustomRelayKey ?? "";
         DailyBudgetBox.Text = a.DailyBudgetUsd > 0 ? a.DailyBudgetUsd.ToString("F2") : "0";
         MonthlyBudgetBox.Text = a.MonthlyBudgetUsd > 0 ? a.MonthlyBudgetUsd.ToString("F2") : "0";
         AlertThresholdBox.Text = a.AlertThresholdPct.ToString();
@@ -67,12 +68,25 @@ public partial class GeminiAccountManagerWindow : Window
         KeyPreviewText.Text = "--";
         PrimaryBadge.Visibility = Visibility.Collapsed;
         NewKeyBox.Password = "";
+        CustomRelayKeyBox.Text = "";
         DailyBudgetBox.Text = "0";
         MonthlyBudgetBox.Text = "0";
         AlertThresholdBox.Text = "80";
         PrimaryCheck.IsChecked = false;
         ActiveCheck.IsChecked = false;
         StatusLabel.Text = "";
+    }
+
+    private void GenerateRelayKey_Click(object sender, RoutedEventArgs e)
+    {
+        // 안전한 URL-safe 랜덤 키 생성: tracker-XXXXXXXXXXXXXXXXXX (20자 base32)
+        const string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+        Span<byte> rnd = stackalloc byte[18];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(rnd);
+        var sb = new System.Text.StringBuilder("tracker-");
+        foreach (var b in rnd) sb.Append(alphabet[b % alphabet.Length]);
+        CustomRelayKeyBox.Text = sb.ToString();
+        SetStatus("랜덤 키 생성됨 — 저장 버튼을 눌러 적용하세요", "StatusWarnBrush");
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -93,6 +107,9 @@ public partial class GeminiAccountManagerWindow : Window
         _accounts.RenameAccount(_current.Id, alias);
         _accounts.SetBudget(_current.Id, daily, monthly, thr);
         _accounts.SetActive(_current.Id, ActiveCheck.IsChecked == true);
+
+        var customKey = CustomRelayKeyBox.Text?.Trim();
+        _accounts.SetCustomRelayKey(_current.Id, string.IsNullOrEmpty(customKey) ? null : customKey);
 
         if (PrimaryCheck.IsChecked == true && !_current.IsPrimary)
             _accounts.SetPrimary(_current.Id);

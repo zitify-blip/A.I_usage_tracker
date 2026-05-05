@@ -110,6 +110,16 @@ public class GeminiAccountService
         AccountsChanged?.Invoke();
     }
 
+    /// <summary>커스텀 릴레이 키 설정. null·빈 문자열이면 제거하고 기본 'tracker-{alias}' 사용으로 회귀.</summary>
+    public void SetCustomRelayKey(string accountId, string? customKey)
+    {
+        var acc = _storage.GeminiAccounts.FirstOrDefault(a => a.Id == accountId);
+        if (acc == null) return;
+        acc.CustomRelayKey = string.IsNullOrWhiteSpace(customKey) ? null : customKey.Trim();
+        _storage.Save();
+        AccountsChanged?.Invoke();
+    }
+
     public async Task<(bool ok, string? error)> RotateKeyAsync(string accountId, string newApiKey)
     {
         var acc = _storage.GeminiAccounts.FirstOrDefault(a => a.Id == accountId);

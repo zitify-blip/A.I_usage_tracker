@@ -298,8 +298,14 @@ public partial class MainWindow : Window
 
     // ────────── Tick (1s) ──────────
 
+    private int _tickCounter;
+
     private void Tick()
     {
+        // 30초마다 릴레이 UI 갱신 — 활성 클라이언트의 'X분 ago' 표시·5분 윈도우 경과 반영
+        if ((++_tickCounter % 30) == 0 && _geminiRelay.IsRunning)
+            RefreshGeminiRelayUi();
+
         var l = _usage.Latest;
         if (l.SessionResetAt == null) return;
 
@@ -1303,6 +1309,7 @@ public partial class MainWindow : Window
 
         if (_geminiRelay.IsRunning)
         {
+            var clients = _geminiRelay.ActiveClients;
             GeminiRelayStatusText.Text = $"● Running on 127.0.0.1:{_geminiRelay.Port}";
             GeminiRelayStatusText.Foreground = BR("StatusGoodBrush");
             GeminiRelayStartBtn.Content = "⏹ Stop";
@@ -1310,12 +1317,25 @@ public partial class MainWindow : Window
             GeminiRelayPortBox.IsEnabled = false;
 
             var stats = $"served: {_geminiRelay.RequestsServed}";
+            if (clients.Count > 0) stats += $" · {clients.Count} client{(clients.Count == 1 ? "" : "s")}";
             if (_geminiRelay.StartedAt.HasValue)
             {
                 var up = DateTime.Now - _geminiRelay.StartedAt.Value;
                 stats += $" · up {(up.TotalHours >= 1 ? $"{up.TotalHours:F1}h" : $"{up.TotalMinutes:F0}m")}";
             }
             GeminiRelayStatsText.Text = stats;
+
+            // 활성 클라이언트 박스 갱신
+            if (clients.Count > 0)
+            {
+                GeminiRelayClientsTitle.Text = $"👥 ACTIVE CLIENTS ({clients.Count})";
+                GeminiRelayClientsList.ItemsSource = clients.Select(c => new RelayClientRow(c)).ToList();
+                GeminiRelayClientsBox.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                GeminiRelayClientsBox.Visibility = Visibility.Collapsed;
+            }
         }
         else
         {
@@ -1326,6 +1346,7 @@ public partial class MainWindow : Window
             GeminiRelayStartBtn.Style = (Style)FindResource("BtnPrimary");
             GeminiRelayPortBox.IsEnabled = true;
             GeminiRelayStatsText.Text = "";
+            GeminiRelayClientsBox.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -1366,9 +1387,9 @@ public partial class MainWindow : Window
         var port = _geminiRelay.IsRunning ? _geminiRelay.Port
                                           : _storage.Settings.ClampedGeminiRelayPort();
         var selected = _geminiAccounts.GetSelected();
-        var alias = selected?.Alias ?? "default";
+        var effectiveKey = selected?.EffectiveRelayKey ?? "tracker-default";
 
-        GeminiRelaySettings.Load(port, alias);
+        GeminiRelaySettings.Load(port, effectiveKey);
         GeminiRelaySettings.CloseRequested -= HideSettingsPage;
         GeminiRelaySettings.CloseRequested += HideSettingsPage;
         GeminiRelaySettings.Visibility = Visibility.Visible;
@@ -2339,5 +2360,22 @@ internal class GeminiHistoryItem
         OutputText = r.OutputTokens.ToString("N0");
         LatencyText = $"{r.LatencyMs}";
         CostText = $"${r.CostUsd:F5}";
+    }
+}
+
+internal class RelayClientRow
+{
+    public string Title { get; }     // "google-genai/0.5.2" 또는 UA 첫 토큰
+    public string Stats { get; }     // "192.168.1.5 · 24 req · alias=work"
+    public string LastSeen { get; }  // "12s ago"
+
+    public RelayClientRow(AIUsageTracker.Services.ClientInfo c)
+    {
+        Title = c.DisplayName;
+        Stats = $"{c.RemoteIp} · {c.RequestCount} req · {c.AccountAlias}";
+        var since = DateTime.Now - c.LastSeenAt;
+        LastSeen = since.TotalSeconds < 60 ? $"{(int)since.TotalSeconds}s ago"
+                 : since.TotalMinutes < 60 ? $"{since.TotalMinutes:F0}m ago"
+                 : $"{since.TotalHours:F1}h ago";
     }
 }
