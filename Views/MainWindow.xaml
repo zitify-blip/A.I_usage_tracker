@@ -601,7 +601,7 @@
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 5-Hour Session -->
+            <!-- 5-Hour Session — single bar: usage fill + time marker overlay -->
             <Border Grid.Column="0" Style="{StaticResource Card}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -618,67 +618,63 @@
                     <Grid Grid.Row="1" VerticalAlignment="Center">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="14"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Usage Bar -->
-                        <StackPanel Grid.Row="0">
-                            <Grid Margin="0,0,0,6">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="USAGE" FontSize="10"
-                                           Foreground="{StaticResource TxtSub}" FontWeight="SemiBold"
-                                           VerticalAlignment="Bottom"/>
-                                <TextBlock Grid.Column="2" VerticalAlignment="Bottom">
-                                    <Run x:Name="UsagePctText" Text="0%" FontSize="22"
-                                         FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                    <Run Text=" of session" FontSize="10" Foreground="{StaticResource TxtHintBrush}"/>
-                                </TextBlock>
-                            </Grid>
-                            <Grid Height="10">
+                        <!-- Big numbers row: USAGE % (left) + TIME LEFT (right) -->
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                <TextBlock Text="USAGE  " FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TxtSub}" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                <TextBlock x:Name="UsagePctText" Text="0%" FontSize="22"
+                                           FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text=" / session" FontSize="10"
+                                           Foreground="{StaticResource TxtHintBrush}"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,4"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Column="1" VerticalAlignment="Bottom">
+                                <Run x:Name="TimeLeftText" Text="--" FontSize="22"
+                                     FontWeight="Bold" Foreground="{DynamicResource AccentBlueBrush}"/>
+                                <Run x:Name="TimeLeftPctText" Text=" left" FontSize="10"
+                                     Foreground="{StaticResource TxtHintBrush}"/>
+                            </TextBlock>
+                        </Grid>
+
+                        <!-- Combined bar: usage fill + time marker (flowing) -->
+                        <Grid Grid.Row="1" Height="22" VerticalAlignment="Center" x:Name="SessionBarRoot">
+                            <Grid Height="10" VerticalAlignment="Center">
                                 <Border Background="{StaticResource BorderBrushBase}" CornerRadius="5"/>
                                 <Border x:Name="UsageBar" Background="{StaticResource AccentBrush}" CornerRadius="5"
                                         HorizontalAlignment="Left" Width="0"/>
                             </Grid>
-                        </StackPanel>
+                            <Canvas x:Name="SessionTimeMarkerCanvas" ClipToBounds="False">
+                                <Grid x:Name="SessionTimeMarker" Canvas.Left="0" Canvas.Top="-3"
+                                      Visibility="Collapsed">
+                                    <Rectangle Width="2" Height="26"
+                                               Fill="{DynamicResource AccentBlueBrush}"
+                                               HorizontalAlignment="Center"/>
+                                    <Ellipse Width="6" Height="6"
+                                             Fill="{DynamicResource AccentBlueBrush}"
+                                             VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-3,0,0"/>
+                                    <Ellipse Width="6" Height="6"
+                                             Fill="{DynamicResource AccentBlueBrush}"
+                                             VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,-3"/>
+                                </Grid>
+                            </Canvas>
+                        </Grid>
 
-                        <!-- Session Window Bar (elapsed = left→right) -->
-                        <StackPanel Grid.Row="2">
-                            <Grid Margin="0,0,0,6">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="SESSION WINDOW" FontSize="10"
-                                           Foreground="{StaticResource TxtSub}" FontWeight="SemiBold"
-                                           VerticalAlignment="Bottom"/>
-                                <TextBlock Grid.Column="2" VerticalAlignment="Bottom">
-                                    <Run x:Name="TimeLeftText" Text="--" FontSize="22"
-                                         FontWeight="Bold" Foreground="{DynamicResource AccentBlueBrush}"/>
-                                    <Run x:Name="TimeLeftPctText" Text=" left" FontSize="10"
-                                         Foreground="{StaticResource TxtHintBrush}"/>
-                                </TextBlock>
-                            </Grid>
-                            <Grid Height="12" x:Name="TimeBarRoot">
-                                <Border Background="{StaticResource BorderBrushBase}" CornerRadius="6" Height="10"
-                                        VerticalAlignment="Center"/>
-                                <Border x:Name="TimeBar" Background="{DynamicResource AccentBlueBrush}" CornerRadius="6"
-                                        Height="10" VerticalAlignment="Center"
-                                        HorizontalAlignment="Left" Width="0"/>
-                                <Canvas x:Name="TimePlayheadCanvas" ClipToBounds="False">
-                                    <Grid x:Name="TimePlayhead" Canvas.Left="0" Canvas.Top="-2">
-                                        <Ellipse Width="16" Height="16" Fill="{DynamicResource AccentBlueBrush}"
-                                                 Stroke="{StaticResource BgBaseBrush}" StrokeThickness="2"
-                                                 Margin="-8,0,0,0"/>
-                                    </Grid>
-                                </Canvas>
-                            </Grid>
-                        </StackPanel>
+                        <!-- Footer hint: shows where the playhead is heading -->
+                        <TextBlock Grid.Row="2" x:Name="SessionTimeHintText"
+                                   FontSize="10" Foreground="{StaticResource TxtHintBrush}"
+                                   HorizontalAlignment="Right" Margin="0,6,0,0"
+                                   Text="Time elapsed: --"/>
                     </Grid>
                 </Grid>
             </Border>
@@ -760,13 +756,13 @@
                         <Canvas x:Name="WeekAllMarkerCanvas" ClipToBounds="False">
                             <Grid x:Name="WeekAllMarker" Canvas.Left="0" Canvas.Top="-2"
                                   Visibility="Collapsed">
-                                <Rectangle Width="2" Height="22" Fill="White" HorizontalAlignment="Center"/>
-                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Top"
+                                <Rectangle Width="2" Height="22" Fill="{DynamicResource TxtHighlightBrush}" HorizontalAlignment="Center"/>
+                                <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Top"
                                          HorizontalAlignment="Center" Margin="0,-2,0,0"/>
-                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Bottom"
+                                <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Bottom"
                                          HorizontalAlignment="Center" Margin="0,0,0,-2"/>
                                 <TextBlock x:Name="WeekAllMarkerLabel" Text="--%"
-                                           FontSize="8" Foreground="White" FontWeight="Bold"
+                                           FontSize="8" Foreground="{DynamicResource TxtHighlightBrush}" FontWeight="Bold"
                                            Canvas.Top="-14" HorizontalAlignment="Center"/>
                             </Grid>
                         </Canvas>
@@ -798,13 +794,13 @@
                         <Canvas x:Name="SubMarkerCanvas" ClipToBounds="False">
                             <Grid x:Name="SubMarker" Canvas.Left="0" Canvas.Top="-2"
                                   Visibility="Collapsed">
-                                <Rectangle Width="2" Height="22" Fill="White" HorizontalAlignment="Center"/>
-                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Top"
+                                <Rectangle Width="2" Height="22" Fill="{DynamicResource TxtHighlightBrush}" HorizontalAlignment="Center"/>
+                                <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Top"
                                          HorizontalAlignment="Center" Margin="0,-2,0,0"/>
-                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Bottom"
+                                <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Bottom"
                                          HorizontalAlignment="Center" Margin="0,0,0,-2"/>
                                 <TextBlock x:Name="SubMarkerLabel" Text="--%"
-                                           FontSize="8" Foreground="White" FontWeight="Bold"
+                                           FontSize="8" Foreground="{DynamicResource TxtHighlightBrush}" FontWeight="Bold"
                                            Canvas.Top="-14" HorizontalAlignment="Center"/>
                             </Grid>
                         </Canvas>
@@ -836,13 +832,13 @@
                         <Canvas x:Name="DesignMarkerCanvas" ClipToBounds="False">
                             <Grid x:Name="DesignMarker" Canvas.Left="0" Canvas.Top="-2"
                                   Visibility="Collapsed">
-                                <Rectangle Width="2" Height="22" Fill="White" HorizontalAlignment="Center"/>
-                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Top"
+                                <Rectangle Width="2" Height="22" Fill="{DynamicResource TxtHighlightBrush}" HorizontalAlignment="Center"/>
+                                <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Top"
                                          HorizontalAlignment="Center" Margin="0,-2,0,0"/>
-                                <Ellipse Width="5" Height="5" Fill="White" VerticalAlignment="Bottom"
+                                <Ellipse Width="5" Height="5" Fill="{DynamicResource TxtHighlightBrush}" VerticalAlignment="Bottom"
                                          HorizontalAlignment="Center" Margin="0,0,0,-2"/>
                                 <TextBlock x:Name="DesignMarkerLabel" Text="--%"
-                                           FontSize="8" Foreground="White" FontWeight="Bold"
+                                           FontSize="8" Foreground="{DynamicResource TxtHighlightBrush}" FontWeight="Bold"
                                            Canvas.Top="-14" HorizontalAlignment="Center"/>
                             </Grid>
                         </Canvas>

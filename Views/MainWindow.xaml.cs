@@ -338,10 +338,11 @@ public partial class MainWindow : Window
         // 리셋 시각이 지났으면 — 새 세션 시작됨, 다음 fetch까지 "Resetting..." 표시
         if (rst <= DateTimeOffset.Now)
         {
-            UpdateTimeBar(0, 100);
+            SessionTimeMarker.Visibility = Visibility.Collapsed;
             TimeLeftText.Text = "5h 00m";
             TimeLeftPctText.Text = " · 새 세션 시작 (새로고침 중)";
             SessionResetAtLabel.Text = "Resetting...";
+            SessionTimeHintText.Text = "Time elapsed: --";
             TimeLeftText.Foreground = BR("AccentBlueBrush");
             return;
         }
@@ -350,26 +351,12 @@ public partial class MainWindow : Window
         var elapsedPct = Math.Clamp((SessionTotalMs - rem) / SessionTotalMs * 100, 0, 100);
         var remPct = 100 - elapsedPct;
 
-        UpdateTimeBar(elapsedPct, remPct);
+        SetMarker(SessionTimeMarker, null, SessionTimeMarkerCanvas, l.SessionResetAt, SessionTotalMs);
         TimeLeftText.Text = FmtRemain((long)rem);
-        TimeLeftPctText.Text = $" left · {elapsedPct:F0}% elapsed";
+        TimeLeftPctText.Text = " left";
         SessionResetAtLabel.Text = $"Resets at {rst.ToLocalTime():ddd HH:mm}";
+        SessionTimeHintText.Text = $"Time elapsed: {elapsedPct:F0}%";
         TimeLeftText.Foreground = remPct > 30 ? BR("AccentBlueBrush") : remPct > 10 ? BR("StatusWarnBrush") : BR("StatusBadBrush");
-    }
-
-    private void UpdateTimeBar(double elapsedPct, double remPct)
-    {
-        if (TimeBarRoot.ActualWidth <= 0) return;
-        var width = TimeBarRoot.ActualWidth;
-        var fill = width * Math.Clamp(elapsedPct, 0, 100) / 100.0;
-        TimeBar.Width = fill;
-
-        var color = remPct > 30 ? CR("AccentBlueBrush") : remPct > 10 ? CR("StatusWarnBrush") : CR("StatusBadBrush");
-        TimeBar.Background = new SolidColorBrush(color);
-        if (TimePlayhead.Children.Count > 0 && TimePlayhead.Children[0] is Ellipse e)
-            e.Fill = new SolidColorBrush(color);
-
-        Canvas.SetLeft(TimePlayhead, fill);
     }
 
     // ────────── Ring ──────────
@@ -403,18 +390,24 @@ public partial class MainWindow : Window
         bar.Background = UsageColor(pct);
     }
 
+    // 주간 카드 호환 오버로드 — 라벨이 있고 totalMs는 한 주
     private static void SetMarker(Grid marker, TextBlock label, Canvas canvas, string? iso)
+        => SetMarker(marker, label, canvas, iso, WeekTotalMs);
+
+    /// <summary>리셋 시각 ISO와 윈도우 길이(ms)를 받아 marker 위치를 갱신.
+    /// label이 null이면 텍스트는 안 건드림 (세션 카드처럼 외부에 별도 텍스트가 있을 때).</summary>
+    private static void SetMarker(Grid marker, TextBlock? label, Canvas canvas, string? iso, double totalMs)
     {
         if (string.IsNullOrEmpty(iso) || !DateTimeOffset.TryParse(iso, out var rst))
         { marker.Visibility = Visibility.Collapsed; return; }
 
         marker.Visibility = Visibility.Visible;
         var rem = Math.Max(0, (rst - DateTimeOffset.Now).TotalMilliseconds);
-        var elapsed = Math.Max(0, WeekTotalMs - rem);
-        var pct = Math.Min(100, (double)elapsed / WeekTotalMs * 100);
+        var elapsed = Math.Max(0, totalMs - rem);
+        var pct = Math.Min(100, elapsed / totalMs * 100);
         var w = canvas.ActualWidth > 0 ? canvas.ActualWidth : 300;
         Canvas.SetLeft(marker, w * pct / 100.0);
-        label.Text = $"{pct:F0}%";
+        if (label != null) label.Text = $"{pct:F0}%";
     }
 
     // ────────── Claude Design ──────────
