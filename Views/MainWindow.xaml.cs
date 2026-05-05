@@ -134,7 +134,8 @@ public partial class MainWindow : Window
         VersionLabel.Text = $"v{UpdateService.CurrentVersion}";
 
         bool isDog = (_storage.Settings.Theme ?? "dark") == "dog";
-        ThemeToggleBtn.Content = isDog ? "🌙" : "🐶";
+        // 테마 토글: 단색 반원 글리프 (◐). 강아지 모드에서는 회전된 반원으로 시각 차이 표현.
+        ThemeToggleBtn.Content = isDog ? "◑" : "◐";
         ApplyDogDecorations(isDog);
     }
 
@@ -764,7 +765,7 @@ public partial class MainWindow : Window
         var next = cur == "dog" ? "dark" : "dog";
         _storage.Settings.Theme = next;
         _storage.SaveSettings(_storage.Settings);
-        ThemeToggleBtn.Content = next == "dog" ? "🌙" : "🐶";
+        ThemeToggleBtn.Content = next == "dog" ? "◑" : "◐";
         System.Windows.MessageBox.Show("테마가 변경되었습니다.\n다음 실행 시 적용됩니다.",
                         "테마 변경", MessageBoxButton.OK, MessageBoxImage.Information);
     }
@@ -772,7 +773,7 @@ public partial class MainWindow : Window
     private void TopMostBtn_Click(object sender, RoutedEventArgs e)
     {
         Topmost = !Topmost;
-        TopMostBtn.Content = Topmost ? "📍" : "📌";
+        // 글리프 자체는 그대로(⌃), 색만 토글: 활성 시 노랑 액센트, 비활성 시 타이틀바 기본색
         TopMostBtn.Foreground = Topmost ? BR("AccentYellowBrush") : BR("TitleBarTextBrush");
     }
 

@@ -23,6 +23,28 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        // 전역 예외 핸들러 — 로그에 남기고 사용자에게 친절한 에러 메시지 표시.
+        // (이전엔 캐치되지 않은 UI/스레드 예외가 조용히 앱을 죽여서 진단 불가능했음)
+        DispatcherUnhandledException += (s, ex) =>
+        {
+            Logger.Error("Unhandled UI exception", ex.Exception);
+            try
+            {
+                System.Windows.MessageBox.Show(
+                    $"예기치 못한 오류가 발생했습니다.\n\n{ex.Exception.GetType().Name}: {ex.Exception.Message}\n\n로그: %APPDATA%\\AI_usage_tracker\\logs\\app.log",
+                    "A.I. Usage Tracker", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch { }
+            ex.Handled = true;   // 앱이 죽지 않도록
+        };
+        AppDomain.CurrentDomain.UnhandledException += (s, ex) =>
+            Logger.Error("Unhandled domain exception", ex.ExceptionObject as Exception);
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, ex) =>
+        {
+            Logger.Warn("Unobserved task exception", ex.Exception);
+            ex.SetObserved();
+        };
+
         _instanceMutex = new System.Threading.Mutex(true, SingleInstanceMutexName, out var createdNew);
         if (!createdNew)
         {
