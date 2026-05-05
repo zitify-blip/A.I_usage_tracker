@@ -139,6 +139,8 @@ public partial class MainWindow : Window
         ApplyDogDecorations(isDog);
     }
 
+    private bool _suppressDogToggle;
+
     private void ApplyDogDecorations(bool isDog)
     {
         var vis = isDog ? Visibility.Visible : Visibility.Collapsed;
@@ -148,22 +150,75 @@ public partial class MainWindow : Window
         NormalTitleIcon.Visibility = inv;
         DogWatermark.Visibility    = vis;
         DogAnimCanvas.Visibility   = vis;
+        DogSettingsBtn.Visibility  = vis;     // 견종 선택 버튼은 강아지 모드일 때만
+
+        // 체크박스 초기화 (저장된 enabled 목록 반영) — 초기화 중엔 핸들러 무시
+        _suppressDogToggle = true;
+        var enabled = new HashSet<string>(_storage.Settings.GetEnabledBreedNames(),
+            StringComparer.OrdinalIgnoreCase);
+        DogBreedCorgi.IsChecked  = enabled.Contains("Corgi");
+        DogBreedBichon.IsChecked = enabled.Contains("Bichon");
+        DogBreedGolden.IsChecked = enabled.Contains("Golden");
+        DogBreedPoodle.IsChecked = enabled.Contains("Poodle");
+        _suppressDogToggle = false;
 
         if (isDog)
         {
             // 레이아웃이 완성된 후 시작해야 카드 위치를 정확히 감지할 수 있음
-            Dispatcher.InvokeAsync(() =>
-            {
-                _dogAnim?.Stop();
-                _dogAnim = new DogAnimationController(DogAnimCanvas, RootGrid);
-                _dogAnim.Start(3);
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
+            Dispatcher.InvokeAsync(StartDogAnim,
+                System.Windows.Threading.DispatcherPriority.Loaded);
         }
         else
         {
             _dogAnim?.Stop();
             _dogAnim = null;
         }
+    }
+
+    /// <summary>현재 저장된 견종 선택을 기준으로 애니메이션 재시작.
+    /// 강아지 모드 ON 일 때만 호출. 빈 선택이면 캔버스가 비어있게 됨.</summary>
+    private void StartDogAnim()
+    {
+        _dogAnim?.Stop();
+        _dogAnim = new DogAnimationController(DogAnimCanvas, RootGrid);
+        var breeds = ParseBreeds(_storage.Settings.GetEnabledBreedNames());
+        _dogAnim.Start(breeds);
+    }
+
+    private static List<DogBreed> ParseBreeds(IReadOnlyList<string> names)
+    {
+        var result = new List<DogBreed>();
+        foreach (var n in names)
+            if (Enum.TryParse<DogBreed>(n, true, out var b) && !result.Contains(b))
+                result.Add(b);
+        return result;
+    }
+
+    private void DogSettingsBtn_Click(object sender, RoutedEventArgs e)
+        => DogSettingsPopup.IsOpen = !DogSettingsPopup.IsOpen;
+
+    private void DogBreed_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppressDogToggle) return;
+        var enabled = new List<string>();
+        if (DogBreedCorgi.IsChecked  == true) enabled.Add("Corgi");
+        if (DogBreedBichon.IsChecked == true) enabled.Add("Bichon");
+        if (DogBreedGolden.IsChecked == true) enabled.Add("Golden");
+        if (DogBreedPoodle.IsChecked == true) enabled.Add("Poodle");
+        _storage.Settings.EnabledDogBreeds = enabled;
+        _storage.SaveSettings(_storage.Settings);
+        if (_dogAnim != null) StartDogAnim();   // 즉시 반영
+    }
+
+    private void DogBreedAll_Click(object sender, RoutedEventArgs e)
+    {
+        _suppressDogToggle = true;
+        DogBreedCorgi.IsChecked  = true;
+        DogBreedBichon.IsChecked = true;
+        DogBreedGolden.IsChecked = true;
+        DogBreedPoodle.IsChecked = true;
+        _suppressDogToggle = false;
+        DogBreed_Toggled(sender, e);   // 한 번만 저장 + 재시작
     }
 
     private TimeSpan CurrentPollInterval() =>

@@ -46,10 +46,21 @@ public sealed class DogAnimationController : IDisposable
 
     public void Start(int count = 4)
     {
+        // 호환성 shim — 견종 미지정 시 4종 모두 등장
+        Start(new[] { DogBreed.Corgi, DogBreed.Bichon, DogBreed.Golden, DogBreed.Poodle }, count);
+    }
+
+    /// <summary>지정된 견종 리스트만 등장. count 가 음수/기본이면 breeds.Count 만큼 1:1 등장.
+    /// breeds 가 비어있으면 아무것도 안 만들고 timer 만 동작 (캔버스는 비어있음).</summary>
+    public void Start(IReadOnlyList<DogBreed> breeds, int count = -1)
+    {
         _canvas.SizeChanged += OnSizeChanged;
-        // 4종이 모두 한 번씩 등장하도록 index→breed 1:1 매핑 (count>=4면 자연 분산)
-        for (int i = 0; i < count; i++)
-            _dogs.Add(new DogActor(_canvas, Rng, i, (DogBreed)(i % 4)));
+        if (breeds.Count > 0)
+        {
+            var n = count < 0 ? breeds.Count : count;
+            for (int i = 0; i < n; i++)
+                _dogs.Add(new DogActor(_canvas, Rng, i, breeds[i % breeds.Count]));
+        }
         _animTimer.Start();
         _obstacleTimer.Start();
     }

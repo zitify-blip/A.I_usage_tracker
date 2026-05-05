@@ -65,6 +65,46 @@
                 <!-- 헤더 5개 버튼: Path/Geometry 기반 렌더링 (BrandIcons.xaml 의 ChromeIcon* 리소스).
                      글꼴 폴백(컬러 이모지) 영향이 원천 차단되어 Foreground 토큰을 정확히 따름. -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!-- 강아지 모드 설정 (활성 시에만 표시) -->
+                    <Button x:Name="DogSettingsBtn"
+                            Content="{StaticResource ChromeIconPaw}"
+                            ToolTip="화면에 등장시킬 강아지 종 선택"
+                            Style="{StaticResource ChromeBtn}"
+                            Visibility="Collapsed"
+                            Click="DogSettingsBtn_Click"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                    <!-- 견종 선택 팝업 -->
+                    <Popup x:Name="DogSettingsPopup" StaysOpen="False"
+                           Placement="Bottom" PlacementTarget="{Binding ElementName=DogSettingsBtn}"
+                           AllowsTransparency="True">
+                        <Border Background="{DynamicResource BgCardBrush}"
+                                BorderBrush="{DynamicResource BorderStrongBrush}"
+                                BorderThickness="1" CornerRadius="6"
+                                Padding="14,10" MinWidth="200"
+                                Effect="{x:Null}">
+                            <StackPanel>
+                                <TextBlock Text="화면에 등장할 강아지" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TxtSubBrush}" Margin="0,0,0,8"/>
+                                <CheckBox x:Name="DogBreedCorgi"  Content="🍞 식빵 코기"
+                                          Tag="Corgi"  Margin="0,2"
+                                          Checked="DogBreed_Toggled" Unchecked="DogBreed_Toggled"/>
+                                <CheckBox x:Name="DogBreedBichon" Content="☁️ 구름 비숑"
+                                          Tag="Bichon" Margin="0,2"
+                                          Checked="DogBreed_Toggled" Unchecked="DogBreed_Toggled"/>
+                                <CheckBox x:Name="DogBreedGolden" Content="🍮 골든 리트리버"
+                                          Tag="Golden" Margin="0,2"
+                                          Checked="DogBreed_Toggled" Unchecked="DogBreed_Toggled"/>
+                                <CheckBox x:Name="DogBreedPoodle" Content="🍫 초코 푸들"
+                                          Tag="Poodle" Margin="0,2"
+                                          Checked="DogBreed_Toggled" Unchecked="DogBreed_Toggled"/>
+                                <Border Height="1" Background="{DynamicResource BorderBrushBase}" Margin="0,8,0,6"/>
+                                <Button Content="모두 선택" Style="{StaticResource BtnGhost}"
+                                        FontSize="11" Padding="10,4"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                        Click="DogBreedAll_Click"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
                     <Button x:Name="ThemeToggleBtn"
                             Content="{StaticResource ChromeIconThemeDark}"
                             ToolTip="테마 전환 (다크 ↔ 강아지)"
