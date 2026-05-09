@@ -20,7 +20,7 @@ public class ClaudeApiService
 (function() {
   var noCacheHeaders = { 'Accept': 'application/json', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' };
   var ts = Date.now();
-  fetch('https://claude.ai/api/organizations?_t=' + ts, { credentials: 'include', cache: 'no-store', headers: noCacheHeaders })
+  fetch('https://claude.ai/api/organizations?_t=' + ts, { credentials: 'include', cache: 'reload', headers: noCacheHeaders })
     .then(function(orgsRes) {
       if (orgsRes.status === 401 || orgsRes.status === 403) {
         window.chrome.webview.postMessage({ ok: false, error: 'not_logged_in', status: orgsRes.status });
@@ -38,7 +38,7 @@ public class ClaudeApiService
         var orgId = orgs[0].uuid;
         fetch('https://claude.ai/api/organizations/' + orgId + '/usage?_t=' + Date.now(), {
           credentials: 'include',
-          cache: 'no-store',
+          cache: 'reload',
           headers: noCacheHeaders
         }).then(function(usageRes) {
           if (usageRes.status === 401 || usageRes.status === 403) {
@@ -103,6 +103,26 @@ public class ClaudeApiService
         // Wait for page to load (max 15s)
         if (await Task.WhenAny(tcs.Task, Task.Delay(15000)) != tcs.Task)
             _webView.CoreWebView2.DOMContentLoaded -= Handler;
+
+        // Service Worker가 /api/organizations/*/usage 응답을 캐시해 stale 100%를
+        // 반환하는 경우 방지 — 등록된 SW를 모두 해제. 쿠키/세션엔 영향 없음.
+        try
+        {
+            await _webView.CoreWebView2.ExecuteScriptAsync(@"
+                (async function() {
+                  try {
+                    if (navigator.serviceWorker) {
+                      var regs = await navigator.serviceWorker.getRegistrations();
+                      for (var i = 0; i < regs.length; i++) { try { await regs[i].unregister(); } catch(e){} }
+                    }
+                    if (window.caches) {
+                      var keys = await caches.keys();
+                      for (var j = 0; j < keys.length; j++) { try { await caches.delete(keys[j]); } catch(e){} }
+                    }
+                  } catch(e){}
+                })();");
+        }
+        catch { /* non-fatal */ }
     }
 
     public async Task ReloadAsync()
@@ -134,6 +154,17 @@ public class ClaudeApiService
 
         try
         {
+            // 디스크 HTTP 캐시 비우기 — 쿠키는 보존됨. 일부 응답이 stale로 굳는 문제 방지.
+            try
+            {
+                await _webView.CoreWebView2.Profile.ClearBrowsingDataAsync(
+                    CoreWebView2BrowsingDataKinds.DiskCache);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("ClearBrowsingDataAsync failed (non-fatal)", ex);
+            }
+
             var tcs = new TaskCompletionSource<string>();
 
             void MsgHandler(object? s, CoreWebView2WebMessageReceivedEventArgs args)
