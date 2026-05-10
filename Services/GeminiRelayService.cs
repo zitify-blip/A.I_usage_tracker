@@ -19,6 +19,7 @@ public class GeminiRelayService : IDisposable
 {
     private const string UpstreamBase = "https://generativelanguage.googleapis.com";
     private const string AliasPrefix = "tracker-";
+    private const int MaxStreamCaptureBytes = 4 * 1024 * 1024;
 
     private readonly StorageService _storage;
     private readonly GeminiAccountService _accounts;
@@ -256,14 +257,29 @@ public class GeminiRelayService : IDisposable
             if (isStream && upRes.IsSuccessStatusCode)
             {
                 using var upStream = await upRes.Content.ReadAsStreamAsync();
-                var capture = new MemoryStream();
+                using var capture = new MemoryStream();
                 var buf = new byte[8192];
                 int n;
+                bool captureFull = false;
                 while ((n = await upStream.ReadAsync(buf).ConfigureAwait(false)) > 0)
                 {
                     await res.OutputStream.WriteAsync(buf.AsMemory(0, n)).ConfigureAwait(false);
                     await res.OutputStream.FlushAsync().ConfigureAwait(false);
-                    capture.Write(buf, 0, n);
+                    // 큰 응답(이미지 포함, 긴 컨텍스트)에서 RAM 폭주 방지 — usageMetadata 는
+                    // 마지막 SSE 이벤트에 포함되므로 통상 수 KB 면 충분. 4MB 초과 시
+                    // 캡처 중단 (스트리밍 자체는 계속 — 클라이언트 응답엔 영향 없음).
+                    if (!captureFull)
+                    {
+                        if (capture.Length + n > MaxStreamCaptureBytes)
+                        {
+                            captureFull = true;
+                            Logger.Warn($"GeminiRelay stream capture exceeded {MaxStreamCaptureBytes} bytes for model={model}; usage metadata may be incomplete");
+                        }
+                        else
+                        {
+                            capture.Write(buf, 0, n);
+                        }
+                    }
                 }
                 sw.Stop();
                 var captured = Encoding.UTF8.GetString(capture.ToArray());

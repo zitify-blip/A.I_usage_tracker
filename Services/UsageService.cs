@@ -98,8 +98,13 @@ public class UsageService
         var weekReset = sevenDay?.GetResetTime();
         var subResetRaw = sub?.GetResetTime();
         string? subReset = subResetRaw;
+        // API 가 항상 ISO-8601 UTC (`...Z` 또는 `+00:00`) 로 돌려주지만, TryParse 기본값은
+        // 로컬 타임존 기준이라 KST(+09:00) 환경에서 9시간 차이로 미래 시각이 과거로 평가될
+        // 수 있음. AssumeUniversal | AdjustToUniversal 로 명시적으로 UTC 비교.
         if (string.IsNullOrEmpty(subResetRaw) ||
-            (DateTimeOffset.TryParse(subResetRaw, out var subDt) && subDt <= DateTimeOffset.Now))
+            (DateTimeOffset.TryParse(subResetRaw, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+                out var subDt) && subDt <= DateTimeOffset.UtcNow))
         {
             subReset = weekReset;
         }

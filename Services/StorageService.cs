@@ -19,6 +19,12 @@ public class StorageService
 
     private StorageData _data = new();
 
+    // Gemini Relay 가 ThreadPool 에서 동시에 SaveGeminiUsage / Save 를 호출하면
+    // _data.*UsageHistory.Add 도중 JsonSerializer.Serialize 가 enumerate 해서
+    // "Collection was modified" 또는 config.json 손상이 발생. 모든 쓰기/직렬화는
+    // 이 락 안에서.
+    private readonly object _saveLock = new();
+
     public StorageService()
     {
         Load();
@@ -44,18 +50,21 @@ public class StorageService
 
     public void Save()
     {
-        try
+        lock (_saveLock)
         {
-            Directory.CreateDirectory(StorageDir);
-            var json = JsonSerializer.Serialize(_data, JsonOptions);
+            try
+            {
+                Directory.CreateDirectory(StorageDir);
+                var json = JsonSerializer.Serialize(_data, JsonOptions);
 
-            var tempPath = StoragePath + ".tmp";
-            File.WriteAllText(tempPath, json);
-            File.Move(tempPath, StoragePath, overwrite: true);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Storage save failed (accounts={_data.GeminiAccounts.Count})", ex);
+                var tempPath = StoragePath + ".tmp";
+                File.WriteAllText(tempPath, json);
+                File.Move(tempPath, StoragePath, overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Storage save failed (accounts={_data.GeminiAccounts.Count})", ex);
+            }
         }
     }
 
@@ -74,11 +83,12 @@ public class StorageService
         if (snapshot.FiveHourUtilization is < 0 or > 100) return;
         if (snapshot.SevenDayUtilization is < 0 or > 100) return;
 
-        _data.UsageHistory.Add(snapshot);
-
-        var cutoff = DateTimeOffset.UtcNow.AddDays(-30).ToUnixTimeMilliseconds();
-        _data.UsageHistory.RemoveAll(s => s.Timestamp < cutoff);
-
+        lock (_saveLock)
+        {
+            _data.UsageHistory.Add(snapshot);
+            var cutoff = DateTimeOffset.UtcNow.AddDays(-30).ToUnixTimeMilliseconds();
+            _data.UsageHistory.RemoveAll(s => s.Timestamp < cutoff);
+        }
         Save();
     }
 
@@ -112,16 +122,23 @@ public class StorageService
 
     public void SaveGeminiUsage(GeminiUsageRecord record)
     {
-        _data.GeminiUsageHistory.Add(record);
-        var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
-        _data.GeminiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        lock (_saveLock)
+        {
+            _data.GeminiUsageHistory.Add(record);
+            var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
+            _data.GeminiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        }
         Save();
     }
 
     public IReadOnlyList<GeminiUsageRecord> GetGeminiUsageHistory(string? accountId = null)
     {
-        if (accountId == null) return _data.GeminiUsageHistory;
-        return _data.GeminiUsageHistory.Where(r => r.AccountId == accountId).ToList();
+        // 릴레이 핸들러가 동시에 Add 중일 수 있으므로 항상 스냅샷 복사 반환.
+        lock (_saveLock)
+        {
+            if (accountId == null) return _data.GeminiUsageHistory.ToList();
+            return _data.GeminiUsageHistory.Where(r => r.AccountId == accountId).ToList();
+        }
     }
 
     // ────────── Gemini pricing overrides ──────────
@@ -202,9 +219,12 @@ public class StorageService
 
     public void SaveAnthropicApiUsage(IEnumerable<AnthropicApiUsageSnapshot> records)
     {
-        _data.AnthropicApiUsageHistory.AddRange(records);
-        var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
-        _data.AnthropicApiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        lock (_saveLock)
+        {
+            _data.AnthropicApiUsageHistory.AddRange(records);
+            var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
+            _data.AnthropicApiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        }
         Save();
     }
 
@@ -243,9 +263,12 @@ public class StorageService
 
     public void SaveOpenAiApiUsage(IEnumerable<OpenAiApiUsageSnapshot> records)
     {
-        _data.OpenAiApiUsageHistory.AddRange(records);
-        var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
-        _data.OpenAiApiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        lock (_saveLock)
+        {
+            _data.OpenAiApiUsageHistory.AddRange(records);
+            var cutoff = DateTimeOffset.UtcNow.AddDays(-90).ToUnixTimeMilliseconds();
+            _data.OpenAiApiUsageHistory.RemoveAll(r => r.Timestamp < cutoff);
+        }
         Save();
     }
 

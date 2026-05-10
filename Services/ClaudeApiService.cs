@@ -16,47 +16,43 @@ public class ClaudeApiService
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "AIUsageTracker", "WebView2Data");
 
-    public static readonly string FetchViaPostMessage = @"
+    // 호출부에서 __NONCE__ 를 GUID 로 치환. 응답 메시지에 동일 nonce 를 실어 보내
+    // 페이지 자체 스크립트의 무관한 postMessage 와 구분.
+    public const string FetchViaPostMessageTemplate = @"
 (function() {
+  var __nonce = '__NONCE__';
+  function send(payload) {
+    payload.__id = __nonce;
+    window.chrome.webview.postMessage(payload);
+  }
   var noCacheHeaders = { 'Accept': 'application/json', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' };
   var ts = Date.now();
   fetch('https://claude.ai/api/organizations?_t=' + ts, { credentials: 'include', cache: 'reload', headers: noCacheHeaders })
     .then(function(orgsRes) {
-      if (orgsRes.status === 401 || orgsRes.status === 403) {
-        window.chrome.webview.postMessage({ ok: false, error: 'not_logged_in', status: orgsRes.status });
-        return;
-      }
-      if (!orgsRes.ok) {
-        window.chrome.webview.postMessage({ ok: false, error: 'orgs_failed', status: orgsRes.status });
-        return;
-      }
-      orgsRes.json().then(function(orgs) {
-        if (!orgs || !orgs.length) {
-          window.chrome.webview.postMessage({ ok: false, error: 'no_org' });
-          return;
-        }
+      if (orgsRes.status === 401 || orgsRes.status === 403)
+        return send({ ok: false, error: 'not_logged_in', status: orgsRes.status });
+      if (!orgsRes.ok)
+        return send({ ok: false, error: 'orgs_failed', status: orgsRes.status });
+      return orgsRes.json().then(function(orgs) {
+        if (!orgs || !orgs.length) return send({ ok: false, error: 'no_org' });
         var orgId = orgs[0].uuid;
-        fetch('https://claude.ai/api/organizations/' + orgId + '/usage?_t=' + Date.now(), {
+        return fetch('https://claude.ai/api/organizations/' + orgId + '/usage?_t=' + Date.now(), {
           credentials: 'include',
           cache: 'reload',
           headers: noCacheHeaders
         }).then(function(usageRes) {
-          if (usageRes.status === 401 || usageRes.status === 403) {
-            window.chrome.webview.postMessage({ ok: false, error: 'not_logged_in', status: usageRes.status });
-            return;
-          }
-          if (!usageRes.ok) {
-            window.chrome.webview.postMessage({ ok: false, error: 'usage_failed', status: usageRes.status });
-            return;
-          }
-          usageRes.json().then(function(usage) {
-            window.chrome.webview.postMessage({ ok: true, data: JSON.stringify(usage) });
+          if (usageRes.status === 401 || usageRes.status === 403)
+            return send({ ok: false, error: 'not_logged_in', status: usageRes.status });
+          if (!usageRes.ok)
+            return send({ ok: false, error: 'usage_failed', status: usageRes.status });
+          return usageRes.json().then(function(usage) {
+            send({ ok: true, data: JSON.stringify(usage) });
           });
         });
       });
     })
     .catch(function(e) {
-      window.chrome.webview.postMessage({ ok: false, error: 'exception', message: String(e) });
+      send({ ok: false, error: 'exception', message: String(e) });
     });
 })()";
 
@@ -165,16 +161,28 @@ public class ClaudeApiService
                 Logger.Warn("ClearBrowsingDataAsync failed (non-fatal)", ex);
             }
 
+            var nonce = Guid.NewGuid().ToString("N");
             var tcs = new TaskCompletionSource<string>();
 
             void MsgHandler(object? s, CoreWebView2WebMessageReceivedEventArgs args)
             {
-                tcs.TrySetResult(args.WebMessageAsJson);
+                // 페이지 자체 스크립트(claude.ai 의 SPA 등)가 보내는 무관한 postMessage 를
+                // 우리 응답으로 오인하지 않도록 nonce 일치 확인.
+                try
+                {
+                    var probe = JsonSerializer.Deserialize<JsonElement>(args.WebMessageAsJson);
+                    if (!probe.TryGetProperty("__id", out var idEl) || idEl.GetString() != nonce)
+                        return;
+                }
+                catch { return; }
+
                 _webView.CoreWebView2.WebMessageReceived -= MsgHandler;
+                tcs.TrySetResult(args.WebMessageAsJson);
             }
             _webView.CoreWebView2.WebMessageReceived += MsgHandler;
 
-            await _webView.CoreWebView2.ExecuteScriptAsync(FetchViaPostMessage);
+            var script = FetchViaPostMessageTemplate.Replace("__NONCE__", nonce);
+            await _webView.CoreWebView2.ExecuteScriptAsync(script);
 
             // Wait for postMessage result (max 30s)
             var completed = await Task.WhenAny(tcs.Task, Task.Delay(30000));
@@ -230,17 +238,30 @@ public class ClaudeApiService
 
         try
         {
+            var nonce = Guid.NewGuid().ToString("N");
             var tcs = new TaskCompletionSource<string>();
 
             void MsgHandler(object? s, CoreWebView2WebMessageReceivedEventArgs args)
             {
-                tcs.TrySetResult(args.WebMessageAsJson);
+                try
+                {
+                    var probe = JsonSerializer.Deserialize<JsonElement>(args.WebMessageAsJson);
+                    if (!probe.TryGetProperty("__id", out var idEl) || idEl.GetString() != nonce)
+                        return;
+                }
+                catch { return; }
+
                 _webView.CoreWebView2.WebMessageReceived -= MsgHandler;
+                tcs.TrySetResult(args.WebMessageAsJson);
             }
             _webView.CoreWebView2.WebMessageReceived += MsgHandler;
 
+            // SendMessage 의 모든 fetch 체인을 단일 catch 로 감싸 unhandled rejection 차단.
+            // 응답에는 항상 __id (nonce) 를 실어 핸들러가 우리 응답만 받도록 함.
             var script = $@"
 (function() {{
+  var __nonce = '{nonce}';
+  function send(p) {{ p.__id = __nonce; window.chrome.webview.postMessage(p); }}
   var msg = {JsonSerializer.Serialize(message)};
   var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'UTC';
   fetch('https://claude.ai/api/organizations', {{ credentials: 'include' }})
@@ -248,7 +269,7 @@ public class ClaudeApiService
     .then(function(orgs) {{
       var orgId = orgs[0].uuid;
       var convUuid = crypto.randomUUID();
-      fetch('https://claude.ai/api/organizations/' + orgId + '/chat_conversations', {{
+      return fetch('https://claude.ai/api/organizations/' + orgId + '/chat_conversations', {{
         method: 'POST', credentials: 'include',
         headers: {{ 'Content-Type': 'application/json' }},
         body: JSON.stringify({{ uuid: convUuid, name: '' }})
@@ -258,7 +279,7 @@ public class ClaudeApiService
           return r.json();
         }})
         .then(function(conv) {{
-          fetch('https://claude.ai/api/organizations/' + orgId + '/chat_conversations/' + conv.uuid + '/completion', {{
+          return fetch('https://claude.ai/api/organizations/' + orgId + '/chat_conversations/' + conv.uuid + '/completion', {{
             method: 'POST', credentials: 'include',
             headers: {{ 'Content-Type': 'application/json', 'Accept': 'text/event-stream' }},
             body: JSON.stringify({{
@@ -269,17 +290,12 @@ public class ClaudeApiService
               rendering_mode: 'messages'
             }})
           }}).then(function(r) {{
-            window.chrome.webview.postMessage({{ ok: r.ok, status: r.status, conv: conv.uuid }});
-          }}).catch(function(e) {{
-            window.chrome.webview.postMessage({{ ok: false, error: 'completion_failed', message: String(e) }});
+            send({{ ok: r.ok, status: r.status, conv: conv.uuid }});
           }});
-        }})
-        .catch(function(e) {{
-          window.chrome.webview.postMessage({{ ok: false, error: 'create_conv_failed', message: String(e) }});
         }});
     }})
     .catch(function(e) {{
-      window.chrome.webview.postMessage({{ ok: false, error: 'orgs_failed', message: String(e) }});
+      send({{ ok: false, error: 'send_failed', message: String(e) }});
     }});
 }})()";
 

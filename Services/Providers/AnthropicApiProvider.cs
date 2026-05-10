@@ -105,7 +105,13 @@ public class AnthropicApiProvider : IUsageProvider
                     foreach (var r in results.EnumerateArray())
                     {
                         var model = r.TryGetProperty("model", out var mEl) ? mEl.GetString() ?? "unknown" : "unknown";
-                        var inT = ReadLong(r, "uncached_input_tokens") + ReadLong(r, "input_tokens");
+                        // Admin API 의 모던 스키마는 uncached_input_tokens 만 사용.
+                        // input_tokens 는 일부 응답에서 같은 값을 별칭처럼 돌려줄 수 있어
+                        // 둘을 합치면 입력 토큰이 두 배로 잡혀 비용이 부풀려졌음.
+                        // 둘 중 하나만 우선 사용 (uncached 가 있으면 그것, 없으면 input_tokens fallback).
+                        var inT = r.TryGetProperty("uncached_input_tokens", out _)
+                            ? ReadLong(r, "uncached_input_tokens")
+                            : ReadLong(r, "input_tokens");
                         var outT = ReadLong(r, "output_tokens");
                         var cacheW = ReadLong(r, "cache_creation_input_tokens");
                         var cacheR = ReadLong(r, "cache_read_input_tokens");

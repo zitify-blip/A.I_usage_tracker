@@ -62,16 +62,26 @@ public partial class LoginWindow : Window
         try
         {
             // Use WebMessageReceived to get async results reliably
+            var nonce = Guid.NewGuid().ToString("N");
             var tcs = new TaskCompletionSource<string>();
 
             void MsgHandler(object? s, CoreWebView2WebMessageReceivedEventArgs args)
             {
-                tcs.TrySetResult(args.WebMessageAsJson);
+                // claude.ai 페이지의 무관한 postMessage 와 구분 — nonce 일치 시에만 수신.
+                try
+                {
+                    var probe = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(args.WebMessageAsJson);
+                    if (!probe.TryGetProperty("__id", out var idEl) || idEl.GetString() != nonce)
+                        return;
+                }
+                catch { return; }
                 LoginWebView.CoreWebView2.WebMessageReceived -= MsgHandler;
+                tcs.TrySetResult(args.WebMessageAsJson);
             }
             LoginWebView.CoreWebView2.WebMessageReceived += MsgHandler;
 
-            await LoginWebView.CoreWebView2.ExecuteScriptAsync(ClaudeApiService.FetchViaPostMessage);
+            var script = ClaudeApiService.FetchViaPostMessageTemplate.Replace("__NONCE__", nonce);
+            await LoginWebView.CoreWebView2.ExecuteScriptAsync(script);
 
             // Wait for message (max 30s)
             var completed = await Task.WhenAny(tcs.Task, Task.Delay(30000));
