@@ -522,16 +522,36 @@ public partial class MainWindow : Window
         var pct = Math.Min(100, elapsed / totalMs * 100);
         var w = canvas.ActualWidth > 0 ? canvas.ActualWidth : 300;
 
-        // 마커의 세로선(2px) 중심이 정확히 pct 위치에 오도록 정렬.
-        // 배지(라벨 박스)가 캔버스 오른쪽 밖으로 살짝 나가더라도 ClipToBounds=False 이므로 그대로 보임 —
-        // 100% 일 때 라인이 88~95% 위치에 갇혀 보이던 우측 클램프 제거.
+        // 마커 Grid 의 중심(2px 세로선)이 정확히 pct 위치에 오도록 정렬.
+        // 100% 일 때 라인이 ~88~95% 위치에 갇혀 보이던 우측 클램프는 제거.
         marker.UpdateLayout();
         var halfW = marker.ActualWidth / 2;
-        var left = w * pct / 100.0 - halfW;
-        // 좌측만 음수 방지 (0% 에서 마커가 캔버스 왼쪽 밖으로 빠지는 것만 막음)
-        if (left < -halfW) left = -halfW;
+        var lineX = w * pct / 100.0;
+        var left = lineX - halfW;
+        if (left < -halfW) left = -halfW;          // 좌측 음수만 방지
         Canvas.SetLeft(marker, left);
         if (label != null) label.Text = $"{pct:F0}%";
+
+        // 배지(라벨 박스) 가 캔버스 오른쪽 밖으로 나가면 배지만 좌측으로 슬라이드.
+        // 세로선은 그대로 정확한 pct 위치에 머무름.
+        System.Windows.Controls.Border? badge = null;
+        foreach (var child in marker.Children)
+            if (child is System.Windows.Controls.Border b) { badge = b; break; }
+        if (badge != null)
+        {
+            badge.RenderTransform = null;
+            badge.UpdateLayout();
+            var halfBadge = badge.ActualWidth / 2;
+            var badgeRightInCanvas = lineX + halfBadge;
+            var badgeLeftInCanvas = lineX - halfBadge;
+            double dx = 0;
+            if (badgeRightInCanvas > w)
+                dx = -(badgeRightInCanvas - w + 2);   // 2px 여백
+            else if (badgeLeftInCanvas < 0)
+                dx = -badgeLeftInCanvas + 2;
+            if (dx != 0)
+                badge.RenderTransform = new System.Windows.Media.TranslateTransform(dx, 0);
+        }
 
         // 호버 툴팁 — 정확한 pct + 리셋 잔여 시간
         marker.ToolTip = $"{pct:F1}% · 리셋 {FmtResetIn(iso)}";
