@@ -2113,11 +2113,13 @@ public partial class MainWindow : Window
         CodexLogoutBtn.Visibility = loggedIn ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void RenderCodexUsage()
+    private async void RenderCodexUsage()
     {
         if (CodexDashboard == null) return;
         var since = DateTimeOffset.UtcNow.AddDays(-_codexRangeDays);
-        var summary = _codex.Aggregate(since);
+        // I/O 비중이 큰 rollout JSONL 파싱을 백그라운드 스레드로 위임해 UI 블로킹 회피
+        var summary = await Task.Run(() => _codex.Aggregate(since));
+        if (CodexDashboard == null) return; // 비동기 대기 중 unload 방어
 
         if (summary.Models.Count == 0)
         {
@@ -2186,32 +2188,101 @@ public partial class MainWindow : Window
         CodexLocalPercent.Text = $"{(int)Math.Round(pct * 100)}%";
     }
 
-    private class CodexBarItem
-    {
-        public string Label { get; set; } = "";
-        public double BarHeight { get; set; }
-    }
+    private int[] _codexHourlyCache = new int[12];
 
     private void UpdateUsagePattern(int[] hourly)
     {
-        if (CodexPatternBars == null) return;
-        var max = hourly.Length > 0 ? Math.Max(1, hourly.Max()) : 1;
+        if (CodexPatternCanvas == null) return;
+        _codexHourlyCache = (int[])hourly.Clone();
+
         var total = hourly.Sum();
         CodexPatternMeta.Text = total > 0 ? $"합계 {FormatTokensShort(total)}" : "데이터 없음";
 
-        // 라벨: -11h, -9h, -7h, -5h, -3h, -1h … 짝수 시간만 표기
-        var items = new List<CodexBarItem>(12);
+        // X축 라벨: -11h, -9h, … (짝수 시간만 표시)
+        var labels = new List<string>(12);
         for (int i = 0; i < 12; i++)
         {
             var hoursAgo = 11 - i;
-            var label = hoursAgo % 2 == 0 ? $"-{hoursAgo}h" : "";
-            items.Add(new CodexBarItem
-            {
-                Label = label,
-                BarHeight = Math.Max(2.0, (hourly[i] / (double)max) * 70.0),
-            });
+            labels.Add(hoursAgo % 2 == 0 ? $"-{hoursAgo}h" : "");
         }
-        CodexPatternBars.ItemsSource = items;
+        CodexPatternAxis.ItemsSource = labels;
+
+        DrawCodexPattern();
+    }
+
+    private void CodexPatternCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawCodexPattern();
+
+    private void DrawCodexPattern()
+    {
+        if (CodexPatternCanvas == null) return;
+        var canvas = CodexPatternCanvas;
+        canvas.Children.Clear();
+        var w = canvas.ActualWidth;
+        var h = canvas.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+
+        var hourly = _codexHourlyCache;
+        var max = Math.Max(1, hourly.Max());
+        var lineBrush = (System.Windows.Media.Brush)FindResource("StatusGoodBrush");
+        var fillBrush = lineBrush.Clone();
+        if (fillBrush is System.Windows.Media.SolidColorBrush sb) sb.Opacity = 0.18;
+        var subBrush = (System.Windows.Media.Brush)FindResource("BorderBrushBase");
+
+        // 가로 보조선 3개 (25/50/75%)
+        for (int g = 1; g <= 3; g++)
+        {
+            var y = h - h * (g * 0.25);
+            var grid = new System.Windows.Shapes.Line
+            {
+                X1 = 0, X2 = w, Y1 = y, Y2 = y,
+                Stroke = subBrush, StrokeThickness = 0.5, StrokeDashArray = new System.Windows.Media.DoubleCollection { 2, 3 }
+            };
+            canvas.Children.Add(grid);
+        }
+
+        var points = new System.Windows.Media.PointCollection(12);
+        for (int i = 0; i < 12; i++)
+        {
+            var x = (w / 11.0) * i;
+            var y = h - (hourly[i] / (double)max) * (h - 6) - 3;
+            points.Add(new System.Windows.Point(x, y));
+        }
+
+        // 영역 채우기 (Polygon: 라인 + 바닥)
+        var polyPoints = new System.Windows.Media.PointCollection(points) {
+            new System.Windows.Point(w, h),
+            new System.Windows.Point(0, h),
+        };
+        var area = new System.Windows.Shapes.Polygon { Points = polyPoints, Fill = fillBrush };
+        canvas.Children.Add(area);
+
+        // 라인
+        var line = new System.Windows.Shapes.Polyline
+        {
+            Points = points,
+            Stroke = lineBrush,
+            StrokeThickness = 2,
+            StrokeLineJoin = System.Windows.Media.PenLineJoin.Round
+        };
+        canvas.Children.Add(line);
+
+        // 데이터 포인트 (호버 시 툴팁)
+        for (int i = 0; i < 12; i++)
+        {
+            var hoursAgo = 11 - i;
+            var pt = points[i];
+            var dot = new System.Windows.Shapes.Ellipse
+            {
+                Width = 8, Height = 8,
+                Fill = lineBrush,
+                Stroke = System.Windows.Media.Brushes.White,
+                StrokeThickness = 1,
+                ToolTip = $"-{hoursAgo}h: {FormatTokensShort(hourly[i])} 토큰",
+            };
+            Canvas.SetLeft(dot, pt.X - 4);
+            Canvas.SetTop(dot, pt.Y - 4);
+            canvas.Children.Add(dot);
+        }
     }
 
     private void CodexRangeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

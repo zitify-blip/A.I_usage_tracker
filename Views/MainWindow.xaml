@@ -1313,7 +1313,7 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="TODAY · COST BY ACCOUNT"
+                                    <TextBlock Grid.Row="0" Text="오늘 · 계정별 사용 비용"
                                                Style="{StaticResource Sec}"/>
                                     <ItemsControl Grid.Row="1" x:Name="GeminiCompareList" Margin="0,4,0,0">
                                         <ItemsControl.ItemTemplate>
@@ -1894,33 +1894,31 @@
                                                    Foreground="{StaticResource TxtSubBrush}"
                                                    HorizontalAlignment="Right"/>
                                     </Grid>
-                                    <ItemsControl Grid.Row="1" x:Name="CodexPatternBars" Height="80">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Rows="1" Columns="12"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="3,0">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" CornerRadius="2"
-                                                            Background="{StaticResource StatusGoodBrush}"
-                                                            VerticalAlignment="Bottom"
-                                                            Height="{Binding BarHeight}"
-                                                            Opacity="0.85"/>
-                                                    <TextBlock Grid.Row="1" Text="{Binding Label}"
+                                    <Grid Grid.Row="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Canvas Grid.Row="0" x:Name="CodexPatternCanvas"
+                                                Height="100" ClipToBounds="True"
+                                                Background="Transparent"
+                                                SizeChanged="CodexPatternCanvas_SizeChanged"/>
+                                        <ItemsControl Grid.Row="1" x:Name="CodexPatternAxis" Margin="0,4,0,0">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Rows="1" Columns="12"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}"
                                                                FontSize="9"
                                                                Foreground="{StaticResource TxtSubBrush}"
-                                                               HorizontalAlignment="Center"
-                                                               Margin="0,4,0,0"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                                               HorizontalAlignment="Center"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
                                 </Grid>
                             </Border>
 
