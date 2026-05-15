@@ -2160,6 +2160,8 @@
                                 <RowDefinition Height="8"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
@@ -2230,7 +2232,49 @@
                                 </Grid>
                             </Border>
 
+                            <!-- USAGE PATTERN — LAST 12H (시간대별 비용 추이) -->
                             <Border Grid.Row="4" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                                        <TextBlock Text="USAGE PATTERN — LAST 12H" Style="{StaticResource Sec}"/>
+                                        <TextBlock x:Name="OpenAiPatternMeta" Text=""
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource TxtSubBrush}"
+                                                   HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Canvas Grid.Row="0" x:Name="OpenAiPatternCanvas"
+                                                Height="100" ClipToBounds="True"
+                                                Background="Transparent"
+                                                SizeChanged="OpenAiPatternCanvas_SizeChanged"/>
+                                        <ItemsControl Grid.Row="1" x:Name="OpenAiPatternAxis" Margin="0,4,0,0">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Rows="1" Columns="12"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}"
+                                                               FontSize="9"
+                                                               Foreground="{StaticResource TxtSubBrush}"
+                                                               HorizontalAlignment="Center"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="6" Style="{StaticResource Card}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>

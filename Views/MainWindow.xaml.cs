@@ -2145,6 +2145,112 @@ public partial class MainWindow : Window
         OpenAiTotalInput.Text = grouped.Sum(g => g.Input).ToString("N0");
         OpenAiTotalOutput.Text = grouped.Sum(g => g.Output).ToString("N0");
         OpenAiTotalCached.Text = grouped.Sum(g => g.Cached).ToString("N0");
+
+        // USAGE PATTERN — LAST 12H (시간대별 비용)
+        UpdateOpenAiPattern(history);
+    }
+
+    private double[] _openAiHourlyCache = new double[12];
+
+    private void UpdateOpenAiPattern(IReadOnlyList<OpenAiApiUsageSnapshot> history)
+    {
+        if (OpenAiPatternCanvas == null) return;
+        var now = DateTime.Now;
+        var twelveAgo = now.AddHours(-12);
+        var twelveAgoMs = new DateTimeOffset(twelveAgo, DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds();
+        var buckets = new double[12];
+
+        foreach (var r in history)
+        {
+            if (r.Timestamp < twelveAgoMs) continue;
+            var t = DateTimeOffset.FromUnixTimeMilliseconds(r.Timestamp).LocalDateTime;
+            var hoursAgo = (int)Math.Floor((now - t).TotalHours);
+            if (hoursAgo < 0) hoursAgo = 0;
+            if (hoursAgo > 11) continue;
+            var bucket = 11 - hoursAgo; // 오래된 → 0, 최신 → 11
+            buckets[bucket] += r.CostUsd;
+        }
+
+        _openAiHourlyCache = buckets;
+        var total = buckets.Sum();
+        OpenAiPatternMeta.Text = total > 0 ? $"합계 ${total:F2}" : "데이터 없음";
+
+        var labels = new List<string>(12);
+        for (int i = 0; i < 12; i++)
+        {
+            var hoursAgo = 11 - i;
+            labels.Add(hoursAgo % 2 == 0 ? $"-{hoursAgo}h" : "");
+        }
+        OpenAiPatternAxis.ItemsSource = labels;
+
+        DrawOpenAiPattern();
+    }
+
+    private void OpenAiPatternCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawOpenAiPattern();
+
+    private void DrawOpenAiPattern()
+    {
+        if (OpenAiPatternCanvas == null) return;
+        var canvas = OpenAiPatternCanvas;
+        canvas.Children.Clear();
+        var w = canvas.ActualWidth;
+        var h = canvas.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+
+        var series = _openAiHourlyCache;
+        var max = Math.Max(0.0001, series.Max());
+        var lineBrush = (System.Windows.Media.Brush)FindResource("OpenAiBrandBrush");
+        var fillBrush = lineBrush.Clone();
+        if (fillBrush is System.Windows.Media.SolidColorBrush sb) sb.Opacity = 0.18;
+        var subBrush = (System.Windows.Media.Brush)FindResource("BorderBrushBase");
+
+        // 25/50/75% 보조선
+        for (int g = 1; g <= 3; g++)
+        {
+            var y = h - h * (g * 0.25);
+            canvas.Children.Add(new System.Windows.Shapes.Line
+            {
+                X1 = 0, X2 = w, Y1 = y, Y2 = y,
+                Stroke = subBrush, StrokeThickness = 0.5,
+                StrokeDashArray = new System.Windows.Media.DoubleCollection { 2, 3 }
+            });
+        }
+
+        var points = new System.Windows.Media.PointCollection(12);
+        for (int i = 0; i < 12; i++)
+        {
+            var x = (w / 11.0) * i;
+            var y = h - (series[i] / max) * (h - 6) - 3;
+            points.Add(new System.Windows.Point(x, y));
+        }
+
+        var polyPoints = new System.Windows.Media.PointCollection(points) {
+            new System.Windows.Point(w, h),
+            new System.Windows.Point(0, h),
+        };
+        canvas.Children.Add(new System.Windows.Shapes.Polygon { Points = polyPoints, Fill = fillBrush });
+        canvas.Children.Add(new System.Windows.Shapes.Polyline
+        {
+            Points = points, Stroke = lineBrush, StrokeThickness = 2,
+            StrokeLineJoin = System.Windows.Media.PenLineJoin.Round
+        });
+
+        for (int i = 0; i < 12; i++)
+        {
+            var hoursAgo = 11 - i;
+            var pt = points[i];
+            var dot = new System.Windows.Shapes.Ellipse
+            {
+                Width = 8, Height = 8,
+                Fill = lineBrush,
+                Stroke = System.Windows.Media.Brushes.White,
+                StrokeThickness = 1,
+                ToolTip = $"-{hoursAgo}h: ${series[i]:F4}",
+            };
+            Canvas.SetLeft(dot, pt.X - 4);
+            Canvas.SetTop(dot, pt.Y - 4);
+            canvas.Children.Add(dot);
+        }
     }
 
     private void OpenAiAccountCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
