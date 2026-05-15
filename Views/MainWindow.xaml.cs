@@ -518,7 +518,16 @@ public partial class MainWindow : Window
         var elapsed = Math.Max(0, totalMs - rem);
         var pct = Math.Min(100, elapsed / totalMs * 100);
         var w = canvas.ActualWidth > 0 ? canvas.ActualWidth : 300;
-        Canvas.SetLeft(marker, w * pct / 100.0);
+
+        // 마커의 중심(2px 세로선)을 정확히 pct 위치에 정렬하고, 양 끝 배지가
+        // 캔버스를 넘지 않도록 좌우 클램프. (99% 일 때 배지가 바를 넘어가던 오버플로 수정)
+        marker.UpdateLayout();
+        var halfW = marker.ActualWidth / 2;
+        var center = w * pct / 100.0;
+        var left = center - halfW;
+        if (marker.ActualWidth > 0)
+            left = Math.Max(0, Math.Min(w - marker.ActualWidth, left));
+        Canvas.SetLeft(marker, left);
         if (label != null) label.Text = $"{pct:F0}%";
     }
 
@@ -2092,7 +2101,16 @@ public partial class MainWindow : Window
     {
         if (CodexLogPathHint != null)
             CodexLogPathHint.Text = $"{_codex.SessionsDir}\\rollout-*.jsonl 경로를 확인하세요";
+        UpdateCodexAuthButtons();
         RenderCodexUsage();
+    }
+
+    private void UpdateCodexAuthButtons()
+    {
+        if (CodexLoginBtn == null || CodexLogoutBtn == null) return;
+        var loggedIn = _codex.IsLoggedIn();
+        CodexLoginBtn.Visibility = loggedIn ? Visibility.Collapsed : Visibility.Visible;
+        CodexLogoutBtn.Visibility = loggedIn ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void RenderCodexUsage()
@@ -2235,7 +2253,7 @@ public partial class MainWindow : Window
             };
             using var p = Process.Start(psi);
             // Best-effort: refresh usage view shortly after to pick up new logs
-            _ = Task.Delay(2000).ContinueWith(_ => Dispatcher.Invoke(RenderCodexUsage));
+            _ = Task.Delay(2000).ContinueWith(_ => Dispatcher.Invoke(RefreshCodexUi));
         }
         catch (Exception ex)
         {

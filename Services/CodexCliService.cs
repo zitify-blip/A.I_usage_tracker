@@ -12,12 +12,17 @@ namespace AIUsageTracker.Services;
 public class CodexCliService
 {
     public string SessionsDir { get; }
+    public string AuthFile { get; }
 
     public CodexCliService()
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         SessionsDir = Path.Combine(home, ".codex", "sessions");
+        AuthFile = Path.Combine(home, ".codex", "auth.json");
     }
+
+    /// <summary>~/.codex/auth.json 존재 여부로 Codex CLI 로그인 상태 판별.</summary>
+    public bool IsLoggedIn() => File.Exists(AuthFile);
 
     public class CodexModelRow
     {
