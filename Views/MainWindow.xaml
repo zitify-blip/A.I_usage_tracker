@@ -302,9 +302,11 @@
                     </Border>
                 </Grid>
 
-                <!-- ═══════════ Row 3: Health (Claude | Gemini budgets) ═══════════ -->
+                <!-- ═══════════ Row 3: Health (Claude | OpenAI | Gemini) ═══════════ -->
                 <Grid Grid.Row="3">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="10"/>
                         <ColumnDefinition Width="*"/>
@@ -430,8 +432,57 @@
                         </Grid>
                     </Border>
 
-                    <!-- Gemini budgets -->
+                    <!-- OpenAI · 비용 (Codex CLI + OpenAI API 합산) -->
                     <Border Grid.Column="2" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="◯ " FontSize="11" FontWeight="Bold"
+                                           Foreground="{StaticResource OpenAiBrandBrush}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="OPENAI · 비용" Style="{StaticResource Sec}"
+                                           VerticalAlignment="Center" Margin="0"/>
+                            </StackPanel>
+                            <Grid Grid.Row="1" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="오늘" FontSize="10" Foreground="{StaticResource TxtSubBrush}"/>
+                                    <TextBlock x:Name="OpenAiTodayText" Text="$0.00"
+                                               FontSize="22" FontWeight="Bold"
+                                               Foreground="{StaticResource TxtHighlight}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="이번 달" FontSize="10" Foreground="{StaticResource TxtSubBrush}"/>
+                                    <TextBlock x:Name="OpenAiMonthText" Text="$0.00"
+                                               FontSize="22" FontWeight="Bold"
+                                               Foreground="{StaticResource TxtHighlight}"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Grid.Row="2" x:Name="OpenAiBreakdown"
+                                       Text="CLI $0.00 · API $0.00"
+                                       FontSize="10" Foreground="{StaticResource TxtSubBrush}"
+                                       Margin="0,0,0,8"/>
+                            <Canvas Grid.Row="3" x:Name="OpenAiMiniCanvas"
+                                    Height="40" ClipToBounds="True"
+                                    Background="Transparent"
+                                    SizeChanged="OpenAiMiniCanvas_SizeChanged"/>
+                            <TextBlock Grid.Row="4" Text="최근 7일 추세"
+                                       FontSize="9" Foreground="{StaticResource TxtHintBrush}"
+                                       HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Gemini budgets -->
+                    <Border Grid.Column="4" Style="{StaticResource Card}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -507,7 +558,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="7-DAY TREND · GEMINI COST"
+                                <TextBlock Grid.Column="0" Text="7일 추세 · Gemini 모델별"
                                            Style="{StaticResource Sec}"/>
                                 <TextBlock Grid.Column="1" x:Name="TrendTotalLabel" Text="$0.00"
                                            FontSize="11" Foreground="{StaticResource TxtSub}"/>

@@ -7,11 +7,8 @@ namespace AIUsageTracker.Services.Providers;
 /// xAI (Grok) API client. xAI does not currently expose an organization-wide usage report
 /// endpoint, so this provider only validates keys and reports the per-key info from /v1/api-key.
 /// </summary>
-public class GrokApiProvider : IUsageProvider
+public class GrokApiProvider
 {
-    public string Id => "grok-api";
-    public string DisplayName => "Grok (xAI)";
-
     private const string BaseUrl = "https://api.x.ai";
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 

@@ -24,6 +24,35 @@ public class CodexCliService
     /// <summary>~/.codex/auth.json 존재 여부로 Codex CLI 로그인 상태 판별.</summary>
     public bool IsLoggedIn() => File.Exists(AuthFile);
 
+    /// <summary>
+    /// Scans rollout files and aggregates local USD cost by local date for the global dashboard.
+    /// </summary>
+    public Dictionary<DateTime, double> GetCostByDay(DateTimeOffset since)
+    {
+        var result = new Dictionary<DateTime, double>();
+        if (!Directory.Exists(SessionsDir)) return result;
+
+        foreach (var path in EnumerateSessionFiles(SessionsDir))
+        {
+            try
+            {
+                var fi = new FileInfo(path);
+                if (fi.LastWriteTimeUtc < since.UtcDateTime) continue;
+                var parsed = ParseFile(path);
+                if (!parsed.touched) continue;
+                var day = fi.LastWriteTime.Date;
+                var key = string.IsNullOrEmpty(parsed.model) ? "unknown" : parsed.model;
+                var cost = OpenAiPricing.CalculateCost(key, parsed.input, parsed.output, parsed.cached);
+                result[day] = result.TryGetValue(day, out var prev) ? prev + cost : cost;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Codex cost-by-day parse failed: {path}", ex);
+            }
+        }
+        return result;
+    }
+
     public class CodexModelRow
     {
         public string Model { get; set; } = "";

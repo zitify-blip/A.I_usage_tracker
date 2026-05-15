@@ -7,11 +7,8 @@ namespace AIUsageTracker.Services.Providers;
 /// OpenAI Admin API client. Requires an Admin API key (sk-admin-*).
 /// Uses /v1/organization/usage/{completions,embeddings,...} endpoints with Unix-second timestamps.
 /// </summary>
-public class OpenAiApiProvider : IUsageProvider
+public class OpenAiApiProvider
 {
-    public string Id => "openai-api";
-    public string DisplayName => "OpenAI API";
-
     private const string BaseUrl = "https://api.openai.com";
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 

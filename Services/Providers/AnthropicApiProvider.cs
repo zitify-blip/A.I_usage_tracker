@@ -8,11 +8,8 @@ namespace AIUsageTracker.Services.Providers;
 /// Anthropic Admin API client. Requires an Admin API key (sk-ant-admin*).
 /// Provides usage report queries via /v1/organizations/usage_report and a basic key validation.
 /// </summary>
-public class AnthropicApiProvider : IUsageProvider
+public class AnthropicApiProvider
 {
-    public string Id => "anthropic-api";
-    public string DisplayName => "Claude API";
-
     private const string BaseUrl = "https://api.anthropic.com";
     private const string AnthropicVersion = "2023-06-01";
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };

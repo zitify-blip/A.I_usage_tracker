@@ -1092,7 +1092,7 @@ public partial class MainWindow : Window
 
     private void GlobalRefreshBtn_Click(object sender, RoutedEventArgs e) => RefreshGlobalUi();
 
-    private void RefreshGlobalUi()
+    private async void RefreshGlobalUi()
     {
         var now = DateTimeOffset.Now;
         var today = now.Date;
@@ -1105,13 +1105,31 @@ public partial class MainWindow : Window
         long TsMs(DateTime d) => new DateTimeOffset(d, now.Offset).ToUnixTimeMilliseconds();
 
         var all = _storage.GetGeminiUsageHistory();
+        var oaHist = _storage.GetOpenAiApiUsageHistory();
+        var antHist = _storage.GetAnthropicApiUsageHistory();
         var accounts = _geminiAccounts.GetAccounts();
 
-        // ─── Row 1: Hero tiles ───
-        var todayCost = all.Where(r => r.Timestamp >= TsMs(today) && r.Timestamp < TsMs(today.AddDays(1))).Sum(r => r.CostUsd);
-        var yesterdayCost = all.Where(r => r.Timestamp >= TsMs(yesterday) && r.Timestamp < TsMs(today)).Sum(r => r.CostUsd);
+        // Codex(CLI) 일별 비용 — rollout JSONL 파싱이 무거우니 백그라운드 위임
+        var codexSince = new DateTimeOffset(monthStart.AddDays(-7), now.Offset); // 트렌드용 7일 여유 포함
+        var codexDailyCost = await Task.Run(() => _codex.GetCostByDay(codexSince));
+        if (HeroTodayCost == null) return; // 비동기 대기 중 unload 방어
+
+        // 헬퍼: 한 윈도우의 모든 프로바이더 비용 합산
+        double SumWindow(DateTime start, DateTime end)
+        {
+            var s = TsMs(start); var e = TsMs(end);
+            var g = all.Where(r => r.Timestamp >= s && r.Timestamp < e).Sum(r => r.CostUsd);
+            var o = oaHist.Where(r => r.Timestamp >= s && r.Timestamp < e).Sum(r => r.CostUsd);
+            var a = antHist.Where(r => r.Timestamp >= s && r.Timestamp < e).Sum(r => r.CostUsd);
+            var c = codexDailyCost.Where(kv => kv.Key >= start && kv.Key < end).Sum(kv => kv.Value);
+            return g + o + a + c;
+        }
+
+        // ─── Row 1: Hero tiles (전체 프로바이더 통합) ───
+        var todayCost = SumWindow(today, today.AddDays(1));
+        var yesterdayCost = SumWindow(yesterday, today);
         var monthRecs = all.Where(r => r.Timestamp >= TsMs(monthStart) && r.Timestamp < TsMs(monthEnd)).ToList();
-        var monthCost = monthRecs.Sum(r => r.CostUsd);
+        var monthCost = SumWindow(monthStart, monthEnd);
 
         HeroTodayCost.Text = $"${todayCost:F2}";
         if (yesterdayCost > 0 || todayCost > 0)
@@ -1197,15 +1215,41 @@ public partial class MainWindow : Window
         GeminiBudgetsList.ItemsSource = budgetRows;
         GeminiBudgetsEmpty.Visibility = budgetRows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
+        // ─── OpenAI · 비용 카드 (Codex CLI + OpenAI API 합산) ───
+        var oaTodayApi = oaHist.Where(r => r.Timestamp >= TsMs(today) && r.Timestamp < TsMs(today.AddDays(1))).Sum(r => r.CostUsd);
+        var oaTodayCli = codexDailyCost.TryGetValue(today, out var cliToday) ? cliToday : 0;
+        var oaTodayTotal = oaTodayApi + oaTodayCli;
+        var oaMonthApi = oaHist.Where(r => r.Timestamp >= TsMs(monthStart) && r.Timestamp < TsMs(monthEnd)).Sum(r => r.CostUsd);
+        var oaMonthCli = codexDailyCost.Where(kv => kv.Key >= monthStart && kv.Key < monthEnd).Sum(kv => kv.Value);
+        var oaMonthTotal = oaMonthApi + oaMonthCli;
+        OpenAiTodayText.Text = $"${oaTodayTotal:F2}";
+        OpenAiMonthText.Text = $"${oaMonthTotal:F2}";
+        OpenAiBreakdown.Text = $"이번 달 — CLI ${oaMonthCli:F2} · API ${oaMonthApi:F2}";
+        _openAiMiniDaily = BuildOpenAiMiniSeries(today, codexDailyCost, oaHist);
+        DrawOpenAiMini();
+
         // ─── Row 3: Trend (7-day) ───
         Update7DayTrend(all);
 
-        // ─── Row 3: Top models ───
-        var byModel = monthRecs.GroupBy(r => r.Model)
-            .Select(g => new { Model = g.Key, Cost = g.Sum(x => x.CostUsd) })
-            .Where(x => x.Cost > 0)
-            .OrderByDescending(x => x.Cost)
+        // ─── Row 3: Top models (전체 프로바이더 통합) ───
+        var modelCosts = new Dictionary<string, double>();
+        foreach (var r in monthRecs)
+            modelCosts[r.Model] = modelCosts.GetValueOrDefault(r.Model) + r.CostUsd;
+        foreach (var r in oaHist.Where(r => r.Timestamp >= TsMs(monthStart) && r.Timestamp < TsMs(monthEnd)))
+            modelCosts[r.Model] = modelCosts.GetValueOrDefault(r.Model) + r.CostUsd;
+        foreach (var r in antHist.Where(r => r.Timestamp >= TsMs(monthStart) && r.Timestamp < TsMs(monthEnd)))
+            modelCosts[r.Model] = modelCosts.GetValueOrDefault(r.Model) + r.CostUsd;
+        // Codex 월간 모델 분포
+        var codexMonthSum = await Task.Run(() => _codex.Aggregate(new DateTimeOffset(monthStart, now.Offset)));
+        if (HeroTodayCost == null) return;
+        foreach (var m in codexMonthSum.Models)
+            modelCosts[m.Model] = modelCosts.GetValueOrDefault(m.Model) + m.Cost;
+
+        var byModel = modelCosts
+            .Where(kv => kv.Value > 0)
+            .OrderByDescending(kv => kv.Value)
             .Take(3)
+            .Select(kv => new { Model = kv.Key, Cost = kv.Value })
             .ToList();
         var topMax = byModel.FirstOrDefault()?.Cost ?? 1;
         if (topMax <= 0) topMax = 1;
@@ -1221,6 +1265,81 @@ public partial class MainWindow : Window
             x.Model, x.Cost, x.Cost / topMax * topBarMax, x.Cost / totalMonth)).ToList();
         TopModelsList.ItemsSource = topRows;
         TopModelsEmpty.Visibility = topRows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // ─── OpenAI 미니 7일 추세 (Codex CLI + OpenAI API 합산) ───
+    private double[] _openAiMiniDaily = new double[7];
+
+    private double[] BuildOpenAiMiniSeries(DateTime today, Dictionary<DateTime, double> codexDaily,
+        IReadOnlyList<OpenAiApiUsageSnapshot> oaHist)
+    {
+        var series = new double[7];
+        for (int i = 0; i < 7; i++)
+        {
+            var d = today.AddDays(-6 + i);
+            var dStart = new DateTimeOffset(d, DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds();
+            var dEnd = new DateTimeOffset(d.AddDays(1), DateTimeOffset.Now.Offset).ToUnixTimeMilliseconds();
+            var api = oaHist.Where(r => r.Timestamp >= dStart && r.Timestamp < dEnd).Sum(r => r.CostUsd);
+            var cli = codexDaily.TryGetValue(d, out var c) ? c : 0;
+            series[i] = api + cli;
+        }
+        return series;
+    }
+
+    private void OpenAiMiniCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawOpenAiMini();
+
+    private void DrawOpenAiMini()
+    {
+        if (OpenAiMiniCanvas == null) return;
+        var canvas = OpenAiMiniCanvas;
+        canvas.Children.Clear();
+        var w = canvas.ActualWidth;
+        var h = canvas.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+
+        var series = _openAiMiniDaily;
+        var max = Math.Max(0.01, series.Max());
+        var lineBrush = (System.Windows.Media.Brush)FindResource("OpenAiBrandBrush");
+        var fillBrush = lineBrush.Clone();
+        if (fillBrush is System.Windows.Media.SolidColorBrush sb) sb.Opacity = 0.18;
+
+        var points = new System.Windows.Media.PointCollection(7);
+        for (int i = 0; i < 7; i++)
+        {
+            var x = (w / 6.0) * i;
+            var y = h - (series[i] / max) * (h - 4) - 2;
+            points.Add(new System.Windows.Point(x, y));
+        }
+
+        var polyPoints = new System.Windows.Media.PointCollection(points) {
+            new System.Windows.Point(w, h),
+            new System.Windows.Point(0, h),
+        };
+        canvas.Children.Add(new System.Windows.Shapes.Polygon { Points = polyPoints, Fill = fillBrush });
+        canvas.Children.Add(new System.Windows.Shapes.Polyline
+        {
+            Points = points, Stroke = lineBrush, StrokeThickness = 1.5,
+            StrokeLineJoin = System.Windows.Media.PenLineJoin.Round
+        });
+
+        // 데이터 포인트 + 툴팁
+        var today = DateTime.Now.Date;
+        for (int i = 0; i < 7; i++)
+        {
+            var pt = points[i];
+            var d = today.AddDays(-6 + i);
+            var dot = new System.Windows.Shapes.Ellipse
+            {
+                Width = 6, Height = 6,
+                Fill = lineBrush,
+                Stroke = System.Windows.Media.Brushes.White,
+                StrokeThickness = 1,
+                ToolTip = $"{d:MM/dd}: ${series[i]:F2}",
+            };
+            Canvas.SetLeft(dot, pt.X - 3);
+            Canvas.SetTop(dot, pt.Y - 3);
+            canvas.Children.Add(dot);
+        }
     }
 
     private static void SetRatioBar(Border bar, double ratio, SolidColorBrush color)
@@ -1344,7 +1463,8 @@ public partial class MainWindow : Window
                     Height = 5,
                     Fill = B(FamilyColors[fam]),
                     Stroke = BR("BgCardBrush") is SolidColorBrush bgSolid ? bgSolid : BR("BorderBrushBase"),
-                    StrokeThickness = 1
+                    StrokeThickness = 1,
+                    ToolTip = $"{days[i]:MM/dd} · {fam}: ${cost:F2}",
                 };
                 Canvas.SetLeft(dot, X(i) - 2.5);
                 Canvas.SetTop(dot, Y(cost) - 2.5);

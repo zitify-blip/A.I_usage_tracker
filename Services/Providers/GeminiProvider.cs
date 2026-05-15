@@ -3,11 +3,8 @@ using System.Text.Json;
 
 namespace AIUsageTracker.Services.Providers;
 
-public class GeminiProvider : IUsageProvider
+public class GeminiProvider
 {
-    public string Id => "gemini";
-    public string DisplayName => "Gemini";
-
     private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta";
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
