@@ -20,7 +20,7 @@ public class UpdateInfo
 public class UpdateService
 {
     // GitHub owner/repo — change this to your actual repo
-    private const string GitHubOwner = "zitify-blip";
+    private const string GitHubOwner = "zitify";
     private const string GitHubRepo = "A.I_usage_tracker";
     private const string GitHubApiUrl = $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/releases/latest";
 
